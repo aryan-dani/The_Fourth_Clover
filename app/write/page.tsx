@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,15 +22,30 @@ import {
   Tag, 
   Eye,
   Loader2,
-  X
+  X,
+  Edit3
 } from 'lucide-react';
 import Link from 'next/link';
 
+interface Post {
+  id: string;
+  title: string;
+  content: string;
+  excerpt: string;
+  cover_image: string | null;
+  tags: string[];
+  status: 'draft' | 'published';
+}
+
 export default function WritePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get('edit');
   const { user } = useAuth();
+  
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [postData, setPostData] = useState({
     title: '',
     content: '',
@@ -42,8 +57,46 @@ export default function WritePage() {
   const [tagInput, setTagInput] = useState('');
   const [error, setError] = useState('');
 
+  // Load post for editing
+  useEffect(() => {
+    if (editId && user) {
+      loadPostForEditing(editId);
+    }
+  }, [editId, user]);
+
+  const loadPostForEditing = async (postId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('id', postId)
+        .eq('author_id', user?.id)
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setPostData({
+          title: data.title,
+          content: data.content,
+          excerpt: data.excerpt || '',
+          coverImage: data.cover_image || '',
+          tags: data.tags || [],
+          status: data.status,
+        });
+        setIsEditing(true);
+      }
+    } catch (err) {
+      console.error('Error loading post:', err);
+      toast.error('Failed to load post for editing');
+      router.push('/write');
+    }
+  };
+
   // Auto-save functionality
   useEffect(() => {
+    if (!isEditing || !postData.title.trim()) return;
+    
     const autoSave = setInterval(() => {
       if (postData.title.trim() && postData.content.trim()) {
         handleSave(true);
@@ -51,7 +104,7 @@ export default function WritePage() {
     }, 30000); // Auto-save every 30 seconds
 
     return () => clearInterval(autoSave);
-  }, [postData]);
+  }, [postData, isEditing]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -71,22 +124,33 @@ export default function WritePage() {
       const readTime = calculateReadTime(postData.content);
       const excerpt = postData.excerpt || postData.content.substring(0, 150) + '...';
 
-      const { error } = await supabase
-        .from('posts')
-        .upsert({
-          title: postData.title,
-          slug,
-          content: postData.content,
-          excerpt,
-          cover_image: postData.coverImage || null,
-          status: postData.status,
-          author_id: user.id,
-          tags: postData.tags,
-          read_time: readTime,
-          ...(postData.status === 'published' ? { published_at: new Date().toISOString() } : {})
-        });
+      const postPayload = {
+        title: postData.title,
+        slug,
+        content: postData.content,
+        excerpt,
+        cover_image: postData.coverImage || null,
+        status: postData.status,
+        author_id: user.id,
+        tags: postData.tags,
+        read_time: readTime,
+        ...(postData.status === 'published' ? { published_at: new Date().toISOString() } : {})
+      };
 
-      if (error) throw error;
+      let result;
+      if (isEditing && editId) {
+        result = await supabase
+          .from('posts')
+          .update(postPayload)
+          .eq('id', editId)
+          .eq('author_id', user.id);
+      } else {
+        result = await supabase
+          .from('posts')
+          .insert(postPayload);
+      }
+
+      if (result.error) throw result.error;
 
       if (!isAutoSave) {
         toast.success(postData.status === 'published' ? 'Post published!' : 'Draft saved!');
@@ -148,38 +212,48 @@ export default function WritePage() {
           className="flex items-center justify-between mb-8"
         >
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" asChild className="hover:bg-accent">
               <Link href="/dashboard" className="flex items-center">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Dashboard
               </Link>
             </Button>
-            <h1 className="text-2xl font-bold">Write Your Story</h1>
+            <div className="flex items-center space-x-2">
+              {isEditing ? <Edit3 className="w-5 h-5" /> : <Edit3 className="w-5 h-5" />}
+              <h1 className="text-2xl font-bold brand-text">
+                {isEditing ? 'Edit Your Story' : 'Write Your Story'}
+              </h1>
+            </div>
           </div>
 
           <div className="flex items-center space-x-2">
             {isSaving && (
               <div className="flex items-center text-sm text-muted-foreground">
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Saving...
+                <span className="loading-dots">Saving</span>
               </div>
             )}
-            <Button variant="outline" onClick={() => handleSave()}>
+            <Button variant="outline" onClick={() => handleSave()} className="glass-hover">
               <Save className="w-4 h-4 mr-2" />
               Save Draft
             </Button>
-            <Button onClick={handlePublish} disabled={isLoading}>
+            <Button onClick={handlePublish} disabled={isLoading} className="glow-button">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               <Send className="w-4 h-4 mr-2" />
-              Publish
+              {isEditing ? 'Update' : 'Publish'}
             </Button>
           </div>
         </motion.div>
 
         {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Alert variant="destructive" className="mb-6">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          </motion.div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -199,33 +273,44 @@ export default function WritePage() {
                         placeholder="Enter your story title..."
                         value={postData.title}
                         onChange={(e) => setPostData(prev => ({ ...prev, title: e.target.value }))}
-                        className="text-2xl font-bold border-none p-0 placeholder:text-muted-foreground focus-visible:ring-0"
+                        className="text-2xl font-bold border-none p-0 placeholder:text-muted-foreground focus-ring bg-transparent"
                       />
                     </div>
 
                     {/* Cover Image */}
                     <div>
-                      <Label htmlFor="coverImage" className="text-sm font-medium">
-                        Cover Image URL (optional)
+                      <Label htmlFor="coverImage" className="text-sm font-medium flex items-center space-x-2">
+                        <Image className="w-4 h-4" />
+                        <span>Cover Image URL (optional)</span>
                       </Label>
-                      <div className="flex items-center space-x-2 mt-2">
-                        <Image className="w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="coverImage"
-                          placeholder="https://example.com/image.jpg"
-                          value={postData.coverImage}
-                          onChange={(e) => setPostData(prev => ({ ...prev, coverImage: e.target.value }))}
-                        />
-                      </div>
+                      <Input
+                        id="coverImage"
+                        placeholder="https://images.pexels.com/your-image.jpg"
+                        value={postData.coverImage}
+                        onChange={(e) => setPostData(prev => ({ ...prev, coverImage: e.target.value }))}
+                        className="mt-2 focus-ring"
+                      />
+                      {postData.coverImage && (
+                        <div className="mt-3 rounded-lg overflow-hidden">
+                          <img
+                            src={postData.coverImage}
+                            alt="Cover preview"
+                            className="w-full h-48 object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
 
                     {/* Content */}
                     <div>
                       <Textarea
-                        placeholder="Tell your story..."
+                        placeholder="Tell your story... ✨"
                         value={postData.content}
                         onChange={(e) => setPostData(prev => ({ ...prev, content: e.target.value }))}
-                        className="min-h-[400px] border-none p-0 resize-none placeholder:text-muted-foreground focus-visible:ring-0"
+                        className="min-h-[400px] border-none p-0 resize-none placeholder:text-muted-foreground focus-ring bg-transparent text-base leading-relaxed"
                       />
                     </div>
 
@@ -239,7 +324,7 @@ export default function WritePage() {
                         placeholder="Brief description of your post..."
                         value={postData.excerpt}
                         onChange={(e) => setPostData(prev => ({ ...prev, excerpt: e.target.value }))}
-                        className="mt-2 max-h-24"
+                        className="mt-2 max-h-24 focus-ring"
                         rows={3}
                       />
                     </div>
@@ -272,9 +357,9 @@ export default function WritePage() {
                         value={tagInput}
                         onChange={(e) => setTagInput(e.target.value)}
                         onKeyPress={handleKeyPress}
-                        className="flex-1"
+                        className="flex-1 focus-ring"
                       />
-                      <Button size="sm" onClick={addTag}>
+                      <Button size="sm" onClick={addTag} className="glow-button">
                         Add
                       </Button>
                     </div>
@@ -282,13 +367,20 @@ export default function WritePage() {
                     {postData.tags.length > 0 && (
                       <div className="flex flex-wrap gap-2">
                         {postData.tags.map((tag) => (
-                          <Badge key={tag} variant="secondary" className="flex items-center space-x-1">
-                            <span>{tag}</span>
-                            <X 
-                              className="w-3 h-3 cursor-pointer hover:text-destructive" 
-                              onClick={() => removeTag(tag)}
-                            />
-                          </Badge>
+                          <motion.div
+                            key={tag}
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0 }}
+                          >
+                            <Badge variant="secondary" className="flex items-center space-x-1 hover:bg-accent transition-colors">
+                              <span>{tag}</span>
+                              <X 
+                                className="w-3 h-3 cursor-pointer hover:text-destructive transition-colors" 
+                                onClick={() => removeTag(tag)}
+                              />
+                            </Badge>
+                          </motion.div>
                         ))}
                       </div>
                     )}
@@ -314,15 +406,15 @@ export default function WritePage() {
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Words:</span>
-                      <span>{postData.content.trim().split(/\s+/).length}</span>
+                      <span className="font-medium">{postData.content.trim().split(/\s+/).filter(word => word.length > 0).length}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Characters:</span>
-                      <span>{postData.content.length}</span>
+                      <span className="font-medium">{postData.content.length}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Read time:</span>
-                      <span>{calculateReadTime(postData.content)}m</span>
+                      <span className="font-medium">{calculateReadTime(postData.content)}m</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Status:</span>
@@ -330,6 +422,12 @@ export default function WritePage() {
                         {postData.status}
                       </Badge>
                     </div>
+                    {isEditing && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Mode:</span>
+                        <Badge variant="outline">Editing</Badge>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

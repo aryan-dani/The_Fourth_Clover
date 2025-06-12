@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useAuth } from '@/lib/auth-context';
-import { Menu, Search, PenTool, Home, User, LogOut } from 'lucide-react';
+import { Menu, Search, PenTool, Home, User, LogOut, Settings } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,15 +31,15 @@ export function Header() {
     <motion.header
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+      className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60"
     >
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center space-x-3">
-          <div className="circle-logo">
-            <span className="text-lg font-bold brand-text">🍀</span>
+        <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+          <div className="circle-logo animate-float">
+            <span className="text-lg font-bold">🍀</span>
           </div>
-          <div className="brand-text text-xl tracking-tight">
+          <div className="brand-text text-xl tracking-tight gradient-text">
             THE FOURTH CLOVER
           </div>
         </Link>
@@ -50,7 +50,7 @@ export function Header() {
             <Link
               key={item.name}
               href={item.href}
-              className="text-muted-foreground hover:text-foreground transition-colors duration-200 flex items-center space-x-2 text-sm font-medium"
+              className="text-muted-foreground hover:text-foreground transition-all duration-200 flex items-center space-x-2 text-sm font-medium hover:scale-105"
             >
               <item.icon className="w-4 h-4" />
               <span>{item.name}</span>
@@ -65,20 +65,27 @@ export function Header() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost\" className="relative h-9 w-9 rounded-full">
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full glass-hover">
                   <Avatar className="h-9 w-9">
                     <AvatarImage src={user.user_metadata?.avatar_url} />
-                    <AvatarFallback className="bg-muted">
+                    <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white">
                       {user.user_metadata?.full_name?.[0] || user.email?.[0] || 'U'}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuContent className="w-56 glass" align="end" forceMount>
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex flex-col space-y-1 leading-none">
+                    <p className="font-medium">{user.user_metadata?.full_name || 'User'}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/profile" className="flex items-center">
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
+                    <Settings className="mr-2 h-4 w-4" />
+                    Edit Profile
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -88,7 +95,7 @@ export function Header() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={signOut}>
+                <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   Sign out
                 </DropdownMenuItem>
@@ -96,10 +103,10 @@ export function Header() {
             </DropdownMenu>
           ) : (
             <div className="hidden md:flex items-center space-x-2">
-              <Button variant="ghost" asChild className="minimal-button">
+              <Button variant="ghost" asChild className="glass-hover">
                 <Link href="/auth/signin">Sign in</Link>
               </Button>
-              <Button asChild className="bg-foreground text-background hover:bg-foreground/90">
+              <Button asChild className="glow-button">
                 <Link href="/auth/signup">Get Started</Link>
               </Button>
             </div>
@@ -108,18 +115,18 @@ export function Header() {
           {/* Mobile Menu */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
+              <Button variant="ghost" size="icon" className="md:hidden glass-hover">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+            <SheetContent side="right" className="w-[300px] sm:w-[400px] glass">
               <nav className="flex flex-col space-y-4 mt-6">
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
                     href={item.href}
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center space-x-2 text-foreground hover:text-muted-foreground transition-colors"
+                    className="flex items-center space-x-2 text-foreground hover:text-muted-foreground transition-colors py-2"
                   >
                     <item.icon className="w-4 h-4" />
                     <span>{item.name}</span>
@@ -131,14 +138,14 @@ export function Header() {
                     <Link
                       href="/auth/signin"
                       onClick={() => setIsOpen(false)}
-                      className="text-foreground hover:text-muted-foreground transition-colors"
+                      className="text-foreground hover:text-muted-foreground transition-colors py-2"
                     >
                       Sign in
                     </Link>
                     <Link
                       href="/auth/signup"
                       onClick={() => setIsOpen(false)}
-                      className="text-foreground hover:text-muted-foreground transition-colors"
+                      className="text-foreground hover:text-muted-foreground transition-colors py-2"
                     >
                       Get Started
                     </Link>

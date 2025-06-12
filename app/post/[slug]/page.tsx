@@ -24,7 +24,8 @@ import {
   Send,
   Copy,
   ArrowLeft,
-  Loader2
+  Loader2,
+  Reply
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -50,11 +51,13 @@ interface Comment {
   id: string;
   content: string;
   created_at: string;
+  parent_id: string | null;
   profiles: {
     username: string;
     full_name: string;
     avatar_url: string | null;
   };
+  replies?: Comment[];
 }
 
 export default function PostPage({ params }: { params: { slug: string } }) {
@@ -62,6 +65,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
+  const [replyTo, setReplyTo] = useState<string | null>(null);
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -111,6 +115,8 @@ export default function PostPage({ params }: { params: { slug: string } }) {
   };
 
   const fetchComments = async () => {
+    if (!post?.id) return;
+    
     try {
       const { data, error } = await supabase
         .from('comments')
@@ -118,11 +124,30 @@ export default function PostPage({ params }: { params: { slug: string } }) {
           *,
           profiles (username, full_name, avatar_url)
         `)
-        .eq('post_id', post?.id)
+        .eq('post_id', post.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setComments(data || []);
+      
+      // Organize comments with replies
+      const topLevelComments = (data || []).filter(comment => !comment.parent_id);
+      const repliesMap = new Map();
+      
+      (data || []).forEach(comment => {
+        if (comment.parent_id) {
+          if (!repliesMap.has(comment.parent_id)) {
+            repliesMap.set(comment.parent_id, []);
+          }
+          repliesMap.get(comment.parent_id).push(comment);
+        }
+      });
+      
+      const commentsWithReplies = topLevelComments.map(comment => ({
+        ...comment,
+        replies: repliesMap.get(comment.id) || []
+      }));
+      
+      setComments(commentsWithReplies);
     } catch (error) {
       console.error('Error fetching comments:', error);
     }
@@ -165,6 +190,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
         if (error) throw error;
         setIsLiked(false);
         setLikesCount(prev => prev - 1);
+        toast.success('Like removed');
       } else {
         // Add like
         const { error } = await supabase
@@ -177,6 +203,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
         if (error) throw error;
         setIsLiked(true);
         setLikesCount(prev => prev + 1);
+        toast.success('Post liked! ❤️');
       }
     } catch (error) {
       console.error('Error toggling like:', error);
@@ -197,14 +224,16 @@ export default function PostPage({ params }: { params: { slug: string } }) {
         .insert({
           post_id: post.id,
           author_id: user.id,
-          content: newComment.trim()
+          content: newComment.trim(),
+          parent_id: replyTo
         });
 
       if (error) throw error;
       
       setNewComment('');
+      setReplyTo(null);
       fetchComments();
-      toast.success('Comment added!');
+      toast.success('Comment added! 💬');
     } catch (error) {
       console.error('Error submitting comment:', error);
       toast.error('Failed to add comment');
@@ -227,7 +256,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
         break;
       case 'copy':
         copyToClipboard(url);
-        toast.success('Link copied to clipboard!');
+        toast.success('Link copied to clipboard! 📋');
         break;
     }
   };
@@ -238,10 +267,10 @@ export default function PostPage({ params }: { params: { slug: string } }) {
         <Header />
         <div className="container mx-auto px-4 py-16">
           <div className="max-w-4xl mx-auto">
-            <div className="animate-pulse">
-              <div className="h-8 bg-muted rounded mb-4"></div>
-              <div className="h-4 bg-muted rounded w-1/2 mb-8"></div>
-              <div className="aspect-video bg-muted rounded mb-8"></div>
+            <div className="animate-pulse space-y-6">
+              <div className="h-8 bg-muted rounded"></div>
+              <div className="h-4 bg-muted rounded w-1/2"></div>
+              <div className="aspect-video bg-muted rounded"></div>
               <div className="space-y-4">
                 {[...Array(5)].map((_, i) => (
                   <div key={i} className="h-4 bg-muted rounded"></div>
@@ -271,7 +300,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
             animate={{ opacity: 1, x: 0 }}
             className="mb-6"
           >
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" asChild className="hover:bg-accent">
               <Link href="/explore" className="flex items-center">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Explore
@@ -286,13 +315,13 @@ export default function PostPage({ params }: { params: { slug: string } }) {
             className="mb-8"
           >
             <header className="mb-8">
-              <h1 className="text-4xl lg:text-5xl font-bold mb-6 leading-tight">
+              <h1 className="text-4xl lg:text-5xl font-bold mb-6 leading-tight brand-text">
                 {post.title}
               </h1>
 
               {/* Author Info */}
               <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-                <div className="flex items-center space-x-4">
+                <Link href={`/profile/${post.profiles.username}`} className="flex items-center space-x-4 hover:opacity-80 transition-opacity">
                   <Avatar className="w-12 h-12">
                     <AvatarImage src={post.profiles.avatar_url || ''} />
                     <AvatarFallback>
@@ -314,7 +343,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
                       </div>
                     </div>
                   </div>
-                </div>
+                </Link>
 
                 {/* Engagement Actions */}
                 <div className="flex items-center space-x-2">
@@ -322,20 +351,22 @@ export default function PostPage({ params }: { params: { slug: string } }) {
                     variant={isLiked ? "default" : "outline"}
                     size="sm"
                     onClick={toggleLike}
-                    className="flex items-center space-x-2"
+                    className={`flex items-center space-x-2 transition-all ${
+                      isLiked ? 'glow-button animate-pulse-slow' : 'glass-hover'
+                    }`}
                   >
                     <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
                     <span>{likesCount}</span>
                   </Button>
                   
                   <div className="flex items-center space-x-1">
-                    <Button variant="outline" size="sm" onClick={() => handleShare('twitter')}>
+                    <Button variant="outline" size="sm" onClick={() => handleShare('twitter')} className="glass-hover">
                       <Twitter className="w-4 h-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleShare('whatsapp')}>
+                    <Button variant="outline" size="sm" onClick={() => handleShare('whatsapp')} className="glass-hover">
                       <Send className="w-4 h-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleShare('copy')}>
+                    <Button variant="outline" size="sm" onClick={() => handleShare('copy')} className="glass-hover">
                       <Copy className="w-4 h-4" />
                     </Button>
                   </div>
@@ -346,7 +377,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
               {post.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-8">
                   {post.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary">
+                    <Badge key={tag} variant="secondary" className="hover:bg-accent transition-colors">
                       {tag}
                     </Badge>
                   ))}
@@ -383,9 +414,9 @@ export default function PostPage({ params }: { params: { slug: string } }) {
           >
             <Card className="glass">
               <CardContent className="p-6">
-                <h2 className="text-2xl font-bold mb-6 flex items-center">
+                <h2 className="text-2xl font-bold mb-6 flex items-center brand-text">
                   <MessageCircle className="w-6 h-6 mr-2" />
-                  Comments ({comments.length})
+                  Comments ({comments.reduce((total, comment) => total + 1 + (comment.replies?.length || 0), 0)})
                 </h2>
 
                 {/* Add Comment */}
@@ -399,30 +430,44 @@ export default function PostPage({ params }: { params: { slug: string } }) {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
+                        {replyTo && (
+                          <div className="mb-2 text-sm text-muted-foreground">
+                            Replying to comment...
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => setReplyTo(null)}
+                              className="ml-2 h-auto p-1"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        )}
                         <Textarea
-                          placeholder="Share your thoughts..."
+                          placeholder={replyTo ? "Write a reply..." : "Share your thoughts..."}
                           value={newComment}
                           onChange={(e) => setNewComment(e.target.value)}
-                          className="mb-3"
+                          className="mb-3 focus-ring"
                           rows={3}
                         />
                         <Button 
                           onClick={submitComment} 
                           disabled={!newComment.trim() || submittingComment}
                           size="sm"
+                          className="glow-button"
                         >
                           {submittingComment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Post Comment
+                          {replyTo ? 'Post Reply' : 'Post Comment'}
                         </Button>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="mb-8 p-4 border border-dashed border-border rounded-lg text-center">
+                  <div className="mb-8 p-4 border border-dashed border-border rounded-lg text-center glass">
                     <p className="text-muted-foreground mb-4">
-                      Sign in to join the conversation
+                      Sign in to join the conversation 💬
                     </p>
-                    <Button asChild>
+                    <Button asChild className="glow-button">
                       <Link href="/auth/signin">Sign In</Link>
                     </Button>
                   </div>
@@ -431,34 +476,77 @@ export default function PostPage({ params }: { params: { slug: string } }) {
                 {/* Comments List */}
                 <div className="space-y-6">
                   {comments.map((comment) => (
-                    <div key={comment.id} className="flex space-x-4">
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={comment.profiles.avatar_url || ''} />
-                        <AvatarFallback>
-                          {comment.profiles.full_name?.[0] || comment.profiles.username[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <p className="font-semibold">
-                            {comment.profiles.full_name || comment.profiles.username}
+                    <div key={comment.id}>
+                      {/* Main Comment */}
+                      <div className="flex space-x-4">
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={comment.profiles.avatar_url || ''} />
+                          <AvatarFallback>
+                            {comment.profiles.full_name?.[0] || comment.profiles.username[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <p className="font-semibold">
+                              {comment.profiles.full_name || comment.profiles.username}
+                            </p>
+                            <span className="text-sm text-muted-foreground">
+                              {formatDate(comment.created_at)}
+                            </span>
+                          </div>
+                          <p className="text-foreground leading-relaxed mb-2">
+                            {comment.content}
                           </p>
-                          <span className="text-sm text-muted-foreground">
-                            {formatDate(comment.created_at)}
-                          </span>
+                          {user && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setReplyTo(comment.id)}
+                              className="text-xs hover:bg-accent"
+                            >
+                              <Reply className="w-3 h-3 mr-1" />
+                              Reply
+                            </Button>
+                          )}
                         </div>
-                        <p className="text-foreground leading-relaxed">
-                          {comment.content}
-                        </p>
                       </div>
+
+                      {/* Replies */}
+                      {comment.replies && comment.replies.length > 0 && (
+                        <div className="ml-14 mt-4 space-y-4">
+                          {comment.replies.map((reply) => (
+                            <div key={reply.id} className="flex space-x-3">
+                              <Avatar className="w-8 h-8">
+                                <AvatarImage src={reply.profiles.avatar_url || ''} />
+                                <AvatarFallback className="text-xs">
+                                  {reply.profiles.full_name?.[0] || reply.profiles.username[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <p className="font-semibold text-sm">
+                                    {reply.profiles.full_name || reply.profiles.username}
+                                  </p>
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatDate(reply.created_at)}
+                                  </span>
+                                </div>
+                                <p className="text-foreground leading-relaxed text-sm">
+                                  {reply.content}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
 
                   {comments.length === 0 && (
                     <div className="text-center py-8">
-                      <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4 animate-float" />
                       <p className="text-muted-foreground">
-                        No comments yet. Be the first to share your thoughts!
+                        No comments yet. Be the first to share your thoughts! ✨
                       </p>
                     </div>
                   )}
