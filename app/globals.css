@@ -5,47 +5,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800;900&display=swap');
 
 :root {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 0, 0, 0;
-  --background-end-rgb: 0, 0, 0;
-}
-
-[data-theme="light"] {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 255, 255, 255;
   --background-end-rgb: 255, 255, 255;
 }
 
+[data-theme="dark"] {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
+}
+
 @layer base {
   :root {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --radius: 0.5rem;
-  }
-  
-  .light {
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
@@ -70,6 +42,34 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+  }
+  
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
   }
 }
 
@@ -87,12 +87,12 @@
 }
 
 @layer components {
-  .glass {
-    @apply bg-card/80 border border-border shadow-lg backdrop-blur-md;
+  .elegant-card {
+    @apply bg-card border border-border shadow-sm backdrop-blur-sm;
   }
   
-  .glass-hover {
-    @apply glass hover:bg-card/90 hover:shadow-xl transition-all duration-300;
+  .elegant-card-hover {
+    @apply elegant-card hover:shadow-md transition-all duration-300;
   }
   
   .brand-text {
@@ -101,40 +101,31 @@
   }
   
   .circle-logo {
-    @apply w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center shadow-lg;
+    @apply w-12 h-12 bg-foreground text-background rounded-full flex items-center justify-center;
   }
   
-  .glow-button {
-    @apply relative overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold;
-  }
-  
-  .glow-button::before {
-    content: '';
-    @apply absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 transition-opacity duration-300;
-  }
-  
-  .glow-button:hover::before {
-    @apply opacity-100;
-  }
-  
-  .gradient-text {
-    @apply bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent;
+  .minimal-button {
+    @apply border border-border hover:bg-accent hover:text-accent-foreground transition-colors duration-200;
   }
   
   .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-background;
+    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background;
   }
 
-  .animate-glow {
-    animation: glow 2s ease-in-out infinite alternate;
+  .animate-fadeIn {
+    animation: fadeIn 0.6s ease-out forwards;
   }
   
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
+  .animate-slideUp {
+    animation: slideUp 0.6s ease-out forwards;
+  }
+
+  .glass {
+    @apply bg-card/80 border border-border shadow-lg backdrop-blur-md;
   }
   
-  .animate-pulse-slow {
-    animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  .glass-hover {
+    @apply glass hover:bg-card/90 hover:shadow-xl transition-all duration-300;
   }
 
   .line-clamp-2 {
@@ -152,27 +143,31 @@
   }
 }
 
-@keyframes glow {
+@keyframes fadeIn {
   from {
-    box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+    opacity: 0;
+    transform: translateY(20px);
   }
   to {
-    box-shadow: 0 0 30px rgba(168, 85, 247, 0.6), 0 0 40px rgba(236, 72, 153, 0.3);
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
   }
-  50% {
-    transform: translateY(-10px);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -180,16 +175,16 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-muted-foreground/30 rounded-full;
+  @apply bg-border rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-muted-foreground/50;
+  @apply bg-muted-foreground;
 }
 
 /* Selection styles */
 ::selection {
-  @apply bg-purple-500/30 text-foreground;
+  @apply bg-primary text-primary-foreground;
 }
 
 /* Prose styles for blog content */
@@ -210,7 +205,7 @@
 }
 
 .prose a {
-  @apply text-purple-400 hover:text-purple-300 transition-colors underline decoration-1 underline-offset-2;
+  @apply text-foreground hover:text-muted-foreground transition-colors underline decoration-1 underline-offset-2;
 }
 
 .prose code {
@@ -222,7 +217,7 @@
 }
 
 .prose blockquote {
-  @apply border-l-4 border-purple-500 pl-4 italic text-muted-foreground;
+  @apply border-l-4 border-border pl-4 italic text-muted-foreground;
 }
 
 .prose ul,
@@ -232,31 +227,6 @@
 
 .prose img {
   @apply rounded-lg;
-}
-
-/* Loading animation */
-.loading-dots {
-  display: inline-block;
-}
-
-.loading-dots::after {
-  content: '';
-  animation: loading-dots 1.5s infinite;
-}
-
-@keyframes loading-dots {
-  0%, 20% {
-    content: '';
-  }
-  40% {
-    content: '.';
-  }
-  60% {
-    content: '..';
-  }
-  80%, 100% {
-    content: '...';
-  }
 }
 
 /* Theme transition */

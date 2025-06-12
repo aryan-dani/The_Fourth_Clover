@@ -9,19 +9,9 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' });
 
 export const metadata: Metadata = {
-  title: 'The Fourth Clover - Modern Blogging Platform',
-  description: 'A minimalist blogging platform for the next generation. Share your stories, connect with readers, and build your community.',
-  keywords: ['blog', 'writing', 'platform', 'minimalist', 'modern', 'gen-z'],
-  openGraph: {
-    title: 'The Fourth Clover',
-    description: 'A minimalist blogging platform for the next generation',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'The Fourth Clover',
-    description: 'A minimalist blogging platform for the next generation',
-  },
+  title: 'The Fourth Clover - Minimalist Blogging Platform',
+  description: 'A minimalist blogging platform for thoughtful writers. Share your stories and connect with readers who value quality content.',
+  keywords: ['blog', 'writing', 'platform', 'minimalist', 'elegant'],
 };
 
 export default function RootLayout({
@@ -34,8 +24,8 @@ export default function RootLayout({
       <body className={`${inter.variable} ${playfair.variable} font-sans`}>
         <ThemeProvider 
           attribute="class" 
-          defaultTheme="dark" 
-          enableSystem={false}
+          defaultTheme="light" 
+          enableSystem={true}
           disableTransitionOnChange={false}
         >
           <AuthProvider>

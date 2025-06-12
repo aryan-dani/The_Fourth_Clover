@@ -212,7 +212,7 @@ export default function WritePage() {
           className="flex items-center justify-between mb-8"
         >
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" asChild className="hover:bg-accent">
+            <Button variant="ghost" asChild>
               <Link href="/dashboard" className="flex items-center">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Dashboard
@@ -230,14 +230,14 @@ export default function WritePage() {
             {isSaving && (
               <div className="flex items-center text-sm text-muted-foreground">
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                <span className="loading-dots">Saving</span>
+                Saving...
               </div>
             )}
-            <Button variant="outline" onClick={() => handleSave()} className="glass-hover">
+            <Button variant="outline" onClick={() => handleSave()}>
               <Save className="w-4 h-4 mr-2" />
               Save Draft
             </Button>
-            <Button onClick={handlePublish} disabled={isLoading} className="glow-button">
+            <Button onClick={handlePublish} disabled={isLoading} className="bg-foreground text-background hover:bg-foreground/90">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               <Send className="w-4 h-4 mr-2" />
               {isEditing ? 'Update' : 'Publish'}
@@ -264,7 +264,7 @@ export default function WritePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <Card className="glass">
+              <Card className="elegant-card">
                 <CardContent className="p-6">
                   <div className="space-y-6">
                     {/* Title */}
@@ -273,7 +273,7 @@ export default function WritePage() {
                         placeholder="Enter your story title..."
                         value={postData.title}
                         onChange={(e) => setPostData(prev => ({ ...prev, title: e.target.value }))}
-                        className="text-2xl font-bold border-none p-0 placeholder:text-muted-foreground focus-ring bg-transparent"
+                        className="text-2xl font-bold border-none p-0 placeholder:text-muted-foreground focus-visible:ring-0"
                       />
                     </div>
 
@@ -307,10 +307,10 @@ export default function WritePage() {
                     {/* Content */}
                     <div>
                       <Textarea
-                        placeholder="Tell your story... ✨"
+                        placeholder="Tell your story..."
                         value={postData.content}
                         onChange={(e) => setPostData(prev => ({ ...prev, content: e.target.value }))}
-                        className="min-h-[400px] border-none p-0 resize-none placeholder:text-muted-foreground focus-ring bg-transparent text-base leading-relaxed"
+                        className="min-h-[400px] border-none p-0 resize-none placeholder:text-muted-foreground focus-visible:ring-0"
                       />
                     </div>
 
@@ -324,7 +324,7 @@ export default function WritePage() {
                         placeholder="Brief description of your post..."
                         value={postData.excerpt}
                         onChange={(e) => setPostData(prev => ({ ...prev, excerpt: e.target.value }))}
-                        className="mt-2 max-h-24 focus-ring"
+                        className="mt-2 max-h-24"
                         rows={3}
                       />
                     </div>
@@ -342,7 +342,7 @@ export default function WritePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <Card className="glass">
+              <Card className="elegant-card">
                 <CardHeader>
                   <CardTitle className="flex items-center text-lg">
                     <Tag className="w-4 h-4 mr-2" />
@@ -357,9 +357,9 @@ export default function WritePage() {
                         value={tagInput}
                         onChange={(e) => setTagInput(e.target.value)}
                         onKeyPress={handleKeyPress}
-                        className="flex-1 focus-ring"
+                        className="flex-1"
                       />
-                      <Button size="sm" onClick={addTag} className="glow-button">
+                      <Button size="sm" onClick={addTag}>
                         Add
                       </Button>
                     </div>
@@ -367,20 +367,13 @@ export default function WritePage() {
                     {postData.tags.length > 0 && (
                       <div className="flex flex-wrap gap-2">
                         {postData.tags.map((tag) => (
-                          <motion.div
-                            key={tag}
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            exit={{ scale: 0 }}
-                          >
-                            <Badge variant="secondary" className="flex items-center space-x-1 hover:bg-accent transition-colors">
-                              <span>{tag}</span>
-                              <X 
-                                className="w-3 h-3 cursor-pointer hover:text-destructive transition-colors" 
-                                onClick={() => removeTag(tag)}
-                              />
-                            </Badge>
-                          </motion.div>
+                          <Badge key={tag} variant="secondary" className="flex items-center space-x-1">
+                            <span>{tag}</span>
+                            <X 
+                              className="w-3 h-3 cursor-pointer hover:text-destructive" 
+                              onClick={() => removeTag(tag)}
+                            />
+                          </Badge>
                         ))}
                       </div>
                     )}
@@ -395,7 +388,7 @@ export default function WritePage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <Card className="glass">
+              <Card className="elegant-card">
                 <CardHeader>
                   <CardTitle className="flex items-center text-lg">
                     <Eye className="w-4 h-4 mr-2" />
@@ -406,15 +399,15 @@ export default function WritePage() {
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Words:</span>
-                      <span className="font-medium">{postData.content.trim().split(/\s+/).filter(word => word.length > 0).length}</span>
+                      <span>{postData.content.trim().split(/\s+/).filter(word => word.length > 0).length}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Characters:</span>
-                      <span className="font-medium">{postData.content.length}</span>
+                      <span>{postData.content.length}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Read time:</span>
-                      <span className="font-medium">{calculateReadTime(postData.content)}m</span>
+                      <span>{calculateReadTime(postData.content)}m</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Status:</span>

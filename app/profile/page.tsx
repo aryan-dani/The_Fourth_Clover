@@ -184,7 +184,7 @@ export default function ProfilePage() {
             className="flex items-center justify-between mb-8"
           >
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" asChild className="hover:bg-accent">
+              <Button variant="ghost" asChild>
                 <Link href="/dashboard" className="flex items-center">
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Dashboard
@@ -213,7 +213,7 @@ export default function ProfilePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <Card className="glass">
+            <Card className="elegant-card">
               <CardHeader>
                 <CardTitle className="text-xl brand-text">Your Profile</CardTitle>
               </CardHeader>
@@ -340,7 +340,7 @@ export default function ProfilePage() {
 
                   {/* Submit Button */}
                   <div className="flex justify-end">
-                    <Button type="submit" disabled={isSaving} className="glow-button">
+                    <Button type="submit" disabled={isSaving} className="bg-foreground text-background hover:bg-foreground/90">
                       {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       <Save className="w-4 h-4 mr-2" />
                       Save Profile
