@@ -1,6 +1,6 @@
 [build]
   command = "npm run build"
-  publish = ".next"
+  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "18"
@@ -10,8 +10,9 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Fix for Next.js App Router - remove the incorrect redirect
-# The @netlify/plugin-nextjs handles routing automatically
+# Specific configuration for the Next.js plugin
+[context.production.environment]
+  NETLIFY_NEXT_PLUGIN_SKIP = "false"
 
 # Headers for security and performance
 [[headers]]
@@ -26,5 +27,8 @@
   for = "/_next/static/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/_next/image*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"

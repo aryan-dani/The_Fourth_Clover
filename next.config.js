@@ -3,9 +3,9 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  images: { 
+  images: {
     unoptimized: true,
-    domains: ['fntnxpwxuxtztyqoiika.supabase.co'], // Add your Supabase domain
+    domains: ["fntnxpwxuxtztyqoiika.supabase.co"], // Add your Supabase domain
   },
   webpack: (config, { isServer }) => {
     // Handle webpack warnings for Supabase realtime dependencies
