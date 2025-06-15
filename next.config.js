@@ -1,10 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "export",
   eslint: {
     ignoreDuringBuilds: true,
   },
-  images: { unoptimized: true },
+  images: { 
+    unoptimized: true,
+    domains: ['fntnxpwxuxtztyqoiika.supabase.co'], // Add your Supabase domain
+  },
   webpack: (config, { isServer }) => {
     // Handle webpack warnings for Supabase realtime dependencies
     config.resolve.fallback = {
