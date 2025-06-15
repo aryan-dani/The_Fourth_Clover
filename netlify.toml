@@ -5,6 +5,8 @@
 [build.environment]
   NODE_VERSION = "18"
   NEXT_TELEMETRY_DISABLED = "1"
+  # Disable secrets scanning for NEXT_PUBLIC_ variables (they're meant to be public)
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY"
 
 # Essential for Next.js App Router
 [[plugins]]
