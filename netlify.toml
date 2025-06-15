@@ -10,12 +10,8 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Redirects for client-side routing
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  conditions = {Role = ["admin"]}
+# Fix for Next.js App Router - remove the incorrect redirect
+# The @netlify/plugin-nextjs handles routing automatically
 
 # Headers for security and performance
 [[headers]]
@@ -28,5 +24,7 @@
 
 [[headers]]
   for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
