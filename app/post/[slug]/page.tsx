@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
+import { logSupabaseError } from "@/lib/debug-supabase";
 import {
   formatDate,
   shareToTwitter,
@@ -86,36 +87,65 @@ export default function PostPage({ params }: { params: { slug: string } }) {
 
   const fetchPost = async () => {
     try {
-      const { data, error } = await supabase
+      console.log("🔍 Fetching post with slug:", params.slug);
+
+      // First, get the post
+      const { data: postData, error: postError } = await supabase
         .from("posts")
-        .select(
-          `
-          *,
-          profiles (username, full_name, avatar_url, bio)
-        `
-        )
+        .select("*")
         .eq("slug", params.slug)
         .eq("status", "published")
         .single();
 
-      if (error) {
-        if (error.code === "PGRST116") {
+      if (postError) {
+        console.error("❌ Error fetching post:", postError);
+        if (postError.code === "PGRST116") {
           notFound();
         }
-        throw error;
+        throw postError;
       }
 
-      setPost(data);
+      if (!postData) {
+        console.error("❌ No post found with slug:", params.slug);
+        notFound();
+        return;
+      }
+
+      // Then, get the author profile
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("username, full_name, avatar_url, bio")
+        .eq("id", postData.author_id)
+        .single();
+
+      if (profileError) {
+        console.warn("⚠️ Could not fetch author profile:", profileError);
+        // Continue without profile data
+      }
+
+      // Combine the data
+      const combinedData = {
+        ...postData,
+        profiles: profileData || {
+          username: "Anonymous",
+          full_name: "Anonymous User",
+          avatar_url: null,
+          bio: null,
+        },
+      };
+
+      console.log("✅ Post fetched successfully:", combinedData);
+      setPost(combinedData);
 
       // Get likes count
       const { count } = await supabase
         .from("likes")
         .select("*", { count: "exact", head: true })
-        .eq("post_id", data.id);
+        .eq("post_id", postData.id);
 
       setLikesCount(count || 0);
     } catch (error) {
-      console.error("Error fetching post:", error);
+      console.error("❌ Error fetching post:", error);
     } finally {
       setLoading(false);
     }
@@ -125,26 +155,62 @@ export default function PostPage({ params }: { params: { slug: string } }) {
     if (!post?.id) return;
 
     try {
-      const { data, error } = await supabase
+      console.log("🔍 Fetching comments for post:", post.id);
+
+      // Fetch comments without the problematic profile join
+      const { data: commentsData, error: commentsError } = await supabase
         .from("comments")
-        .select(
-          `
-          *,
-          profiles (username, full_name, avatar_url)
-        `
-        )
+        .select("*")
         .eq("post_id", post.id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (commentsError) {
+        console.error("❌ Error fetching comments:", commentsError);
+        throw commentsError;
+      }
+
+      // Fetch profiles for comment authors separately
+      const authorIds = Array.from(
+        new Set(commentsData?.map((comment) => comment.author_id) || [])
+      );
+
+      let profilesData: any[] = [];
+      if (authorIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, username, full_name, avatar_url")
+          .in("id", authorIds);
+
+        if (profilesError) {
+          console.warn(
+            "⚠️ Could not fetch comment author profiles:",
+            profilesError
+          );
+        } else {
+          profilesData = profiles || [];
+        }
+      }
+
+      // Combine comments with their profile data
+      const commentsWithProfiles =
+        commentsData?.map((comment) => ({
+          ...comment,
+          profiles: profilesData.find(
+            (profile) => profile.id === comment.author_id
+          ) || {
+            username: "Anonymous",
+            full_name: "Anonymous User",
+            avatar_url: null,
+          },
+        })) || [];
 
       // Organize comments with replies
-      const topLevelComments = (data || []).filter(
+      const topLevelComments = commentsWithProfiles.filter(
         (comment) => !comment.parent_id
       );
       const repliesMap = new Map();
 
-      (data || []).forEach((comment) => {
+      commentsWithProfiles.forEach((comment) => {
         if (comment.parent_id) {
           if (!repliesMap.has(comment.parent_id)) {
             repliesMap.set(comment.parent_id, []);
@@ -158,6 +224,10 @@ export default function PostPage({ params }: { params: { slug: string } }) {
         replies: repliesMap.get(comment.id) || [],
       }));
 
+      console.log(
+        "✅ Comments fetched successfully:",
+        commentsWithReplies.length
+      );
       setComments(commentsWithReplies);
     } catch (error) {
       console.error("Error fetching comments:", error);
@@ -168,6 +238,11 @@ export default function PostPage({ params }: { params: { slug: string } }) {
     if (!user || !post) return;
 
     try {
+      console.log("❤️ Checking if user liked post:", {
+        post_id: post.id,
+        user_id: user.id,
+      });
+
       const { data, error } = await supabase
         .from("likes")
         .select("id")
@@ -175,11 +250,24 @@ export default function PostPage({ params }: { params: { slug: string } }) {
         .eq("user_id", user.id)
         .single();
 
+      if (error && error.code !== "PGRST116") {
+        // PGRST116 means no rows found, which is expected if user hasn't liked
+        logSupabaseError("Check If Liked", error, {
+          post_id: post.id,
+          user_id: user.id,
+        });
+        console.warn("⚠️ Error checking if liked:", error);
+        return;
+      }
+
       if (!error && data) {
+        console.log("✅ User has liked this post");
         setIsLiked(true);
+      } else {
+        console.log("ℹ️ User has not liked this post");
       }
     } catch (error) {
-      // User hasn't liked the post
+      console.error("❌ Unexpected error checking if liked:", error);
     }
   };
 
@@ -190,6 +278,12 @@ export default function PostPage({ params }: { params: { slug: string } }) {
     }
 
     try {
+      console.log(`${isLiked ? "💔" : "❤️"} Toggling like for post:`, {
+        post_id: post.id,
+        user_id: user.id,
+        current_state: isLiked ? "liked" : "not_liked",
+      });
+
       if (isLiked) {
         // Remove like
         const { error } = await supabase
@@ -198,9 +292,17 @@ export default function PostPage({ params }: { params: { slug: string } }) {
           .eq("post_id", post.id)
           .eq("user_id", user.id);
 
-        if (error) throw error;
+        if (error) {
+          logSupabaseError("Remove Like", error, {
+            post_id: post.id,
+            user_id: user.id,
+          });
+          throw error;
+        }
+
         setIsLiked(false);
         setLikesCount((prev) => prev - 1);
+        console.log("✅ Like removed successfully");
         toast.success("Like removed");
       } else {
         // Add like
@@ -209,9 +311,17 @@ export default function PostPage({ params }: { params: { slug: string } }) {
           user_id: user.id,
         });
 
-        if (error) throw error;
+        if (error) {
+          logSupabaseError("Add Like", error, {
+            post_id: post.id,
+            user_id: user.id,
+          });
+          throw error;
+        }
+
         setIsLiked(true);
         setLikesCount((prev) => prev + 1);
+        console.log("✅ Like added successfully");
         toast.success("Post liked! ❤️");
       }
     } catch (error) {
@@ -228,6 +338,13 @@ export default function PostPage({ params }: { params: { slug: string } }) {
 
     setSubmittingComment(true);
     try {
+      console.log("💬 Submitting comment:", {
+        post_id: post.id,
+        author_id: user.id,
+        content: newComment.trim(),
+        parent_id: replyTo,
+      });
+
       const { error } = await supabase.from("comments").insert({
         post_id: post.id,
         author_id: user.id,
@@ -235,8 +352,17 @@ export default function PostPage({ params }: { params: { slug: string } }) {
         parent_id: replyTo,
       });
 
-      if (error) throw error;
+      if (error) {
+        logSupabaseError("Submit Comment", error, {
+          post_id: post.id,
+          author_id: user.id,
+          content_length: newComment.trim().length,
+          parent_id: replyTo,
+        });
+        throw error;
+      }
 
+      console.log("✅ Comment submitted successfully");
       setNewComment("");
       setReplyTo(null);
       fetchComments();

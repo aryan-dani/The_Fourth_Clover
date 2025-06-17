@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import { generateSlug, calculateReadTime } from "@/lib/utils";
+import { logSupabaseError, runAllTests } from "@/lib/debug-supabase";
 import { toast } from "sonner";
 import {
   Save,
@@ -32,6 +33,7 @@ import Link from "next/link";
 interface Post {
   id: string;
   title: string;
+  slug: string;
   content: string;
   excerpt: string;
   cover_image: string | null;
@@ -51,6 +53,7 @@ export default function WritePage() {
   const [isUploading, setIsUploading] = useState(false);
   const [postData, setPostData] = useState({
     title: "",
+    slug: "",
     content: "",
     excerpt: "",
     coverImage: "",
@@ -59,6 +62,7 @@ export default function WritePage() {
   });
   const [tagInput, setTagInput] = useState("");
   const [error, setError] = useState("");
+  const [debugMode, setDebugMode] = useState(false);
 
   // Load post for editing
   useEffect(() => {
@@ -69,6 +73,8 @@ export default function WritePage() {
 
   const loadPostForEditing = async (postId: string) => {
     try {
+      console.log(`🔍 Loading post for editing: ${postId}`);
+
       const { data, error } = await supabase
         .from("posts")
         .select("*")
@@ -76,11 +82,19 @@ export default function WritePage() {
         .eq("author_id", user?.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        logSupabaseError("Load Post for Editing", error, {
+          postId,
+          userId: user?.id,
+        });
+        throw error;
+      }
 
       if (data) {
+        console.log("✅ Post loaded successfully:", data);
         setPostData({
           title: data.title,
+          slug: data.slug,
           content: data.content,
           excerpt: data.excerpt || "",
           coverImage: data.cover_image || "",
@@ -89,8 +103,8 @@ export default function WritePage() {
         });
         setIsEditing(true);
       }
-    } catch (err) {
-      console.error("Error loading post:", err);
+    } catch (err: any) {
+      console.error("❌ Error loading post:", err);
       toast.error("Failed to load post for editing");
       router.push("/write");
     }
@@ -116,59 +130,77 @@ export default function WritePage() {
     }
   }, [user, router]);
 
-  const handleSave = async (isAutoSave = false) => {
-    if (!user) return;
+  const handleSave = async (
+    isAutoSave = false,
+    overrideStatus?: "draft" | "published"
+  ) => {
+    if (!user) {
+      console.error("❌ No user found for save operation");
+      toast.error("Please sign in to save posts");
+      return;
+    }
+
+    if (!postData.title.trim() || !postData.content.trim()) {
+      const errorMsg = "Title and content are required";
+      console.error("❌ Validation failed:", errorMsg);
+      if (!isAutoSave) {
+        setError(errorMsg);
+        toast.error(errorMsg);
+      }
+      return;
+    }
 
     setIsSaving(true);
     setError("");
 
     try {
-      const slug = generateSlug(postData.title) + "-" + Date.now();
+      // Use existing slug if editing, otherwise generate new one
+      let slug = postData.slug;
+      if (!slug && postData.title) {
+        slug = generateSlug(postData.title) + "-" + Date.now();
+        console.log(`🔗 Generated new slug: ${slug}`);
+      }
+
       const readTime = calculateReadTime(postData.content);
       const excerpt =
         postData.excerpt || postData.content.substring(0, 150) + "...";
 
-      // Create post payload with only required fields first
-      const basePayload = {
+      // Use override status if provided, otherwise use current status
+      const finalStatus = overrideStatus || postData.status;
+
+      console.log(`💾 Saving post with status: ${finalStatus}`);
+
+      // Create post payload with correct column names
+      const postPayload = {
         title: postData.title.trim(),
         slug,
         content: postData.content.trim(),
-        status: postData.status,
-        author_id: user.id,
-        ...(postData.status === "published"
+        status: finalStatus,
+        author_id: user.id, // Using author_id as per database schema
+        excerpt: excerpt,
+        cover_image: postData.coverImage?.trim() || null,
+        tags: postData.tags,
+        read_time: readTime,
+        updated_at: new Date().toISOString(),
+        ...(finalStatus === "published"
           ? { published_at: new Date().toISOString() }
           : {}),
       };
 
-      // Add optional fields that might not exist in database yet - skip for now to avoid DB errors
-      const optionalFields: any = {};
+      console.log("📤 Post payload:", postPayload);
 
-      // Temporarily comment out optional fields that don't exist in DB yet
-      // if (postData.excerpt || postData.content) {
-      //   optionalFields.excerpt = excerpt;
-      // }
-      // if (postData.coverImage) {
-      //   optionalFields.cover_image = postData.coverImage.trim();
-      // }
-      // if (postData.tags.length > 0) {
-      //   optionalFields.tags = postData.tags;
-      // }
-      // if (readTime) {
-      //   optionalFields.read_time = readTime;
-      // }
-
-      const postPayload = { ...basePayload, ...optionalFields };
-
-      let result;
+      let result: { data: any; error: any };
       if (isEditing && editId) {
+        console.log(`🔄 Updating existing post: ${editId}`);
         result = await supabase
           .from("posts")
           .update(postPayload)
           .eq("id", editId)
-          .eq("author_id", user.id)
+          .eq("author_id", user.id) // Using author_id as per database schema
           .select()
           .single();
       } else {
+        console.log("✨ Creating new post");
         result = await supabase
           .from("posts")
           .insert(postPayload)
@@ -177,26 +209,54 @@ export default function WritePage() {
       }
 
       if (result.error) {
-        console.error("Database error:", result.error);
+        const errorInfo = logSupabaseError("Save Post", result.error, {
+          payload: postPayload,
+          isEditing,
+          editId,
+          finalStatus,
+        });
         throw result.error;
       }
 
+      console.log("✅ Post saved successfully:", result.data);
+
       if (!isAutoSave) {
         toast.success(
-          postData.status === "published" ? "Post published!" : "Draft saved!"
+          finalStatus === "published" ? "Post published! 🎉" : "Draft saved! 💾"
         );
 
         // Redirect after successful save
-        if (postData.status === "published") {
-          router.push("/dashboard");
+        if (finalStatus === "published") {
+          console.log(
+            `🚀 Redirecting to published post: /post/${result.data.slug}`
+          );
+          router.push(`/post/${result.data.slug}`);
+        }
+      }
+
+      // Update local state with the saved post data including slug
+      if (result.data) {
+        setPostData((prev) => ({
+          ...prev,
+          slug: result.data.slug,
+          status: result.data.status,
+        }));
+
+        // If this was a new post, set it as editing mode
+        if (!isEditing && result.data.id) {
+          setIsEditing(true);
+          // Update URL to include edit parameter
+          const newUrl = `/write?edit=${result.data.id}`;
+          window.history.replaceState({}, "", newUrl);
+          console.log(`🔗 Updated URL to: ${newUrl}`);
         }
       }
     } catch (err: any) {
-      console.error("Save error:", err);
+      console.error("❌ Save error:", err);
       const errorMessage = err.message || "Failed to save post";
       setError(errorMessage);
       if (!isAutoSave) {
-        toast.error(errorMessage);
+        toast.error(`Save failed: ${errorMessage}`);
       }
     } finally {
       setIsSaving(false);
@@ -205,13 +265,18 @@ export default function WritePage() {
 
   const handlePublish = async () => {
     if (!postData.title.trim() || !postData.content.trim()) {
-      setError("Title and content are required");
+      const errorMsg = "Title and content are required";
+      setError(errorMsg);
+      toast.error(errorMsg);
       return;
     }
 
-    setPostData((prev) => ({ ...prev, status: "published" }));
-    await handleSave();
-    router.push("/dashboard");
+    console.log("🚀 Publishing post...");
+    console.log("📝 Post data before publish:", postData);
+    setError("");
+
+    // Pass "published" status directly to handleSave to avoid async state issues
+    await handleSave(false, "published");
   };
 
   const handleImageUpload = async (
@@ -277,6 +342,38 @@ export default function WritePage() {
     if (e.key === "Enter") {
       e.preventDefault();
       addTag();
+    }
+  };
+
+  // 🔍 Debug function to test Supabase
+  const runDebugTests = async () => {
+    console.log("🚀 Running debug tests...");
+    setDebugMode(true);
+
+    try {
+      const results = await runAllTests();
+      console.log("📊 Debug test results:", results);
+
+      // Show results in UI
+      const failedTests = Object.entries(results).filter(
+        ([_, result]) => !result.success
+      );
+
+      if (failedTests.length === 0) {
+        toast.success("🎉 All Supabase tests passed!");
+      } else {
+        toast.error(
+          `❌ ${failedTests.length} tests failed. Check console for details.`
+        );
+        failedTests.forEach(([test, result]) => {
+          console.error(`❌ ${test}: ${result.error}`);
+        });
+      }
+    } catch (error) {
+      console.error("❌ Debug tests failed:", error);
+      toast.error("Debug tests failed - check console");
+    } finally {
+      setDebugMode(false);
     }
   };
 
@@ -346,6 +443,46 @@ export default function WritePage() {
             <Alert variant="destructive" className="mb-6">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
+          </motion.div>
+        )}
+
+        {/* 🔍 Debug Panel - Only show in development */}
+        {process.env.NODE_ENV === "development" && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <Card className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-yellow-800 dark:text-yellow-200 text-sm flex items-center">
+                  🔍 Debug Panel
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="flex items-center space-x-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={runDebugTests}
+                    disabled={debugMode}
+                    className="text-yellow-800 border-yellow-300"
+                  >
+                    {debugMode ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Testing...
+                      </>
+                    ) : (
+                      "Test Supabase Connection"
+                    )}
+                  </Button>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    Run this if you're experiencing publishing issues
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
         )}
 

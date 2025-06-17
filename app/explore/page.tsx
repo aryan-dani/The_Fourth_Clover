@@ -62,12 +62,14 @@ export default function ExplorePage() {
 
   const fetchPosts = async () => {
     try {
-      const { data, error } = await supabase
+      console.log("🔍 Fetching published posts...");
+
+      // Fetch posts without the problematic profile join
+      const { data: postsData, error: postsError } = await supabase
         .from("posts")
         .select(
           `
           *,
-          profiles (username, full_name, avatar_url),
           likes (count),
           comments (count)
         `
@@ -75,8 +77,45 @@ export default function ExplorePage() {
         .eq("status", "published")
         .order("published_at", { ascending: false });
 
-      if (error) throw error;
-      setPosts(data || []);
+      if (postsError) {
+        console.error("❌ Error fetching posts:", postsError);
+        throw postsError;
+      }
+
+      // Fetch profiles separately to avoid relationship issues
+      const authorIds = Array.from(
+        new Set(postsData?.map((post) => post.author_id) || [])
+      );
+
+      let profilesData: any[] = [];
+      if (authorIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, username, full_name, avatar_url")
+          .in("id", authorIds);
+
+        if (profilesError) {
+          console.warn("⚠️ Could not fetch profiles:", profilesError);
+        } else {
+          profilesData = profiles || [];
+        }
+      }
+
+      // Combine posts with their profile data
+      const postsWithProfiles =
+        postsData?.map((post) => ({
+          ...post,
+          profiles: profilesData.find(
+            (profile) => profile.id === post.author_id
+          ) || {
+            username: "Anonymous",
+            full_name: "Anonymous User",
+            avatar_url: null,
+          },
+        })) || [];
+
+      console.log("✅ Posts fetched successfully:", postsWithProfiles.length);
+      setPosts(postsWithProfiles);
     } catch (error) {
       console.error("Error fetching posts:", error);
     } finally {
