@@ -48,5 +48,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Database schema documentation
 - Deployment guide
 
-[Unreleased]: https://github.com/yourusername/the-fourth-clover/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/yourusername/the-fourth-clover/releases/tag/v0.1.0
+[Unreleased]: https://github.com/aryan-dani/The_Fourth_Clover/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/aryan-dani/The_Fourth_Clover/releases/tag/v0.1.0

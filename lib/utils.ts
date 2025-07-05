@@ -1,5 +1,5 @@
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -8,10 +8,12 @@ export function cn(...inputs: ClassValue[]) {
 export function generateSlug(title: string): string {
   return title
     .toLowerCase()
-    .replace(/[^a-z0-9 -]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .trim();
+    .trim()
+    .replace(/[^a-z0-9 -]/g, "") // Remove special characters
+    .replace(/\s+/g, "-") // Replace spaces with hyphens
+    .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
+    .replace(/^-|-$/g, "") // Remove leading/trailing hyphens
+    .substring(0, 100); // Limit slug length to 100 characters
 }
 
 export function calculateReadTime(content: string): number {
@@ -21,10 +23,10 @@ export function calculateReadTime(content: string): number {
 }
 
 export function formatDate(date: string): string {
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   }).format(new Date(date));
 }
 
@@ -34,7 +36,7 @@ export function formatRelativeTime(date: string): string {
   const diffInSeconds = Math.floor((now.getTime() - target.getTime()) / 1000);
 
   if (diffInSeconds < 60) {
-    return 'just now';
+    return "just now";
   }
 
   const diffInMinutes = Math.floor(diffInSeconds / 60);
@@ -56,21 +58,24 @@ export function formatRelativeTime(date: string): string {
 }
 
 export function extractExcerpt(content: string, length: number = 150): string {
-  const textContent = content.replace(/<[^>]*>/g, '');
-  return textContent.length > length 
-    ? textContent.substring(0, length) + '...'
+  const textContent = content.replace(/<[^>]*>/g, "");
+  return textContent.length > length
+    ? textContent.substring(0, length) + "..."
     : textContent;
 }
 
 export function shareToTwitter(title: string, url: string) {
   const text = encodeURIComponent(`Check out this post: ${title}`);
   const shareUrl = encodeURIComponent(url);
-  window.open(`https://twitter.com/intent/tweet?text=${text}&url=${shareUrl}`, '_blank');
+  window.open(
+    `https://twitter.com/intent/tweet?text=${text}&url=${shareUrl}`,
+    "_blank"
+  );
 }
 
 export function shareToWhatsApp(title: string, url: string) {
   const text = encodeURIComponent(`Check out this post: ${title} ${url}`);
-  window.open(`https://wa.me/?text=${text}`, '_blank');
+  window.open(`https://wa.me/?text=${text}`, "_blank");
 }
 
 export function copyToClipboard(text: string) {

@@ -31,8 +31,8 @@
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/yourusername/the-fourth-clover.git
-   cd the-fourth-clover
+   git clone https://github.com/aryan-dani/The_Fourth_Clover.git
+   cd The_Fourth_Clover
    ```
 
 2. **Install dependencies**
@@ -67,7 +67,7 @@
    ```
 
 6. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+   Navigate to [https://thefourthclover.netlify.app](https://thefourthclover.netlify.app)
 
 ## 🏗️ Tech Stack
 

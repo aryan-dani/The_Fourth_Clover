@@ -154,11 +154,43 @@ export default function WritePage() {
     setError("");
 
     try {
-      // Use existing slug if editing, otherwise generate new one
+      // FIXED: Better slug handling to avoid duplicates
       let slug = postData.slug;
-      if (!slug && postData.title) {
-        slug = generateSlug(postData.title) + "-" + Date.now();
-        console.log(`🔗 Generated new slug: ${slug}`);
+
+      // Only generate new slug for new posts or if title changed significantly
+      if (!slug || (!isEditing && postData.title)) {
+        // For new posts, create a unique slug
+        const baseSlug = generateSlug(postData.title);
+
+        // Check if slug exists and make it unique
+        let uniqueSlug = baseSlug;
+        let counter = 1;
+
+        while (true) {
+          const { data: existingPost } = await supabase
+            .from("posts")
+            .select("id")
+            .eq("slug", uniqueSlug)
+            .single();
+
+          // If no existing post or it's the same post we're editing, use this slug
+          if (!existingPost || (isEditing && existingPost.id === editId)) {
+            slug = uniqueSlug;
+            break;
+          }
+
+          // Try next variation
+          uniqueSlug = `${baseSlug}-${counter}`;
+          counter++;
+
+          // Safety check to prevent infinite loop
+          if (counter > 100) {
+            slug = `${baseSlug}-${Date.now()}`;
+            break;
+          }
+        }
+
+        console.log(`🔗 Using unique slug: ${slug}`);
       }
 
       const readTime = calculateReadTime(postData.content);

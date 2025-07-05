@@ -2,6 +2,22 @@
   "name": "the-fourth-clover",
   "version": "0.1.0",
   "private": true,
+  "description": "A modern, minimalist blogging platform built for Gen-Z writers and thinkers",
+  "homepage": "https://thefourthclover.netlify.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aryan-dani/The_Fourth_Clover.git"
+  },
+  "author": "Aryan Dani",
+  "keywords": [
+    "blog",
+    "nextjs",
+    "supabase",
+    "typescript",
+    "tailwind",
+    "gen-z",
+    "writing"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",

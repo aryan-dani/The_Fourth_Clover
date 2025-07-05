@@ -213,7 +213,7 @@ const likeCount = await DatabaseOperations.getPostLikeCount(postId);
 
 ### 🎯 **New Query Builder:**
 
-Visit `http://localhost:3000/query-complete` for the updated interface with all 6 tables!
+Visit `https://thefourthclover.netlify.app/query-complete` for the updated interface with all 6 tables!
 
 ### 📊 **Complete Schema Support:**
 

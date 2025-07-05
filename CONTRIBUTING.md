@@ -26,8 +26,8 @@ We use GitHub to host code, to track issues and feature requests, as well as acc
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/yourusername/the-fourth-clover.git
-   cd the-fourth-clover
+   git clone https://github.com/aryan-dani/The_Fourth_Clover.git
+   cd The_Fourth_Clover
    ```
 
 2. **Install dependencies**
