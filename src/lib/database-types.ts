@@ -26,6 +26,12 @@ export type PostWithAuthor = Post & {
   comments: [{ count: number }];
 };
 
+export type PostWithCategories = Post & {
+  post_categories: {
+    category: Category;
+  }[];
+};
+
 export interface Category {
   id: string;
   name: string;
