@@ -2,51 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [1.0.0] - 2025-09-21
 
-## [Unreleased]
+### Phase 1: Comprehensive Refactoring and Robustness Review
 
-## [0.1.0] - 2025-06-16
+This initial version marks a massive overhaul of the entire application to establish a robust, scalable, and maintainable foundation. The focus was on improving code quality, centralizing logic, and enhancing the user experience through a standardized UI and more efficient data handling.
 
 ### Added
 
-- 🎨 Modern, minimalist UI/UX design with Gen-Z aesthetic
-- ✍️ Rich post editor with real-time auto-save
-- 📸 Image upload functionality with Supabase Storage
-- 🔐 Google OAuth authentication via Supabase Auth
-- 📱 Fully responsive design for all devices
-- 🚀 Next.js 13+ with App Router for optimal performance
-- 💾 Real-time auto-save to prevent data loss
-- 🎯 User dashboard for managing posts
-- 🌐 Explore page for discovering content
-- 🔍 Individual post pages with SEO optimization
-- 📝 Draft and publish functionality
-- 🎨 Beautiful typography with Charter and Playfair Display fonts
-- 🎭 Subtle animations and micro-interactions
-- 🔄 Character counters and validation
-- 🗂️ Tag system for post categorization
-- ⏱️ Automatic read time calculation
+-   **UI Components**: Integrated `shadcn/ui` to build a comprehensive, consistent, and accessible component library. Added over 25 new UI components including `Button`, `Input`, `Card`, `Table`, `Dialog`, `Toast`, `Sonner` for notifications, and more.
+-   **Form Management**: Implemented `react-hook-form` and `zod` for robust, type-safe form validation across the application.
+-   **Custom Hooks**:
+    -   `useMutatePost`: A centralized hook to handle all logic for creating, updating, and uploading images for posts.
+    -   `useSignIn` & `useSignUp`: Dedicated hooks to manage user authentication flows.
+    -   `useToast`: A custom hook for displaying toast notifications.
+-   **Data Table**: Added a reusable `DataTable` component using `@tanstack/react-table` for displaying, sorting, and paginating posts on the user dashboard.
+-   **Validation Schemas**: Created centralized Zod schemas in `lib/validations.ts` for posts and user profiles to ensure data integrity.
+-   **Documentation**:
+    -   Added this `CHANGELOG.md`.
+    -   Added `DATABASE_ALIGNMENT_REPORT.md` and `SUPABASE_TOOLS.md` for database documentation.
+-   **Utility Functions**: Added new utilities for slug generation, read time calculation, and date formatting in `lib/utils.ts`.
+-   **Supabase Debugging**: Created `lib/debug-supabase.ts` with a suite of tools for testing the connection, schema, auth, and RLS policies.
 
-### Technical Features
+### Changed
 
-- TypeScript for type safety
-- Tailwind CSS with custom design system
-- Radix UI components with shadcn/ui
-- Supabase for backend services
-- Framer Motion for animations
-- Lucide React for icons
-- Form validation with proper error handling
-- Row Level Security (RLS) policies
-- Image optimization and storage
+-   **Centralized Database Logic**: Refactored all Supabase queries into a single `DatabaseOperations` class in `lib/database-operations.ts`, creating a dedicated data access layer.
+-   **Refactored All Pages**:
+    -   **Write Page (`/write`)**: Now uses `useMutatePost` hook, `react-hook-form`, and Zod for a more robust writing and editing experience.
+    -   **Dashboard Page (`/dashboard`)**: Replaced the basic post list with the new powerful and reusable `DataTable` component.
+    -   **Home Page (`/`)**: Converted from static content to dynamically fetching and displaying the latest posts with loading skeletons.
+    -   **Post Page (`/post/[slug]`)**: Optimized data fetching to use a single, efficient query to get the post and author details.
+    -   **Explore Page (`/explore`)**: Refactored to use standardized data types and improved data fetching.
+    -   **Profile Pages (`/profile` and `/profile/[username]`)**: The editable profile page now uses `react-hook-form` and Zod validation. The public profile page has been updated for more efficient data loading.
+-   **Supabase Queries**: Improved Supabase queries to be more explicit and efficient, resolving potential ambiguity in table relationships (e.g., `profiles!posts_author_id_fkey`).
+-   **Type Safety**: Significantly improved type safety across the application by using generated Supabase types and Zod schemas.
+-   **Error Handling & Notifications**: Replaced `console.log` and basic alerts with the `sonner` toast notification system for a better user experience.
 
-### Documentation
+### Fixed
 
-- Comprehensive README with setup instructions
-- Contributing guidelines
-- Environment variable documentation
-- Database schema documentation
-- Deployment guide
-
-[Unreleased]: https://github.com/aryan-dani/The_Fourth_Clover/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/aryan-dani/The_Fourth_Clover/releases/tag/v0.1.0
+-   **Supabase Query Error**: Fixed a critical runtime error "Could not embed because more than one relationship was found" by specifying the foreign key in Supabase select statements.
+-   **Numerous TypeScript Errors**: Resolved a cascade of type errors that arose during the refactoring process.
+-   **Data Consistency**: Ensured consistent data types and structures are used across all components and pages.

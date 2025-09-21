@@ -10,13 +10,15 @@
 ## ✨ Features
 
 - **🎨 Modern Design**: Clean, minimalist interface inspired by Medium with a circular, monochrome aesthetic
-- **✍️ Rich Writing Experience**: Intuitive editor with real-time auto-save and character counters
-- **📸 Image Upload**: Seamless image upload and management with Supabase Storage
-- **🔐 Authentication**: Secure Google OAuth integration with Supabase Auth
-- **📱 Responsive**: Beautiful design that works perfectly on all devices
-- **🚀 Performance**: Built with Next.js 13+ for optimal speed and SEO
-- **💾 Real-time**: Live auto-save functionality to never lose your work
-- **🎯 User-Friendly**: Intuitive dashboard for managing drafts and published posts
+- **✍️ Rich Writing Experience**: Robust editor with `react-hook-form` and `zod` validation.
+- **🗂️ Dynamic Data Tables**: User dashboard with sortable, paginated tables via `@tanstack/react-table`.
+- **🔔 Notifications**: Sleek, non-intrusive toast notifications with `sonner`.
+- **📸 Image Upload**: Seamless image upload and management with Supabase Storage.
+- **🔐 Authentication**: Secure Google OAuth integration with Supabase Auth.
+- **📱 Responsive**: Beautiful design that works perfectly on all devices.
+- **🚀 Performance**: Built with Next.js 13+ for optimal speed and SEO.
+- **💾 Real-time**: Live auto-save functionality to never lose your work.
+- **🎯 User-Friendly**: Intuitive dashboard for managing drafts and published posts.
 
 ## 🚀 Quick Start
 
@@ -77,7 +79,10 @@
 - **Database**: Supabase (PostgreSQL)
 - **Authentication**: Supabase Auth with Google OAuth
 - **Storage**: Supabase Storage for images
-- **UI Components**: Radix UI + shadcn/ui
+- **UI Components**: shadcn/ui
+- **Form Management**: React Hook Form & Zod
+- **Tables**: TanStack Table
+- **Notifications**: Sonner
 - **Animations**: Framer Motion
 - **Icons**: Lucide React
 - **Typography**: Charter (content), Playfair Display (headings)
@@ -87,20 +92,25 @@
 ```
 ├── app/                 # Next.js 13+ app directory
 │   ├── auth/           # Authentication pages
-│   ├── dashboard/      # User dashboard
+│   ├── dashboard/      # User dashboard with TanStack Table
 │   ├── explore/        # Discover posts
 │   ├── post/           # Individual post pages
 │   ├── profile/        # User profiles
-│   └── write/          # Post editor
+│   └── write/          # Post editor with React Hook Form
 ├── components/         # Reusable components
-│   ├── auth/          # Auth-related components
-│   ├── layout/        # Layout components
-│   └── ui/            # UI components (shadcn/ui)
-├── lib/               # Utilities and configurations
+│   ├── auth/           # Auth-related components
+│   ├── layout/         # Layout components
+│   └── ui/             # UI components (shadcn/ui)
+├── lib/                # Utilities and configurations
 │   ├── auth-context.tsx
+│   ├── database-operations.ts # Centralized Supabase logic
 │   ├── supabase.ts
-│   └── utils.ts
-└── hooks/             # Custom React hooks
+│   ├── utils.ts
+│   └── validations.ts  # Zod validation schemas
+├── hooks/              # Custom React hooks
+    ├── useMutatePost.ts
+    ├── useSignIn.ts
+    └── useSignUp.ts
 ```
 
 ## 🎨 Design Philosophy
@@ -129,8 +139,10 @@ The platform uses these main tables:
 
 - `posts` - Blog posts with metadata
 - `profiles` - User profiles
-- `comments` - Post comments (future feature)
-- `likes` - Post likes (future feature)
+- `comments` - Post comments
+- `likes` - Post likes
+- `categories` - Post categories
+- `post_categories` - Junction table for posts and categories
 
 ## 🚀 Deployment
 
@@ -165,7 +177,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **shadcn/ui** for the beautiful component library
+- **shadcn/ui** & **Radix UI** for the beautiful component library
+- **TanStack Table** for powerful data tables
+- **React Hook Form** & **Zod** for robust form validation
 - **Supabase** for the amazing backend-as-a-service
 - **Medium.com** for design inspiration
 - **Charter** and **Playfair Display** for the elegant typography
