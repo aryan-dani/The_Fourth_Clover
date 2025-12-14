@@ -581,8 +581,6 @@ function WritePageContent() {
   );
 }
 
-export const dynamic = "force-dynamic";
-
 export default function WritePage() {
   return (
     <Suspense
