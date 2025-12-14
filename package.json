@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "A modern, minimalist blogging platform built for Gen-Z writers and thinkers",
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "homepage": "https://thefourthclover.netlify.app",
   "repository": {
     "type": "git",
@@ -96,7 +99,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@netlify/plugin-nextjs": "^5.11.2",
+    "@netlify/plugin-nextjs": "^5.15.0",
     "@types/node": "^24.0.1"
   }
 }
