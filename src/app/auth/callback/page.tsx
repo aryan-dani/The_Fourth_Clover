@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -10,120 +10,71 @@ export default function AuthCallback() {
     "loading"
   );
   const [message, setMessage] = useState("Completing sign in...");
-  const hasRun = useRef(false);
 
   useEffect(() => {
-    // Prevent double execution in React Strict Mode
-    if (hasRun.current) return;
-    hasRun.current = true;
+    // Check for error in URL params first
+    const searchParams = new URLSearchParams(window.location.search);
+    const error = searchParams.get("error");
+    const errorDescription = searchParams.get("error_description");
 
-    const handleAuthCallback = async () => {
-      try {
-        // Check for error in search params
-        const searchParams = new URLSearchParams(window.location.search);
-        const error: string | null = searchParams.get("error");
-        const errorDescription: string | null =
-          searchParams.get("error_description");
+    if (error) {
+      console.error("OAuth Error:", error, errorDescription);
+      setStatus("error");
+      setMessage(`Authentication failed: ${errorDescription || error}`);
+      setTimeout(() => (window.location.href = "/auth/signin"), 5000);
+      return;
+    }
 
-        if (error) {
-          console.error("OAuth Error:", error, errorDescription);
-          setStatus("error");
-          setMessage(`Authentication failed: ${errorDescription || error}`);
-          setTimeout(() => window.location.href = "/auth/signin", 5000);
-          return;
-        }
+    // Listen for auth state changes - Supabase handles the OAuth exchange automatically
+    // when detectSessionInUrl is true
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Callback auth state:", event, session?.user?.email);
 
-        // Check for PKCE flow code parameter (modern Supabase OAuth)
-        const code = searchParams.get("code");
-        
-        if (code) {
-          setMessage("Establishing session...");
-          
-          // Exchange the code for a session
-          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-          
-          if (exchangeError) {
-            console.error("Error exchanging code for session:", exchangeError);
-            setStatus("error");
-            setMessage(`Failed to establish session: ${exchangeError.message}`);
-            setTimeout(() => window.location.href = "/auth/signin", 5000);
-            return;
-          }
-
-          if (data.session) {
-            setStatus("success");
-            setMessage("Sign in successful! Redirecting...");
-            
-            // Use hard redirect to ensure proper navigation
-            window.location.href = "/dashboard";
-            return;
-          }
-        }
-
-        // Fallback: Check for implicit flow tokens in URL hash
-        const hashParams = new URLSearchParams(
-          window.location.hash.substring(1)
-        );
-        const accessToken: string | null = hashParams.get("access_token");
-        const refreshToken: string | null = hashParams.get("refresh_token");
-
-        if (accessToken) {
-          setMessage("Establishing session...");
-
-          // Set the session using the tokens from the URL
-          const { data, error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken || "",
-          });
-
-          if (sessionError) {
-            console.error("Error setting session:", sessionError);
-            setStatus("error");
-            setMessage(`Failed to establish session: ${sessionError.message}`);
-            setTimeout(() => window.location.href = "/auth/signin", 5000);
-            return;
-          }
-
-          if (data.session) {
-            setStatus("success");
-            setMessage("Sign in successful! Redirecting...");
-            
-            // Use hard redirect
-            window.location.href = "/dashboard";
-            return;
-          } else {
-            setStatus("error");
-            setMessage("Failed to create session. Please try again.");
-            setTimeout(() => window.location.href = "/auth/signin", 3000);
-            return;
-          }
-        }
-
-        // No code or token - check if session already exists (Supabase may have auto-detected it)
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (session) {
-          setStatus("success");
-          setMessage("You are already signed in. Redirecting...");
+      if (event === "SIGNED_IN" && session) {
+        setStatus("success");
+        setMessage("Sign in successful! Redirecting...");
+        // Small delay to show success message, then redirect
+        setTimeout(() => {
           window.location.href = "/dashboard";
-        } else {
-          setStatus("error");
-          setMessage(
-            "No authentication data found. Please try signing in again."
-          );
-          setTimeout(() => window.location.href = "/auth/signin", 3000);
-        }
-      } catch (error) {
-        console.error("Auth callback error:", error);
-        setStatus("error");
-        setMessage("An error occurred during sign in. Please try again.");
-        setTimeout(() => window.location.href = "/auth/signin", 3000);
+        }, 500);
+      } else if (event === "TOKEN_REFRESHED" && session) {
+        // Already signed in, just redirect
+        window.location.href = "/dashboard";
+      }
+    });
+
+    // Also check if already signed in (in case the event already fired)
+    const checkSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session) {
+        setStatus("success");
+        setMessage("Sign in successful! Redirecting...");
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 500);
       }
     };
 
-    handleAuthCallback();
+    // Wait a brief moment for Supabase to process the URL, then check
+    const timeoutId = setTimeout(checkSession, 1000);
+
+    // Fallback: if nothing happens after 10 seconds, show error
+    const fallbackTimeout = setTimeout(() => {
+      setStatus("error");
+      setMessage("Sign in is taking too long. Please try again.");
+      setTimeout(() => (window.location.href = "/auth/signin"), 3000);
+    }, 10000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeoutId);
+      clearTimeout(fallbackTimeout);
+    };
   }, []);
 
   return (
