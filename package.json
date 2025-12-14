@@ -4,7 +4,8 @@
   "private": true,
   "description": "A modern, minimalist blogging platform built for Gen-Z writers and thinkers",
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=20.9.0",
+    "npm": ">=10"
   },
   "homepage": "https://thefourthclover.netlify.app",
   "repository": {
@@ -74,7 +75,6 @@
     "date-fns": "^3.6.0",
     "dotenv": "^16.5.0",
     "embla-carousel-react": "^8.3.0",
-    "eslint": "8.49.0",
     "eslint-config-next": "13.5.1",
     "framer-motion": "^10.16.0",
     "input-otp": "^1.2.4",
@@ -99,7 +99,10 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.3",
+    "@eslint/js": "^9.39.2",
     "@netlify/plugin-nextjs": "^5.15.0",
-    "@types/node": "^24.0.1"
+    "@types/node": "^24.0.1",
+    "eslint": "^8.57.1"
   }
 }

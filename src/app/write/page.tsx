@@ -292,7 +292,7 @@ function WritePageContent() {
                     )}
                   </Button>
                   <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                    Run this if you're experiencing publishing issues
+                    Run this if you&apos;re experiencing publishing issues
                   </p>
                 </div>
               </CardContent>
@@ -580,6 +580,8 @@ function WritePageContent() {
     </div>
   );
 }
+
+export const dynamic = "force-dynamic";
 
 export default function WritePage() {
   return (

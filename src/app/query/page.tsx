@@ -1,4 +1,7 @@
 "use client";
+
+export const dynamic = "force-dynamic";
+
 import { supabase } from "../../lib/supabase";
 import { useState } from "react";
 
@@ -210,7 +213,7 @@ export default function QueryBuilder() {
                 </label>
                 <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
                   <span className="font-mono">
-                    supabase.from('{selectedTable}').
+                    supabase.from(&apos;{selectedTable}&apos;).
                   </span>
                 </div>
                 <textarea
