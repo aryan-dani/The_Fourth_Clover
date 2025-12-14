@@ -18,7 +18,14 @@ if (typeof window !== "undefined" && (!supabaseUrl || !supabaseAnonKey)) {
   );
 }
 
-export const supabase = createClient(url, key);
+export const supabase = createClient(url, key, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce',
+  },
+});
 
 export type Database = {
   public: {

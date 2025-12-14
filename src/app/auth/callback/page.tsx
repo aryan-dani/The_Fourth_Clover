@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function AuthCallback() {
-  const router = useRouter();
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading"
   );
@@ -31,7 +29,7 @@ export default function AuthCallback() {
           console.error("OAuth Error:", error, errorDescription);
           setStatus("error");
           setMessage(`Authentication failed: ${errorDescription || error}`);
-          setTimeout(() => router.push("/auth/signin"), 5000);
+          setTimeout(() => window.location.href = "/auth/signin", 5000);
           return;
         }
 
@@ -41,14 +39,14 @@ export default function AuthCallback() {
         if (code) {
           setMessage("Establishing session...");
           
-          // Exchange the code for a session - Supabase handles this automatically
+          // Exchange the code for a session
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           
           if (exchangeError) {
             console.error("Error exchanging code for session:", exchangeError);
             setStatus("error");
             setMessage(`Failed to establish session: ${exchangeError.message}`);
-            setTimeout(() => router.push("/auth/signin"), 5000);
+            setTimeout(() => window.location.href = "/auth/signin", 5000);
             return;
           }
 
@@ -56,9 +54,8 @@ export default function AuthCallback() {
             setStatus("success");
             setMessage("Sign in successful! Redirecting...");
             
-            // Clear URL params and redirect
-            window.history.replaceState({}, document.title, window.location.pathname);
-            router.push("/dashboard");
+            // Use hard redirect to ensure proper navigation
+            window.location.href = "/dashboard";
             return;
           }
         }
@@ -83,32 +80,26 @@ export default function AuthCallback() {
             console.error("Error setting session:", sessionError);
             setStatus("error");
             setMessage(`Failed to establish session: ${sessionError.message}`);
-            setTimeout(() => router.push("/auth/signin"), 5000);
+            setTimeout(() => window.location.href = "/auth/signin", 5000);
             return;
           }
 
           if (data.session) {
             setStatus("success");
             setMessage("Sign in successful! Redirecting...");
-
-            // Clear the hash from URL and redirect
-            window.history.replaceState(
-              {},
-              document.title,
-              window.location.pathname
-            );
-
-            router.push("/dashboard");
+            
+            // Use hard redirect
+            window.location.href = "/dashboard";
             return;
           } else {
             setStatus("error");
             setMessage("Failed to create session. Please try again.");
-            setTimeout(() => router.push("/auth/signin"), 3000);
+            setTimeout(() => window.location.href = "/auth/signin", 3000);
             return;
           }
         }
 
-        // No code or token - check if session already exists
+        // No code or token - check if session already exists (Supabase may have auto-detected it)
         const {
           data: { session },
         } = await supabase.auth.getSession();
@@ -116,24 +107,24 @@ export default function AuthCallback() {
         if (session) {
           setStatus("success");
           setMessage("You are already signed in. Redirecting...");
-          router.push("/dashboard");
+          window.location.href = "/dashboard";
         } else {
           setStatus("error");
           setMessage(
             "No authentication data found. Please try signing in again."
           );
-          setTimeout(() => router.push("/auth/signin"), 3000);
+          setTimeout(() => window.location.href = "/auth/signin", 3000);
         }
       } catch (error) {
         console.error("Auth callback error:", error);
         setStatus("error");
         setMessage("An error occurred during sign in. Please try again.");
-        setTimeout(() => router.push("/auth/signin"), 3000);
+        setTimeout(() => window.location.href = "/auth/signin", 3000);
       }
     };
 
     handleAuthCallback();
-  }, [router]);
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
