@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Loader2, AlertCircle } from "lucide-react";
@@ -12,8 +12,13 @@ export default function AuthCallback() {
     "loading"
   );
   const [message, setMessage] = useState("Completing sign in...");
+  const hasRun = useRef(false);
 
   useEffect(() => {
+    // Prevent double execution in React Strict Mode
+    if (hasRun.current) return;
+    hasRun.current = true;
+
     const handleAuthCallback = async () => {
       try {
         // Check for error in search params
@@ -28,7 +33,37 @@ export default function AuthCallback() {
           setMessage(`Authentication failed: ${errorDescription || error}`);
           setTimeout(() => router.push("/auth/signin"), 5000);
           return;
-        } // For OAuth flows, the session info is in the URL hash
+        }
+
+        // Check for PKCE flow code parameter (modern Supabase OAuth)
+        const code = searchParams.get("code");
+        
+        if (code) {
+          setMessage("Establishing session...");
+          
+          // Exchange the code for a session - Supabase handles this automatically
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (exchangeError) {
+            console.error("Error exchanging code for session:", exchangeError);
+            setStatus("error");
+            setMessage(`Failed to establish session: ${exchangeError.message}`);
+            setTimeout(() => router.push("/auth/signin"), 5000);
+            return;
+          }
+
+          if (data.session) {
+            setStatus("success");
+            setMessage("Sign in successful! Redirecting...");
+            
+            // Clear URL params and redirect
+            window.history.replaceState({}, document.title, window.location.pathname);
+            router.push("/dashboard");
+            return;
+          }
+        }
+
+        // Fallback: Check for implicit flow tokens in URL hash
         const hashParams = new URLSearchParams(
           window.location.hash.substring(1)
         );
@@ -39,24 +74,20 @@ export default function AuthCallback() {
           setMessage("Establishing session...");
 
           // Set the session using the tokens from the URL
-          const { data, error } = await supabase.auth.setSession({
+          const { data, error: sessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken || "",
           });
 
-          if (error) {
-            console.error("Error setting session:", error);
+          if (sessionError) {
+            console.error("Error setting session:", sessionError);
             setStatus("error");
-            setMessage(`Failed to establish session: ${error.message}`);
+            setMessage(`Failed to establish session: ${sessionError.message}`);
             setTimeout(() => router.push("/auth/signin"), 5000);
             return;
           }
 
           if (data.session) {
-            setMessage("Setting up your account...");
-
-            // Profile creation is handled by database trigger
-            // Just verify the session and redirect
             setStatus("success");
             setMessage("Sign in successful! Redirecting...");
 
@@ -67,31 +98,31 @@ export default function AuthCallback() {
               window.location.pathname
             );
 
-            setTimeout(() => {
-              router.push("/dashboard");
-            }, 1500);
+            router.push("/dashboard");
+            return;
           } else {
             setStatus("error");
             setMessage("Failed to create session. Please try again.");
             setTimeout(() => router.push("/auth/signin"), 3000);
+            return;
           }
-        } else {
-          // No access token in URL hash, check if user is already signed in
-          const {
-            data: { session },
-          } = await supabase.auth.getSession();
+        }
 
-          if (session) {
-            setStatus("success");
-            setMessage("You are already signed in. Redirecting...");
-            setTimeout(() => router.push("/dashboard"), 1000);
-          } else {
-            setStatus("error");
-            setMessage(
-              "No authentication data found. Please try signing in again."
-            );
-            setTimeout(() => router.push("/auth/signin"), 3000);
-          }
+        // No code or token - check if session already exists
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (session) {
+          setStatus("success");
+          setMessage("You are already signed in. Redirecting...");
+          router.push("/dashboard");
+        } else {
+          setStatus("error");
+          setMessage(
+            "No authentication data found. Please try signing in again."
+          );
+          setTimeout(() => router.push("/auth/signin"), 3000);
         }
       } catch (error) {
         console.error("Auth callback error:", error);
