@@ -44,15 +44,21 @@ export function useSignUp() {
       }
 
       if (data.user) {
-        const { error: profileError } = await supabase.from("profiles").insert({
+        const { error: profileError } = await supabase.from("profiles").upsert({
           id: data.user.id,
           username: formData.username,
           full_name: formData.fullName,
+          updated_at: new Date().toISOString(),
         });
 
         if (profileError) {
-          console.error("Profile creation error:", profileError);
-          toast.error("Error creating your profile.");
+          console.error(
+            "Profile creation error:",
+            JSON.stringify(profileError, null, 2)
+          );
+          toast.error(
+            "Error creating your profile. Please try updating it later."
+          );
         }
 
         toast.success(

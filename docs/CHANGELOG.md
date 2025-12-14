@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2025-12-14
+
+### Security & Performance
+
+- 🔒 Hardened database functions by setting fixed `search_path`.
+- ⚡ Optimized Row Level Security (RLS) policies to prevent unnecessary re-evaluation.
+- 🧹 Removed redundant RLS policies and duplicate database indexes.
+- 🛡️ Added security fix scripts for database maintenance.
+
 ## [0.1.0] - 2025-06-16
 
 ### Added
@@ -48,5 +57,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Database schema documentation
 - Deployment guide
 
-[Unreleased]: https://github.com/aryan-dani/The_Fourth_Clover/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/aryan-dani/The_Fourth_Clover/releases/tag/v0.1.0
+[Unreleased]: https://github.com/aryan-dani/The-Fourth-Clover/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/aryan-dani/The-Fourth-Clover/releases/tag/v0.1.0

@@ -4,7 +4,7 @@ This document outlines the planned development phases for The Fourth Clover, a m
 
 ---
 
-### Phase 1: Core Blogging Platform (MVP) - ✅ Mostly Complete
+### Phase 1: Core Blogging Platform (MVP) - ✅ Complete
 
 This phase establishes the foundational features of a functional, modern blogging platform.
 
@@ -24,6 +24,10 @@ This phase establishes the foundational features of a functional, modern bloggin
   - [x] Dark mode toggle (defaulting to dark).
   - [x] Subtle animations for a Gen-Z aesthetic.
 - [x] **Public Profiles**: Basic user profiles displaying bio and information.
+- [x] **Security & Performance**:
+  - [x] Database function security hardening.
+  - [x] RLS policy optimization.
+  - [x] Index optimization.
 
 ---
 

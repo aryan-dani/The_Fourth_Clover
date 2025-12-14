@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +23,7 @@ export function useMutatePost(postId?: string) {
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [submissionMessage, setSubmissionMessage] = useState("");
+  const createdPostIdRef = useRef<string | null>(null);
 
   const form = useForm<z.infer<typeof postSchema>>({
     resolver: zodResolver(postSchema),
@@ -107,13 +108,73 @@ export function useMutatePost(postId?: string) {
       if (result.error) throw result.error;
 
       if (result.data) {
-        router.push(`/post/${result.data.slug}`);
+        if (result.data.status === "published") {
+          router.push(`/post/${result.data.slug}`);
+        } else {
+          router.push("/dashboard");
+        }
       }
     } catch (error: any) {
       console.error("Error submitting post:", error);
       toast.error(`Error: ${error.message}`);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const saveDraft = async (values: z.infer<typeof postSchema>) => {
+    if (!user) return null;
+
+    try {
+      const read_time = calculateReadTime(values.content);
+      const tagsArray = values.tags
+        ? values.tags.split(",").map((t: string) => t.trim())
+        : [];
+
+      const postPayload = {
+        ...values,
+        cover_image: values.cover_image || null,
+        excerpt: values.excerpt || null,
+        tags: tagsArray,
+        read_time,
+        author_id: user.id,
+        // Don't update published_at for drafts
+        featured_image: values.featured_image || null,
+      };
+
+      let result;
+      const currentPostId = postId || createdPostIdRef.current;
+
+      if (currentPostId) {
+        result = await updatePost(currentPostId, postPayload);
+      } else {
+        result = await createPost(postPayload);
+        if (result.data) {
+          createdPostIdRef.current = result.data.id;
+        }
+      }
+
+      if (result.error) throw result.error;
+
+      // If we just created a new post as a draft, update the URL so subsequent saves are updates
+      if (!currentPostId && result.data) {
+        const newUrl = `/write?edit=${result.data.id}`;
+        window.history.replaceState(
+          { ...window.history.state, as: newUrl, url: newUrl },
+          "",
+          newUrl
+        );
+        // We also need to tell the form/hook that we now have an ID,
+        // but since this hook relies on the prop passed in, we might need to reload or
+        // let the parent handle the ID change.
+        // For now, the router.replace/push might be safer to ensure state consistency.
+        router.replace(newUrl);
+      }
+
+      return result.data;
+    } catch (error: any) {
+      console.error("Error auto-saving post:", error);
+      return null;
     }
   };
 
@@ -169,5 +230,6 @@ export function useMutatePost(postId?: string) {
     handleFormSubmit,
     handleDelete,
     handleImageUpload,
+    saveDraft,
   };
 }

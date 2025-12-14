@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { notFound } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,12 @@ import { CommentSection } from "@/components/comments/CommentSection";
 import { getPostWithAuthorBySlug } from "@/lib/database-operations";
 import { PostWithAuthor } from "@/lib/database-types";
 
-export default function PostPage({ params }: { params: { slug: string } }) {
+export default function PostPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = use(params);
   const { user } = useAuth();
   const [post, setPost] = useState<PostWithAuthor | null>(null);
   const [isLiked, setIsLiked] = useState(false);
@@ -50,13 +55,13 @@ export default function PostPage({ params }: { params: { slug: string } }) {
       try {
         setLoading(true);
         const { data: postData, error: postError } =
-          await getPostWithAuthorBySlug(params.slug);
+          await getPostWithAuthorBySlug(slug);
 
         if (postError || !postData) {
           if (postError) {
             console.error("❌ Error fetching post:", postError);
             logSupabaseError("Fetch Post by Slug", postError, {
-              slug: params.slug,
+              slug: slug,
             });
           }
           notFound();
@@ -78,7 +83,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
     };
 
     fetchPostAndLikes();
-  }, [params.slug, user]);
+  }, [slug, user]);
 
   const checkIfLiked = async (postId: string, userId: string) => {
     try {

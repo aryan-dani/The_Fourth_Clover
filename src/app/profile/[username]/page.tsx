@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { notFound } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -31,8 +31,9 @@ type PostWithCounts = Post & {
 export default function ProfilePage({
   params,
 }: {
-  params: { username: string };
+  params: Promise<{ username: string }>;
 }) {
+  const { username } = use(params);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [posts, setPosts] = useState<PostWithCounts[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +49,7 @@ export default function ProfilePage({
         setLoading(true);
         // Fetch profile
         const { data: profileData, error: profileError } =
-          await getProfileByUsername(params.username);
+          await getProfileByUsername(username);
 
         if (profileError || !profileData) {
           notFound();
@@ -91,7 +92,7 @@ export default function ProfilePage({
     };
 
     fetchProfileData();
-  }, [params.username]);
+  }, [username]);
 
   if (loading) {
     return (

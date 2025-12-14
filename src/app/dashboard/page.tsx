@@ -28,7 +28,11 @@ import Link from "next/link";
 import { useMutatePost } from "@/hooks/useMutatePost";
 import { Post } from "@/lib/database-types";
 import { supabase } from "@/lib/supabase";
-import { getUserPosts, updatePost } from "@/lib/database-operations";
+import {
+  getUserPosts,
+  updatePost,
+  deletePost,
+} from "@/lib/database-operations";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -92,7 +96,55 @@ export default function DashboardPage() {
     totalLikes: 0,
     totalComments: 0,
   });
-  const { handleDelete } = useMutatePost();
+
+  const fetchPosts = async (showLoading = true) => {
+    if (!user) return;
+
+    if (showLoading) setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("posts")
+        .select(
+          `
+          *,
+          likes (count),
+          comments (count)
+        `
+        )
+        .eq("author_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      const userPosts = (data as DashboardPost[]) || [];
+      setPosts(userPosts);
+
+      // Calculate stats
+      const totalLikes = userPosts.reduce(
+        (sum, post) => sum + (post.likes?.[0]?.count || 0),
+        0
+      );
+      const totalComments = userPosts.reduce(
+        (sum, post) => sum + (post.comments?.[0]?.count || 0),
+        0
+      );
+      const publishedPosts = userPosts.filter(
+        (post) => post.status === "published"
+      ).length;
+
+      setStats({
+        totalPosts: userPosts.length,
+        publishedPosts,
+        totalLikes,
+        totalComments,
+      });
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      toast.error("Failed to load posts");
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (authLoading) return;
@@ -101,55 +153,22 @@ export default function DashboardPage() {
       return;
     }
 
-    const fetchPosts = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from("posts")
-          .select(
-            `
-            *,
-            likes (count),
-            comments (count)
-          `
-          )
-          .eq("author_id", user.id)
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-
-        const userPosts = (data as DashboardPost[]) || [];
-        setPosts(userPosts);
-
-        // Calculate stats
-        const totalLikes = userPosts.reduce(
-          (sum, post) => sum + (post.likes?.[0]?.count || 0),
-          0
-        );
-        const totalComments = userPosts.reduce(
-          (sum, post) => sum + (post.comments?.[0]?.count || 0),
-          0
-        );
-        const publishedPosts = userPosts.filter(
-          (post) => post.status === "published"
-        ).length;
-
-        setStats({
-          totalPosts: userPosts.length,
-          publishedPosts,
-          totalLikes,
-          totalComments,
-        });
-      } catch (error) {
-        console.error("Error fetching posts:", error);
-        toast.error("Failed to load posts");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchPosts();
   }, [user, authLoading]);
+
+  const handleDeletePost = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this post?")) return;
+
+    try {
+      const { error } = await deletePost(id);
+      if (error) throw error;
+      toast.success("Post deleted successfully.");
+      fetchPosts(false); // Refresh without full loading state
+    } catch (error: any) {
+      console.error("Error deleting post:", error);
+      toast.error(`Error: ${error.message}`);
+    }
+  };
 
   const handlePublish = async (post: Post) => {
     if (post.status === "published") {
@@ -165,8 +184,7 @@ export default function DashboardPage() {
       toast.success("Post published successfully!");
     }
     // Refresh posts
-    const { data } = await getUserPosts(user!.id);
-    setPosts((data as DashboardPost[]) || []);
+    fetchPosts(false);
   };
 
   const published = posts.filter((post) => post.status === "published");
@@ -178,9 +196,14 @@ export default function DashboardPage() {
       header: "Title",
       cell: ({ row }: { row: any }) => {
         const post = row.original;
+        const href =
+          post.status === "published"
+            ? `/post/${post.slug}`
+            : `/write?edit=${post.id}`;
+
         return (
           <Link
-            href={`/post/${post.slug}`}
+            href={href}
             className="font-medium text-primary hover:underline"
           >
             {post.title}
@@ -243,7 +266,7 @@ export default function DashboardPage() {
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-red-500"
-                onClick={() => handleDelete(post.id)}
+                onClick={() => handleDeletePost(post.id)}
               >
                 Delete
               </DropdownMenuItem>

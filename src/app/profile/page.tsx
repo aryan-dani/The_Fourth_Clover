@@ -27,6 +27,7 @@ import {
 import Link from "next/link";
 import { getProfile, updateProfile } from "@/lib/database-operations";
 import { Profile } from "@/lib/database-types";
+import { supabase } from "@/lib/supabase";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { profileSchema } from "@/lib/validations";
@@ -41,9 +42,10 @@ import {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
 
   const form = useForm<Profile>({
@@ -95,6 +97,46 @@ export default function ProfilePage() {
     fetchProfile();
   }, [user, router, form]);
 
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+
+      if (data) {
+        form.setValue("avatar_url", data.publicUrl);
+        toast.success("Avatar uploaded successfully!");
+        // Trigger a save to update the profile with the new avatar URL immediately
+        // or just let the user click save.
+        // But to see it in the header immediately, we might want to save it.
+        // For now, let's just let the user click save, but if they do, refreshProfile will be called.
+      }
+    } catch (error: any) {
+      console.error("Error uploading avatar:", error);
+      toast.error(
+        "Failed to upload avatar. Make sure 'avatars' bucket exists."
+      );
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleSave = async (values: Profile) => {
     if (!user) return;
 
@@ -108,6 +150,8 @@ export default function ProfilePage() {
       });
 
       if (updateError) throw updateError;
+
+      await refreshProfile(); // Refresh the profile in context to update header
 
       toast.success("Profile updated successfully!");
     } catch (err: any) {
@@ -213,9 +257,26 @@ export default function ProfilePage() {
                               user.email?.[0]}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
-                          <Camera className="w-6 h-6 text-white" />
+                        <div
+                          className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                          onClick={() =>
+                            document.getElementById("avatar-upload")?.click()
+                          }
+                        >
+                          {isUploading ? (
+                            <Loader2 className="w-6 h-6 text-white animate-spin" />
+                          ) : (
+                            <Camera className="w-6 h-6 text-white" />
+                          )}
                         </div>
+                        <input
+                          type="file"
+                          id="avatar-upload"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageUpload}
+                          disabled={isUploading}
+                        />
                       </div>
                       <div className="mt-4">
                         <FormField

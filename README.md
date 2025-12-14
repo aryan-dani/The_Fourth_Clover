@@ -2,10 +2,17 @@
 
 > A modern, minimalist blogging platform built for Gen-Z writers and thinkers.
 
+![Status](https://img.shields.io/badge/Status-Phase_1_Complete-success?style=flat-square)
 ![Next.js](https://img.shields.io/badge/Next.js-13.5-black?style=flat-square&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue?style=flat-square&logo=typescript)
 ![Supabase](https://img.shields.io/badge/Supabase-Database-green?style=flat-square&logo=supabase)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=flat-square&logo=tailwind-css)
+
+## 📚 Documentation
+
+- [Roadmap](docs/ROADMAP.md)
+- [Changelog](docs/CHANGELOG.md)
+- [Supabase Tools](docs/SUPABASE_TOOLS.md)
 
 ## ✨ Features
 
@@ -33,8 +40,8 @@
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/aryan-dani/The_Fourth_Clover.git
-   cd The_Fourth_Clover
+   git clone https://github.com/aryan-dani/The-Fourth-Clover.git
+   cd The-Fourth-Clover
    ```
 
 2. **Install dependencies**
@@ -59,8 +66,9 @@
 4. **Set up the database**
 
    - Go to your Supabase dashboard
-   - Run the SQL from `database-setup.sql` in the SQL Editor
-   - Create a storage bucket named `post-images` and make it public
+   - Run the SQL from `database/setup-storage.sql` in the SQL Editor to set up storage buckets and policies.
+   - Run `database/fix-security-issues.sql` and `database/fix-performance-issues.sql` to ensure your database is secure and optimized.
+   - Ensure you have the necessary tables created (refer to `database/` folder for schema details).
 
 5. **Start the development server**
 
@@ -146,7 +154,15 @@ The platform uses these main tables:
 
 ## 🚀 Deployment
 
-### Vercel (Recommended)
+### Netlify (Recommended)
+
+This project is configured for Netlify deployment via `netlify.toml`.
+
+1. **Connect your repository** to Netlify.
+2. **Add environment variables** in the Netlify dashboard.
+3. **Deploy** - Netlify will automatically build and deploy your app.
+
+### Vercel
 
 1. **Connect your repository** to Vercel
 2. **Add environment variables** in the Vercel dashboard

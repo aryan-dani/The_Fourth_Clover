@@ -1,11 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   images: {
     unoptimized: true,
-    domains: ["fntnxpwxuxtztyqoiika.supabase.co"], // Add your Supabase domain
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "fntnxpwxuxtztyqoiika.supabase.co",
+      },
+    ],
   },
   webpack: (config, { isServer }) => {
     // Handle webpack warnings for Supabase realtime dependencies
@@ -33,6 +35,7 @@ const nextConfig = {
 
     return config;
   },
+  turbopack: {},
 };
 
 module.exports = nextConfig;

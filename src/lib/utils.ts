@@ -17,6 +17,7 @@ export function generateSlug(title: string): string {
 }
 
 export function calculateReadTime(content: string): number {
+  if (!content || content.trim().length === 0) return 0;
   const wordsPerMinute = 200;
   const wordCount = content.trim().split(/\s+/).length;
   return Math.ceil(wordCount / wordsPerMinute);

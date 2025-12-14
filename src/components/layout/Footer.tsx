@@ -23,7 +23,7 @@ export function Footer() {
             </p>
             <div className="flex items-center space-x-4">
               <Link
-                href="https://github.com/aryan-dani/The_Fourth_Clover"
+                href="https://github.com/aryan-dani/The-Fourth-Clover"
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 target="_blank"
                 rel="noopener noreferrer"

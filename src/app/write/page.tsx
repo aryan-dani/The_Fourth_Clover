@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useMutatePost } from "@/hooks/useMutatePost";
-import { calculateReadTime } from "@/lib/utils";
+import { calculateReadTime, generateSlug } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   Form,
@@ -41,10 +41,12 @@ export default function WritePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   const [tagInput, setTagInput] = useState("");
   const [debugMode, setDebugMode] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
 
   const {
     form,
@@ -53,22 +55,81 @@ export default function WritePage() {
     submissionMessage,
     handleFormSubmit,
     handleImageUpload,
+    saveDraft,
   } = useMutatePost(editId || undefined);
 
-  const postData = form.watch();
-  const tags = postData.tags
-    ? postData.tags
+  const {
+    title,
+    content,
+    tags: tagsString,
+    cover_image,
+    excerpt,
+    status,
+  } = form.watch();
+  const postData = form.getValues(); // Keep for other references if needed, or use destructured values
+
+  const tags = tagsString
+    ? tagsString
         .split(",")
         .map((t: string) => t.trim())
         .filter(Boolean)
     : [];
 
+  // Auto-generate slug from title
+  useEffect(() => {
+    if (!editId && title) {
+      const slug = generateSlug(title);
+      const currentSlug = form.getValues("slug");
+      if (
+        !currentSlug ||
+        (currentSlug !== slug && !form.getFieldState("slug").isDirty)
+      ) {
+        form.setValue("slug", slug, { shouldValidate: true });
+      }
+    }
+  }, [title, editId, form]);
+
+  // Autosave functionality
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedValuesRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    // Only autosave if we have a title OR content, and it's not already submitting
+    // We check if title or content is present to avoid saving empty drafts initially
+    if ((title || content) && !isLoading && !isUploading) {
+      autoSaveTimerRef.current = setTimeout(async () => {
+        const values = form.getValues();
+        const currentJson = JSON.stringify(values);
+        const lastJson = JSON.stringify(lastSavedValuesRef.current);
+
+        if (currentJson !== lastJson) {
+          setIsAutoSaving(true);
+          await saveDraft(values);
+          lastSavedValuesRef.current = values;
+          setLastSaved(new Date());
+          setIsAutoSaving(false);
+          toast.success("Draft autosaved", { duration: 2000, id: "autosave" });
+        }
+      }, 3000); // Autosave after 3 seconds of inactivity
+    }
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [title, content, isLoading, isUploading, saveDraft, form]);
+
   // Redirect if not authenticated
   useEffect(() => {
-    if (!user) {
+    if (!loading && !user) {
       router.push("/auth/signin");
     }
-  }, [user, router]);
+  }, [user, loading, router]);
 
   const handleImageFileChange = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -154,6 +215,24 @@ export default function WritePage() {
           </div>
 
           <div className="flex items-center space-x-2">
+            {/* Autosave Indicator */}
+            <div className="text-xs text-muted-foreground mr-2">
+              {isAutoSaving ? (
+                <span className="flex items-center">
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  Saving...
+                </span>
+              ) : lastSaved ? (
+                <span>
+                  Saved{" "}
+                  {lastSaved.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              ) : null}
+            </div>
+
             <Button
               onClick={form.handleSubmit(handleFormSubmit)}
               disabled={isLoading}
@@ -161,7 +240,11 @@ export default function WritePage() {
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               <Send className="w-4 h-4 mr-2" />
-              {!!editId ? "Update" : "Publish"}
+              {status === "draft"
+                ? "Save Draft"
+                : !!editId
+                ? "Update"
+                : "Publish"}
             </Button>
           </div>
         </motion.div>
@@ -444,7 +527,7 @@ export default function WritePage() {
                         <span className="text-muted-foreground">Words:</span>
                         <span>
                           {
-                            postData.content
+                            (content || "")
                               .trim()
                               .split(/\s+/)
                               .filter((word: string) => word.length > 0).length
@@ -455,13 +538,13 @@ export default function WritePage() {
                         <span className="text-muted-foreground">
                           Characters:
                         </span>
-                        <span>{postData.content.length}</span>
+                        <span>{(content || "").length}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">
                           Read time:
                         </span>
-                        <span>{calculateReadTime(postData.content)}m</span>
+                        <span>{calculateReadTime(content || "")}m</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Status:</span>

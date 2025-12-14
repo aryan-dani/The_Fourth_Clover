@@ -27,7 +27,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export function Header() {
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
 
   const navigation = [
@@ -103,18 +103,28 @@ export function Header() {
                   className="flex items-center space-x-3 p-2 rounded-full hover:bg-muted/50 transition-colors focus-ring"
                 >
                   <Avatar className="w-10 h-10 ring-2 ring-background shadow-lg">
-                    <AvatarImage src={user.user_metadata?.avatar_url} />
+                    <AvatarImage
+                      src={
+                        profile?.avatar_url || user.user_metadata?.avatar_url
+                      }
+                    />
                     <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
-                      {user.user_metadata?.full_name?.[0] ||
+                      {profile?.full_name?.[0] ||
+                        user.user_metadata?.full_name?.[0] ||
                         user.email?.[0]?.toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden sm:block text-left">
                     <p className="text-sm font-medium">
-                      {user.user_metadata?.full_name || "Writer"}
+                      {profile?.full_name ||
+                        user.user_metadata?.full_name ||
+                        "Writer"}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      @{user.user_metadata?.username || "user"}
+                      @
+                      {profile?.username ||
+                        user.user_metadata?.username ||
+                        "user"}
                     </p>
                   </div>
                 </motion.button>
