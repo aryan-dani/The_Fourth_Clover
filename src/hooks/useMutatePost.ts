@@ -139,6 +139,7 @@ export function useMutatePost(postId?: string) {
         read_time,
         author_id: user.id,
         // Don't update published_at for drafts
+        published_at: null,
         featured_image: values.featured_image || null,
       };
 
