@@ -41,17 +41,19 @@ export function useSignIn() {
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
+          skipBrowserRedirect: false,
         },
       });
 
       if (error) {
         toast.error(error.message);
         console.error("Error signing in with Google:", error);
+        setIsLoading(false);
       }
+      // Don't set isLoading to false on success - we're redirecting
     } catch (error) {
       toast.error("An unexpected error occurred during Google sign-in.");
       console.error("Error during Google sign-in:", error);
-    } finally {
       setIsLoading(false);
     }
   };

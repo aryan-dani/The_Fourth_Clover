@@ -35,10 +35,7 @@ const clearAuthStorage = () => {
   if (typeof window === "undefined") return;
 
   try {
-    // Clear our specific storage key
-    localStorage.removeItem("sb-fourth-clover-auth");
-
-    // Also clear any other Supabase-related keys
+    // Clear all Supabase-related keys
     const keysToRemove: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);

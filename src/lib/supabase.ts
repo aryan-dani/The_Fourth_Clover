@@ -33,10 +33,11 @@ function getSupabaseClient(): SupabaseClient {
     auth: {
       autoRefreshToken: true,
       persistSession: isClient,
-      detectSessionInUrl: isClient,
+      // Disable automatic URL detection - we handle it manually in the callback page
+      detectSessionInUrl: false,
       flowType: "pkce",
       storage: isClient ? window.localStorage : undefined,
-      storageKey: "sb-fourth-clover-auth",
+      // Use default storage key (based on Supabase URL) for consistent PKCE handling
     },
   });
 

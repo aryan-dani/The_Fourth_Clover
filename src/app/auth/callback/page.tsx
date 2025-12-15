@@ -35,7 +35,26 @@ export default function AuthCallback() {
         return;
       }
 
-      // Check if we have auth tokens in the URL (PKCE flow)
+      // First, check if we already have a valid session
+      try {
+        const {
+          data: { session: existingSession },
+        } = await supabase.auth.getSession();
+
+        if (existingSession) {
+          console.log("Session already exists, redirecting...");
+          setStatus("success");
+          setMessage("Sign in successful! Redirecting...");
+          setTimeout(() => {
+            window.location.replace("/dashboard");
+          }, 500);
+          return;
+        }
+      } catch (err) {
+        console.error("Error checking existing session:", err);
+      }
+
+      // Check if we have auth code in the URL (PKCE flow)
       const code = searchParams.get("code");
 
       if (code) {
@@ -46,6 +65,20 @@ export default function AuthCallback() {
 
           if (exchangeError) {
             console.error("Code exchange error:", exchangeError);
+
+            // Check one more time if session exists (race condition with auth state listener)
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
+            if (session) {
+              setStatus("success");
+              setMessage("Sign in successful! Redirecting...");
+              setTimeout(() => {
+                window.location.replace("/dashboard");
+              }, 500);
+              return;
+            }
+
             setStatus("error");
             setMessage(`Authentication failed: ${exchangeError.message}`);
             setTimeout(() => (window.location.href = "/auth/signin"), 3000);
@@ -55,7 +88,6 @@ export default function AuthCallback() {
           if (data.session) {
             setStatus("success");
             setMessage("Sign in successful! Redirecting...");
-            // Use replace to prevent back button issues
             setTimeout(() => {
               window.location.replace("/dashboard");
             }, 500);
@@ -66,38 +98,30 @@ export default function AuthCallback() {
         }
       }
 
-      // Fallback: Check if session already exists
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+      // If no code and no session, wait a bit and check again
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        if (session) {
-          setStatus("success");
-          setMessage("Sign in successful! Redirecting...");
-          setTimeout(() => {
-            window.location.replace("/dashboard");
-          }, 500);
-          return;
-        }
-      } catch (err) {
-        console.error("Session check error:", err);
+      const {
+        data: { session: finalSession },
+      } = await supabase.auth.getSession();
+
+      if (finalSession) {
+        setStatus("success");
+        setMessage("Sign in successful! Redirecting...");
+        setTimeout(() => {
+          window.location.replace("/dashboard");
+        }, 500);
+        return;
       }
 
-      // If we get here after a timeout, something went wrong
-      const timeout = setTimeout(() => {
-        if (status === "loading") {
-          setStatus("error");
-          setMessage("Sign in timed out. Please try again.");
-          setTimeout(() => (window.location.href = "/auth/signin"), 3000);
-        }
-      }, 8000);
-
-      return () => clearTimeout(timeout);
+      // If still no session, show error
+      setStatus("error");
+      setMessage("Sign in failed. Please try again.");
+      setTimeout(() => (window.location.href = "/auth/signin"), 3000);
     };
 
     handleCallback();
-  }, [status]);
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
