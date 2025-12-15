@@ -7,8 +7,9 @@ import {
   useState,
   useCallback,
   useRef,
+  useSyncExternalStore,
 } from "react";
-import { User, AuthChangeEvent, Session } from "@supabase/supabase-js";
+import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import { Profile } from "./database-types";
 import { getProfile } from "./database-operations";
@@ -33,32 +34,111 @@ const AuthContext = createContext<AuthContextType>({
 const clearAuthStorage = () => {
   if (typeof window === "undefined") return;
 
-  // Clear our specific storage key
-  localStorage.removeItem("sb-fourth-clover-auth");
+  try {
+    // Clear our specific storage key
+    localStorage.removeItem("sb-fourth-clover-auth");
 
-  // Also clear any other Supabase-related keys
-  const keysToRemove: string[] = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && (key.startsWith("sb-") || key.includes("supabase"))) {
-      keysToRemove.push(key);
+    // Also clear any other Supabase-related keys
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith("sb-") || key.includes("supabase"))) {
+        keysToRemove.push(key);
+      }
     }
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
+  } catch (e) {
+    console.error("Error clearing auth storage:", e);
   }
-  keysToRemove.forEach((key) => localStorage.removeItem(key));
 };
 
+// Custom hook to subscribe to auth state - this ensures React re-renders when auth changes
+function useSupabaseAuth() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const {
+          data: { session: initialSession },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error("Error getting initial session:", error.message);
+          // Clear corrupted data
+          if (
+            error.message.includes("Refresh Token") ||
+            error.message.includes("Invalid") ||
+            error.message.includes("expired")
+          ) {
+            clearAuthStorage();
+          }
+          setSession(null);
+        } else {
+          setSession(initialSession);
+        }
+      } catch (e) {
+        console.error("Exception getting session:", e);
+        setSession(null);
+      } finally {
+        setInitialized(true);
+      }
+    };
+
+    getInitialSession();
+
+    // Subscribe to auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      console.log("Auth event:", event, newSession?.user?.email);
+
+      if (event === "SIGNED_OUT") {
+        setSession(null);
+      } else if (
+        event === "SIGNED_IN" ||
+        event === "TOKEN_REFRESHED" ||
+        event === "INITIAL_SESSION"
+      ) {
+        setSession(newSession);
+      } else {
+        setSession(newSession);
+      }
+
+      setInitialized(true);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  return { session, initialized };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const { session, initialized } = useSupabaseAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
   const lastFetchedUserId = useRef<string | null>(null);
-  const mounted = useRef(true);
+
+  const user = session?.user ?? null;
+  const loading = !initialized || profileLoading;
 
   const fetchProfile = useCallback(
     async (userId: string): Promise<Profile | null> => {
+      // Don't fetch if we already have this user's profile
+      if (lastFetchedUserId.current === userId && profile) {
+        return profile;
+      }
+
+      setProfileLoading(true);
       try {
         const { data } = await getProfile(userId);
-        if (mounted.current && data) {
+        if (data) {
           setProfile(data);
           lastFetchedUserId.current = userId;
           return data;
@@ -67,147 +147,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.error("Error fetching profile:", error);
         return null;
+      } finally {
+        setProfileLoading(false);
       }
     },
-    []
+    [profile]
   );
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (user) {
+      lastFetchedUserId.current = null; // Force refresh
       await fetchProfile(user.id);
     }
-  };
+  }, [user, fetchProfile]);
 
-  const handleAuthChange = useCallback(
-    async (event: AuthChangeEvent, session: Session | null) => {
-      console.log("Auth state change:", event, session?.user?.email);
-
-      if (!mounted.current) return;
-
-      // Handle sign out events
-      if (event === "SIGNED_OUT" || !session) {
-        setUser(null);
-        setProfile(null);
-        lastFetchedUserId.current = null;
-        setLoading(false);
-        return;
-      }
-
-      // Handle sign in and token refresh
-      const currentUser = session.user;
-      setUser(currentUser);
-
-      // Fetch profile if user changed
-      if (currentUser && lastFetchedUserId.current !== currentUser.id) {
-        await fetchProfile(currentUser.id);
-      }
-
-      setLoading(false);
-    },
-    [fetchProfile]
-  );
-
+  // Fetch profile when user changes
   useEffect(() => {
-    mounted.current = true;
-    let subscription: { unsubscribe: () => void } | null = null;
+    if (user && lastFetchedUserId.current !== user.id) {
+      fetchProfile(user.id);
+    } else if (!user) {
+      setProfile(null);
+      lastFetchedUserId.current = null;
+    }
+  }, [user, fetchProfile]);
 
-    const initSession = async () => {
-      try {
-        // First, set up the auth state change listener
-        const {
-          data: { subscription: sub },
-        } = supabase.auth.onAuthStateChange(handleAuthChange);
-        subscription = sub;
-
-        // Then get the current session
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
-
-        if (error) {
-          console.error("Session error:", error.message);
-
-          // Clear corrupted auth data
-          if (
-            error.message.includes("Refresh Token") ||
-            error.message.includes("Invalid") ||
-            error.message.includes("expired")
-          ) {
-            console.log("Clearing corrupted auth data...");
-            clearAuthStorage();
-            try {
-              await supabase.auth.signOut({ scope: "local" });
-            } catch (e) {
-              // Ignore signOut errors
-            }
-          }
-
-          if (mounted.current) {
-            setUser(null);
-            setProfile(null);
-            setLoading(false);
-          }
-          return;
-        }
-
-        if (mounted.current) {
-          if (session?.user) {
-            setUser(session.user);
-            if (lastFetchedUserId.current !== session.user.id) {
-              await fetchProfile(session.user.id);
-            }
-          } else {
-            setUser(null);
-            setProfile(null);
-          }
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error("Error initializing session:", error);
-
-        // On any error, clear storage and reset state
-        clearAuthStorage();
-
-        if (mounted.current) {
-          setUser(null);
-          setProfile(null);
-          setLoading(false);
-        }
-      }
-    };
-
-    initSession();
-
-    return () => {
-      mounted.current = false;
-      if (subscription) {
-        subscription.unsubscribe();
-      }
-    };
-  }, [fetchProfile, handleAuthChange]);
-
-  const signOut = async () => {
-    // Immediately update UI state
-    setUser(null);
+  const signOut = useCallback(async () => {
+    // Clear profile immediately
     setProfile(null);
     lastFetchedUserId.current = null;
 
     try {
-      // Clear storage first to prevent stale state on refresh
-      clearAuthStorage();
-
-      // Then sign out from Supabase
+      // Sign out from Supabase
       await supabase.auth.signOut({ scope: "local" });
     } catch (error) {
       console.error("Error signing out:", error);
-      // Force clear storage even if signOut fails
-      clearAuthStorage();
     }
 
-    // Force a clean page reload to reset all state
+    // Clear storage
+    clearAuthStorage();
+
+    // Force reload to clear all state
     window.location.href = "/";
-  };
+  }, []);
 
   return (
     <AuthContext.Provider

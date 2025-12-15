@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -11,23 +11,40 @@ const defaultKey = "placeholder-key";
 const url = supabaseUrl || defaultUrl;
 const key = supabaseAnonKey || defaultKey;
 
-// Only show error in browser/runtime, not during build
-if (typeof window !== "undefined" && (!supabaseUrl || !supabaseAnonKey)) {
-  console.error(
-    "Missing Supabase environment variables. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your environment variables."
-  );
+// Singleton instance
+let supabaseInstance: SupabaseClient | null = null;
+
+// Create a function to get the Supabase client
+// This ensures it's only created on the client side with proper storage
+function getSupabaseClient(): SupabaseClient {
+  if (supabaseInstance) {
+    return supabaseInstance;
+  }
+
+  const isClient = typeof window !== "undefined";
+
+  if (isClient && (!supabaseUrl || !supabaseAnonKey)) {
+    console.error(
+      "Missing Supabase environment variables. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your environment variables."
+    );
+  }
+
+  supabaseInstance = createClient(url, key, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: isClient,
+      detectSessionInUrl: isClient,
+      flowType: "pkce",
+      storage: isClient ? window.localStorage : undefined,
+      storageKey: "sb-fourth-clover-auth",
+    },
+  });
+
+  return supabaseInstance;
 }
 
-export const supabase = createClient(url, key, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    flowType: "pkce",
-    storage: typeof window !== "undefined" ? window.localStorage : undefined,
-    storageKey: "sb-fourth-clover-auth",
-  },
-});
+// Export a getter that always returns the singleton
+export const supabase = getSupabaseClient();
 
 export type Database = {
   public: {
