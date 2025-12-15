@@ -8,7 +8,7 @@ import {
   useCallback,
   useRef,
 } from "react";
-import { User } from "@supabase/supabase-js";
+import { User, AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import { Profile } from "./database-types";
 import { getProfile } from "./database-operations";
@@ -29,23 +29,48 @@ const AuthContext = createContext<AuthContextType>({
   refreshProfile: async () => {},
 });
 
+// Helper to clear all Supabase auth data from localStorage
+const clearAuthStorage = () => {
+  if (typeof window === "undefined") return;
+
+  // Clear our specific storage key
+  localStorage.removeItem("sb-fourth-clover-auth");
+
+  // Also clear any other Supabase-related keys
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key.startsWith("sb-") || key.includes("supabase"))) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach((key) => localStorage.removeItem(key));
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const lastFetchedUserId = useRef<string | null>(null);
+  const mounted = useRef(true);
 
-  const fetchProfile = useCallback(async (userId: string) => {
-    try {
-      const { data } = await getProfile(userId);
-      if (data) {
-        setProfile(data);
-        lastFetchedUserId.current = userId;
+  const fetchProfile = useCallback(
+    async (userId: string): Promise<Profile | null> => {
+      try {
+        const { data } = await getProfile(userId);
+        if (mounted.current && data) {
+          setProfile(data);
+          lastFetchedUserId.current = userId;
+          return data;
+        }
+        return null;
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        return null;
       }
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-    }
-  }, []);
+    },
+    []
+  );
 
   const refreshProfile = async () => {
     if (user) {
@@ -53,62 +78,135 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const handleAuthChange = useCallback(
+    async (event: AuthChangeEvent, session: Session | null) => {
+      console.log("Auth state change:", event, session?.user?.email);
+
+      if (!mounted.current) return;
+
+      // Handle sign out events
+      if (event === "SIGNED_OUT" || !session) {
+        setUser(null);
+        setProfile(null);
+        lastFetchedUserId.current = null;
+        setLoading(false);
+        return;
+      }
+
+      // Handle sign in and token refresh
+      const currentUser = session.user;
+      setUser(currentUser);
+
+      // Fetch profile if user changed
+      if (currentUser && lastFetchedUserId.current !== currentUser.id) {
+        await fetchProfile(currentUser.id);
+      }
+
+      setLoading(false);
+    },
+    [fetchProfile]
+  );
+
   useEffect(() => {
-    // Get initial session
+    mounted.current = true;
+    let subscription: { unsubscribe: () => void } | null = null;
+
     const initSession = async () => {
       try {
+        // First, set up the auth state change listener
+        const {
+          data: { subscription: sub },
+        } = supabase.auth.onAuthStateChange(handleAuthChange);
+        subscription = sub;
+
+        // Then get the current session
         const {
           data: { session },
+          error,
         } = await supabase.auth.getSession();
 
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
+        if (error) {
+          console.error("Session error:", error.message);
 
-        if (currentUser) {
-          // Only fetch if we haven't already
-          if (lastFetchedUserId.current !== currentUser.id) {
-            await fetchProfile(currentUser.id);
+          // Clear corrupted auth data
+          if (
+            error.message.includes("Refresh Token") ||
+            error.message.includes("Invalid") ||
+            error.message.includes("expired")
+          ) {
+            console.log("Clearing corrupted auth data...");
+            clearAuthStorage();
+            try {
+              await supabase.auth.signOut({ scope: "local" });
+            } catch (e) {
+              // Ignore signOut errors
+            }
           }
+
+          if (mounted.current) {
+            setUser(null);
+            setProfile(null);
+            setLoading(false);
+          }
+          return;
+        }
+
+        if (mounted.current) {
+          if (session?.user) {
+            setUser(session.user);
+            if (lastFetchedUserId.current !== session.user.id) {
+              await fetchProfile(session.user.id);
+            }
+          } else {
+            setUser(null);
+            setProfile(null);
+          }
+          setLoading(false);
         }
       } catch (error) {
         console.error("Error initializing session:", error);
-      } finally {
-        setLoading(false);
+
+        // On any error, clear storage and reset state
+        clearAuthStorage();
+
+        if (mounted.current) {
+          setUser(null);
+          setProfile(null);
+          setLoading(false);
+        }
       }
     };
 
     initSession();
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state change:", event); // Debugging log
-
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-
-      if (currentUser) {
-        // Only fetch profile if user changed
-        if (lastFetchedUserId.current !== currentUser.id) {
-          await fetchProfile(currentUser.id);
-        }
-      } else {
-        setProfile(null);
-        lastFetchedUserId.current = null;
+    return () => {
+      mounted.current = false;
+      if (subscription) {
+        subscription.unsubscribe();
       }
-
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [fetchProfile]);
+    };
+  }, [fetchProfile, handleAuthChange]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // Immediately update UI state
     setUser(null);
     setProfile(null);
     lastFetchedUserId.current = null;
+
+    try {
+      // Clear storage first to prevent stale state on refresh
+      clearAuthStorage();
+
+      // Then sign out from Supabase
+      await supabase.auth.signOut({ scope: "local" });
+    } catch (error) {
+      console.error("Error signing out:", error);
+      // Force clear storage even if signOut fails
+      clearAuthStorage();
+    }
+
+    // Force a clean page reload to reset all state
+    window.location.href = "/";
   };
 
   return (

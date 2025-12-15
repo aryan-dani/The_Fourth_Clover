@@ -130,11 +130,16 @@ export function Footer() {
 
         <div className="flex flex-col md:flex-row justify-between items-center">
           <p className="text-muted-foreground text-sm">
-            © 2024 The Fourth Clover. All rights reserved.
+            © 2025 The Fourth Clover. All rights reserved.
           </p>
           <p className="text-muted-foreground text-sm flex items-center mt-4 md:mt-0">
-            Made with <Heart className="w-4 h-4 mx-1 text-muted-foreground" />{" "}
-            for writers everywhere
+            Made by{" "}
+            <Link
+              href="/about"
+              className="font-medium hover:text-foreground transition-colors ml-1 underline underline-offset-4"
+            >
+              Aryan Dani
+            </Link>
           </p>
         </div>
       </div>

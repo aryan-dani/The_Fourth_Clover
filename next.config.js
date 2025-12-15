@@ -9,6 +9,20 @@ const nextConfig = {
       },
     ],
   },
+  // Disable static page caching for pages that depend on client-side auth
+  headers: async () => {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, must-revalidate",
+          },
+        ],
+      },
+    ];
+  },
   webpack: (config, { isServer }) => {
     // Handle webpack warnings for Supabase realtime dependencies
     config.resolve.fallback = {

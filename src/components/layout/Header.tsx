@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -27,8 +27,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export function Header() {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure we only render auth UI on client to prevent hydration mismatch
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const navigation = [
     { name: "Home", href: "/", icon: Home },
@@ -94,7 +100,16 @@ export function Header() {
         <div className="flex items-center space-x-3">
           <ThemeToggle />
 
-          {user ? (
+          {!isClient || loading ? (
+            // Show loading skeleton to prevent flash of wrong state
+            <div className="flex items-center space-x-3 p-2">
+              <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
+              <div className="hidden sm:block space-y-1">
+                <div className="h-4 w-20 bg-muted rounded animate-pulse" />
+                <div className="h-3 w-16 bg-muted rounded animate-pulse" />
+              </div>
+            </div>
+          ) : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <motion.button
