@@ -144,6 +144,23 @@ export default function ProfilePage() {
     setError("");
 
     try {
+      // Validate username format
+      const usernameRegex = /^[a-zA-Z0-9_-]+$/;
+      if (!usernameRegex.test(values.username)) {
+        setError("Username can only contain letters, numbers, underscores, and hyphens (no spaces).");
+        toast.error("Invalid username format. Please use only letters, numbers, underscores, and hyphens.");
+        setIsSaving(false);
+        return;
+      }
+
+      // Check username length
+      if (values.username.length < 3 || values.username.length > 30) {
+        setError("Username must be between 3 and 30 characters.");
+        toast.error("Username must be between 3 and 30 characters.");
+        setIsSaving(false);
+        return;
+      }
+
       const { error: updateError } = await updateProfile(user.id, {
         ...values,
         updated_at: new Date().toISOString(),
@@ -234,13 +251,17 @@ export default function ProfilePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <Card className="elegant-card">
-              <CardHeader>
-                <CardTitle className="text-xl brand-text">
+            <Card className="elegant-card border-2 hover:border-primary/50 transition-all duration-300">
+              <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent">
+                <CardTitle className="text-2xl brand-text flex items-center gap-2">
+                  <User className="w-6 h-6" />
                   Your Profile
                 </CardTitle>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Manage your personal information and social links
+                </p>
               </CardHeader>
-              <CardContent>
+              <CardContent className="mt-6">
                 <Form {...form}>
                   <form
                     onSubmit={form.handleSubmit(handleSave)}
@@ -248,25 +269,28 @@ export default function ProfilePage() {
                   >
                     {/* Avatar */}
                     <div className="text-center">
-                      <div className="relative inline-block">
-                        <Avatar className="w-24 h-24 mx-auto">
+                      <div className="relative inline-block group">
+                        <Avatar className="w-32 h-32 mx-auto ring-4 ring-primary/10 transition-all duration-300 group-hover:ring-primary/30">
                           <AvatarImage src={form.watch("avatar_url") || ""} />
-                          <AvatarFallback className="text-lg">
+                          <AvatarFallback className="text-2xl">
                             {form.watch("full_name")?.[0] ||
                               form.watch("username")?.[0] ||
                               user.email?.[0]}
                           </AvatarFallback>
                         </Avatar>
                         <div
-                          className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+                          className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer backdrop-blur-sm"
                           onClick={() =>
                             document.getElementById("avatar-upload")?.click()
                           }
                         >
                           {isUploading ? (
-                            <Loader2 className="w-6 h-6 text-white animate-spin" />
+                            <Loader2 className="w-8 h-8 text-white animate-spin" />
                           ) : (
-                            <Camera className="w-6 h-6 text-white" />
+                            <>
+                              <Camera className="w-8 h-8 text-white mb-1" />
+                              <span className="text-xs text-white font-medium">Upload Photo</span>
+                            </>
                           )}
                         </div>
                         <input
@@ -278,28 +302,9 @@ export default function ProfilePage() {
                           disabled={isUploading}
                         />
                       </div>
-                      <div className="mt-4">
-                        <FormField
-                          control={form.control}
-                          name="avatar_url"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm font-medium">
-                                Avatar URL
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="https://example.com/avatar.jpg"
-                                  {...field}
-                                  value={field.value || ""}
-                                  className="mt-1 focus-ring"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                      <p className="text-sm text-muted-foreground mt-4">
+                        Click on your avatar to upload a new photo
+                      </p>
                     </div>
 
                     {/* Basic Info */}
@@ -337,8 +342,13 @@ export default function ProfilePage() {
                                 placeholder="Your username"
                                 {...field}
                                 className="mt-1 focus-ring"
+                                pattern="[a-zA-Z0-9_-]{3,30}"
+                                title="Username must be 3-30 characters and contain only letters, numbers, underscores, and hyphens"
                               />
                             </FormControl>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              3-30 characters. Letters, numbers, underscores, and hyphens only.
+                            </p>
                             <FormMessage />
                           </FormItem>
                         )}

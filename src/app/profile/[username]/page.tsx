@@ -47,9 +47,12 @@ export default function ProfilePage({
     const fetchProfileData = async () => {
       try {
         setLoading(true);
+        // Decode the username in case it has URL-encoded characters (like spaces)
+        const decodedUsername = decodeURIComponent(username);
+
         // Fetch profile
         const { data: profileData, error: profileError } =
-          await getProfileByUsername(username);
+          await getProfileByUsername(decodedUsername);
 
         if (profileError || !profileData) {
           notFound();
@@ -138,30 +141,33 @@ export default function ProfilePage({
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-12"
           >
-            <Avatar className="w-24 h-24 mx-auto mb-6">
-              <AvatarImage src={profile.avatar_url || ""} />
-              <AvatarFallback className="text-2xl">
-                {profile.full_name?.[0] || profile.username[0]}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative inline-block mb-6">
+              <Avatar className="w-32 h-32 mx-auto ring-4 ring-primary/20 ring-offset-4 ring-offset-background">
+                <AvatarImage src={profile.avatar_url || ""} />
+                <AvatarFallback className="text-3xl bg-gradient-to-br from-primary/30 to-primary/10">
+                  {profile.full_name?.[0] || profile.username[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary via-purple-500 to-pink-500 rounded-full opacity-20 blur-lg"></div>
+            </div>
 
-            <h1 className="text-3xl font-bold mb-2">
+            <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
               {profile.full_name || profile.username}
             </h1>
-            <p className="text-muted-foreground text-lg mb-4">
+            <p className="text-muted-foreground text-xl mb-6">
               @{profile.username}
             </p>
 
             {profile.bio && (
-              <p className="text-foreground max-w-2xl mx-auto mb-6 leading-relaxed">
+              <p className="text-foreground max-w-2xl mx-auto mb-8 leading-relaxed text-lg">
                 {profile.bio}
               </p>
             )}
 
             {/* Social Links */}
-            <div className="flex items-center justify-center space-x-4 mb-8">
+            <div className="flex items-center justify-center space-x-3 mb-8">
               {profile.website && (
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="outline" size="sm" asChild className="hover:border-primary/50 hover:bg-primary/10 transition-all">
                   <a
                     href={profile.website}
                     target="_blank"
@@ -173,7 +179,7 @@ export default function ProfilePage({
                 </Button>
               )}
               {profile.twitter && (
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="outline" size="sm" asChild className="hover:border-blue-500/50 hover:bg-blue-500/10 hover:text-blue-500 transition-all">
                   <a
                     href={`https://twitter.com/${profile.twitter}`}
                     target="_blank"
@@ -185,7 +191,7 @@ export default function ProfilePage({
                 </Button>
               )}
               {profile.github && (
-                <Button variant="outline" size="sm" asChild>
+                <Button variant="outline" size="sm" asChild className="hover:border-purple-500/50 hover:bg-purple-500/10 hover:text-purple-500 transition-all">
                   <a
                     href={`https://github.com/${profile.github}`}
                     target="_blank"
@@ -200,33 +206,39 @@ export default function ProfilePage({
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-6">
-              <Card className="glass">
+              <Card className="glass border-2 hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                 <CardContent className="p-6 text-center">
-                  <div className="flex items-center justify-center mb-2">
+                  <div className="flex items-center justify-center mb-3 p-3 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 w-fit mx-auto">
                     <FileText className="w-6 h-6 text-primary" />
                   </div>
-                  <p className="text-2xl font-bold">{stats.totalPosts}</p>
-                  <p className="text-sm text-muted-foreground">Posts</p>
+                  <p className="text-3xl font-bold bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    {stats.totalPosts}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1 font-medium">Posts</p>
                 </CardContent>
               </Card>
 
-              <Card className="glass">
+              <Card className="glass border-2 hover:border-red-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-red-500/10">
                 <CardContent className="p-6 text-center">
-                  <div className="flex items-center justify-center mb-2">
+                  <div className="flex items-center justify-center mb-3 p-3 rounded-full bg-gradient-to-br from-red-500/20 to-pink-500/10 w-fit mx-auto">
                     <Heart className="w-6 h-6 text-red-500" />
                   </div>
-                  <p className="text-2xl font-bold">{stats.totalLikes}</p>
-                  <p className="text-sm text-muted-foreground">Likes</p>
+                  <p className="text-3xl font-bold bg-gradient-to-br from-red-500 to-pink-500 bg-clip-text text-transparent">
+                    {stats.totalLikes}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1 font-medium">Likes</p>
                 </CardContent>
               </Card>
 
-              <Card className="glass">
+              <Card className="glass border-2 hover:border-blue-500/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/10">
                 <CardContent className="p-6 text-center">
-                  <div className="flex items-center justify-center mb-2">
+                  <div className="flex items-center justify-center mb-3 p-3 rounded-full bg-gradient-to-br from-blue-500/20 to-blue-500/10 w-fit mx-auto">
                     <MessageCircle className="w-6 h-6 text-blue-500" />
                   </div>
-                  <p className="text-2xl font-bold">{stats.totalComments}</p>
-                  <p className="text-sm text-muted-foreground">Comments</p>
+                  <p className="text-3xl font-bold bg-gradient-to-br from-blue-500 to-cyan-500 bg-clip-text text-transparent">
+                    {stats.totalComments}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1 font-medium">Comments</p>
                 </CardContent>
               </Card>
             </div>
@@ -260,62 +272,65 @@ export default function ProfilePage({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 glass h-full">
-                      {post.cover_image && (
-                        <div className="aspect-video overflow-hidden">
-                          <img
-                            src={post.cover_image}
-                            alt={post.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        </div>
-                      )}
-                      <CardContent className="p-6 flex flex-col flex-1">
-                        <h3 className="font-bold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                          <Link href={`/post/${post.slug}`}>{post.title}</Link>
-                        </h3>
-
-                        <p className="text-muted-foreground text-sm line-clamp-3 mb-4 flex-1">
-                          {post.excerpt}
-                        </p>
-
-                        {post.tags && post.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {post.tags.slice(0, 3).map((tag) => (
-                              <Badge
-                                key={tag}
-                                variant="secondary"
-                                className="text-xs"
-                              >
-                                {tag}
-                              </Badge>
-                            ))}
+                    <Link href={`/post/${post.slug}`} className="block h-full">
+                      <Card className="group overflow-hidden hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 glass h-full border-2 hover:border-primary/30 hover:-translate-y-2 cursor-pointer">
+                        {post.cover_image && (
+                          <div className="aspect-video overflow-hidden relative">
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
+                            <img
+                              src={post.cover_image}
+                              alt={post.title}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            />
                           </div>
                         )}
+                        <CardContent className="p-6 flex flex-col flex-1">
+                          <h3 className="font-bold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors duration-300">
+                            {post.title}
+                          </h3>
 
-                        <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto">
-                          <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-1">
-                              <Clock className="w-3 h-3" />
-                              <span>{post.read_time}m read</span>
+                          <p className="text-muted-foreground text-sm line-clamp-3 mb-4 flex-1">
+                            {post.excerpt}
+                          </p>
+
+                          {post.tags && post.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-4">
+                              {post.tags.slice(0, 3).map((tag) => (
+                                <Badge
+                                  key={tag}
+                                  variant="secondary"
+                                  className="text-xs hover:bg-primary/20 transition-colors"
+                                >
+                                  {tag}
+                                </Badge>
+                              ))}
                             </div>
-                            <div className="flex items-center space-x-1">
-                              <Heart className="w-3 h-3" />
-                              <span>{post.likes[0]?.count || 0}</span>
+                          )}
+
+                          <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto pt-4 border-t border-primary/10">
+                            <div className="flex items-center space-x-4">
+                              <div className="flex items-center space-x-1 hover:text-primary transition-colors">
+                                <Clock className="w-3.5 h-3.5" />
+                                <span>{post.read_time}m read</span>
+                              </div>
+                              <div className="flex items-center space-x-1 hover:text-red-500 transition-colors">
+                                <Heart className="w-3.5 h-3.5" />
+                                <span>{post.likes[0]?.count || 0}</span>
+                              </div>
+                              <div className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
+                                <MessageCircle className="w-3.5 h-3.5" />
+                                <span>{post.comments[0]?.count || 0}</span>
+                              </div>
                             </div>
-                            <div className="flex items-center space-x-1">
-                              <MessageCircle className="w-3 h-3" />
-                              <span>{post.comments[0]?.count || 0}</span>
-                            </div>
+                            <span>
+                              {post.published_at
+                                ? formatRelativeTime(post.published_at)
+                                : ""}
+                            </span>
                           </div>
-                          <span>
-                            {post.published_at
-                              ? formatRelativeTime(post.published_at)
-                              : ""}
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    </Link>
                   </motion.div>
                 ))}
               </div>

@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import { AddComment } from "@/components/comments/AddComment";
 import { Comment } from "@/components/comments/Comment";
 import { toast } from "sonner";
+import { MessageCircle } from "lucide-react";
+import Link from "next/link";
 
 interface CommentType {
   id: string;
@@ -230,25 +233,88 @@ export function CommentSection({ postId }: { postId: string }) {
   };
 
   if (loading) {
-    return <div>Loading comments...</div>;
+    return (
+      <div className="mt-12">
+        <h2 className="text-3xl font-bold mb-8 gradient-text">Comments</h2>
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="flex space-x-4">
+                <div className="w-12 h-12 bg-muted rounded-full"></div>
+                <div className="flex-1 space-y-3">
+                  <div className="h-4 bg-muted rounded w-1/4"></div>
+                  <div className="h-16 bg-muted rounded"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="mt-12">
-      <h2 className="text-2xl font-bold mb-6">Comments ({totalComments})</h2>
-      {user && <AddComment postId={postId} onCommentAdded={handleAddComment} />}
-      <div className="space-y-6 mt-8">
-        {comments.map((comment) => (
-          <Comment
-            key={comment.id}
-            comment={comment}
-            postId={postId}
-            onReplyAdded={handleAddComment}
-            onCommentDeleted={handleDeleteComment}
-            currentUserId={user?.id}
-          />
-        ))}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mt-12"
+    >
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="text-3xl font-bold gradient-text">
+          Comments ({totalComments})
+        </h2>
       </div>
-    </div>
+
+      {user && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <AddComment postId={postId} onCommentAdded={handleAddComment} />
+        </motion.div>
+      )}
+
+      {!user && (
+        <div className="glass rounded-lg p-6 text-center mb-8">
+          <p className="text-muted-foreground">
+            Please <Link href="/auth/signin" className="text-primary hover:underline">sign in</Link> to leave a comment
+          </p>
+        </div>
+      )}
+
+      <div className="space-y-4 mt-8">
+        {comments.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-16 glass rounded-lg"
+          >
+            <MessageCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+            <h3 className="text-xl font-semibold mb-2">No comments yet</h3>
+            <p className="text-muted-foreground">
+              Be the first to share your thoughts!
+            </p>
+          </motion.div>
+        ) : (
+          comments.map((comment, index) => (
+            <motion.div
+              key={comment.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+            >
+              <Comment
+                comment={comment}
+                postId={postId}
+                onReplyAdded={handleAddComment}
+                onCommentDeleted={handleDeleteComment}
+                currentUserId={user?.id}
+              />
+            </motion.div>
+          ))
+        )}
+      </div>
+    </motion.div>
   );
 }

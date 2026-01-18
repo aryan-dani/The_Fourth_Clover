@@ -37,9 +37,15 @@ export default function SignUpPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+
+    // Sanitize username input - remove spaces and special characters
+    const sanitizedValue = name === "username"
+      ? value.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase()
+      : value;
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: sanitizedValue,
       ...(name === "fullName" && !prev.username
         ? { username: generateSlug(value) }
         : {}),
@@ -119,7 +125,12 @@ export default function SignUpPage() {
                       onChange={handleChange}
                       required
                       className="focus-ring"
+                      pattern="[a-zA-Z0-9_-]{3,30}"
+                      title="Username must be 3-30 characters and contain only letters, numbers, underscores, and hyphens"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      3-30 characters. Letters, numbers, underscores, and hyphens only.
+                    </p>
                   </div>
                 </div>
 

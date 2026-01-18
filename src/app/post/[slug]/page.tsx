@@ -273,14 +273,15 @@ export default function PostPage({
                     variant={isLiked ? "default" : "outline"}
                     size="sm"
                     onClick={toggleLike}
-                    className={`flex items-center space-x-2 transition-all ${
-                      isLiked ? "glow-button animate-pulse-slow" : "glass-hover"
-                    }`}
+                    className={`flex items-center space-x-2 transition-all duration-300 ${isLiked
+                        ? "bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 shadow-lg shadow-red-500/30 scale-105"
+                        : "hover:border-red-500/50 hover:bg-red-500/10"
+                      }`}
                   >
                     <Heart
-                      className={`w-4 h-4 ${isLiked ? "fill-current" : ""}`}
+                      className={`w-4 h-4 ${isLiked ? "fill-current animate-pulse" : ""}`}
                     />
-                    <span>{likesCount}</span>
+                    <span className="font-semibold">{likesCount}</span>
                   </Button>
 
                   <div className="flex items-center space-x-1">
@@ -288,7 +289,7 @@ export default function PostPage({
                       variant="outline"
                       size="sm"
                       onClick={() => handleShare("twitter")}
-                      className="glass-hover"
+                      className="hover:bg-blue-500/10 hover:border-blue-500/50 hover:text-blue-500 transition-all duration-300"
                     >
                       <Twitter className="w-4 h-4" />
                     </Button>
@@ -296,7 +297,7 @@ export default function PostPage({
                       variant="outline"
                       size="sm"
                       onClick={() => handleShare("whatsapp")}
-                      className="glass-hover"
+                      className="hover:bg-green-500/10 hover:border-green-500/50 hover:text-green-500 transition-all duration-300"
                     >
                       <Send className="w-4 h-4" />
                     </Button>
@@ -304,7 +305,7 @@ export default function PostPage({
                       variant="outline"
                       size="sm"
                       onClick={() => handleShare("copy")}
-                      className="glass-hover"
+                      className="hover:bg-primary/10 hover:border-primary/50 transition-all duration-300"
                     >
                       <Copy className="w-4 h-4" />
                     </Button>

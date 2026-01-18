@@ -25,6 +25,7 @@ import {
   Upload,
 } from "lucide-react";
 import Link from "next/link";
+import { Header } from "@/components/layout/Header";
 import { useMutatePost } from "@/hooks/useMutatePost";
 import { calculateReadTime, generateSlug } from "@/lib/utils";
 import { toast } from "sonner";
@@ -70,9 +71,9 @@ function WritePageContent() {
 
   const tags = tagsString
     ? tagsString
-        .split(",")
-        .map((t: string) => t.trim())
-        .filter(Boolean)
+      .split(",")
+      .map((t: string) => t.trim())
+      .filter(Boolean)
     : [];
 
   // Auto-generate slug from title
@@ -192,6 +193,7 @@ function WritePageContent() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header />
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <motion.div
@@ -243,8 +245,8 @@ function WritePageContent() {
               {status === "draft"
                 ? "Save Draft"
                 : !!editId
-                ? "Update"
-                : "Publish"}
+                  ? "Update"
+                  : "Publish"}
             </Button>
           </div>
         </motion.div>

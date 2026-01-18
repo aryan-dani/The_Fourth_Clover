@@ -136,6 +136,21 @@
 }
 
 @layer components {
+  /* Floating navbar glass effect */
+  .floating-nav {
+    background-color: hsl(var(--card) / 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--border) / 0.3);
+    box-shadow: 0 8px 32px rgb(0 0 0 / 0.08), 0 2px 8px rgb(0 0 0 / 0.04);
+  }
+
+  .dark .floating-nav {
+    background-color: hsl(var(--card) / 0.6);
+    border: 1px solid hsl(var(--border) / 0.2);
+    box-shadow: 0 8px 32px rgb(0 0 0 / 0.2), 0 2px 8px rgb(0 0 0 / 0.1);
+  }
+
   .elegant-card {
     background-color: hsl(var(--card));
     border: 1px solid hsl(var(--border));

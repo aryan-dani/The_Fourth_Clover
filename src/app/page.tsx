@@ -140,48 +140,21 @@ export default function HomePage() {
               transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
               className="text-center max-w-5xl mx-auto"
             >
-              {/* Logo */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{
-                  duration: 0.6,
-                  delay: 0.2,
-                  ease: [0.4, 0, 0.2, 1],
-                }}
-                className="flex justify-center items-center mb-12"
-              >
-                <div className="relative">
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-foreground to-foreground/80 flex items-center justify-center shadow-xl">
-                    <span className="text-4xl text-background">🍀</span>
-                  </div>
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{
-                      duration: 60,
-                      repeat: Infinity,
-                      ease: "linear",
-                    }}
-                    className="absolute inset-0 rounded-full border border-dashed border-foreground/10"
-                  />
-                </div>
-              </motion.div>
-
-              {/* Title */}
+              {/* Main Tagline */}
               <motion.h1
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{
                   duration: 0.6,
-                  delay: 0.3,
+                  delay: 0.2,
                   ease: [0.4, 0, 0.2, 1],
                 }}
-                className="text-5xl lg:text-7xl font-black mb-6 leading-tight brand-text tracking-tight"
+                className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight brand-text tracking-tight"
               >
-                THE FOURTH
+                Where Stories
                 <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground to-foreground/70">
-                  CLOVER
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground via-foreground/80 to-foreground/60">
+                  Come to Life
                 </span>
               </motion.h1>
 
@@ -235,44 +208,19 @@ export default function HomePage() {
                   </Link>
                 </Button>
               </motion.div>
-
-              {/* Stats */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{
-                  duration: 0.8,
-                  delay: 0.8,
-                  ease: [0.4, 0, 0.2, 1],
-                }}
-                className="mt-16 flex flex-wrap justify-center gap-8 text-sm text-muted-foreground"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-green-500/60" />
-                  1,000+ Writers
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-500/60" />
-                  5,000+ Stories
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-purple-500/60" />
-                  50,000+ Readers
-                </div>
-              </motion.div>
             </motion.div>
           </div>
         </motion.section>
 
         {/* Featured Posts */}
-        <section className="py-24 lg:py-32 bg-gradient-to-b from-background to-muted/20">
+        <section className="py-16 lg:py-20 bg-gradient-to-b from-background to-muted/20">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-              className="text-center mb-16"
+              className="text-center mb-12"
             >
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -283,21 +231,20 @@ export default function HomePage() {
                   delay: 0.1,
                   ease: [0.4, 0, 0.2, 1],
                 }}
-                className="inline-flex items-center gap-2 bg-foreground text-background px-6 py-3 rounded-full mb-6 font-medium"
+                className="inline-flex items-center gap-2 bg-foreground text-background px-5 py-2 rounded-full mb-4 font-medium text-sm"
               >
                 <Sparkles className="w-4 h-4" />
                 Featured Stories
               </motion.div>
-              <h2 className="text-4xl lg:text-5xl font-bold mb-6 brand-text tracking-tight">
+              <h2 className="text-3xl lg:text-4xl font-bold mb-4 brand-text tracking-tight">
                 Stories That Inspire
               </h2>
-              <p className="text-xl lead-text max-w-2xl mx-auto leading-relaxed">
-                Discover exceptional writing from our community of thoughtful
-                creators
+              <p className="text-lg lead-text max-w-2xl mx-auto">
+                Discover exceptional writing from our community
               </p>
             </motion.div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
               {loading &&
                 Array.from({ length: 3 }).map((_, index) => (
                   <motion.div
@@ -312,8 +259,8 @@ export default function HomePage() {
                   >
                     <Card className="h-full">
                       <CardContent className="p-6">
-                        <Skeleton className="h-48 w-full mb-4" />
-                        <Skeleton className="h-6 w-3/4 mb-2" />
+                        <Skeleton className="h-6 w-3/4 mb-3" />
+                        <Skeleton className="h-16 w-full mb-4" />
                         <Skeleton className="h-4 w-1/2" />
                       </CardContent>
                     </Card>
@@ -335,82 +282,77 @@ export default function HomePage() {
                     }}
                     className="medium-card medium-hover"
                   >
-                    <Card className="group overflow-hidden border-0 shadow-sm hover:shadow-md transition-all duration-300 ease-out bg-card/90 backdrop-blur-sm h-full">
-                      <div className="aspect-[4/3] overflow-hidden relative">
-                        <img
-                          src={
-                            post.cover_image ||
-                            "https://via.placeholder.com/800x400"
-                          }
-                          alt={post.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <CardHeader className="pb-4">
-                        <div className="flex items-center space-x-3 mb-4">
-                          <Avatar className="w-10 h-10 ring-2 ring-background">
-                            <AvatarImage src={post.author?.avatar_url || ""} />
-                            <AvatarFallback className="bg-foreground text-background font-semibold">
-                              {post.author?.full_name?.[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold truncate ui-text">
-                              {post.author?.full_name}
-                            </p>
-                            <p className="text-sm text-muted-foreground ui-text">
-                              @{post.author?.username}
-                            </p>
+                    <Link href={`/post/${post.slug}`} className="block h-full">
+                      <Card className="group overflow-hidden border-2 hover:border-primary/30 shadow-sm hover:shadow-lg transition-all duration-300 ease-out bg-card/90 backdrop-blur-sm h-full">
+                        {post.cover_image && (
+                          <div className="aspect-[4/3] overflow-hidden relative">
+                            <img
+                              src={post.cover_image}
+                              alt={post.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                           </div>
-                        </div>
-                        <CardTitle className="line-clamp-2 group-hover:text-primary transition-colors brand-text text-xl leading-tight">
-                          <Link
-                            href={`/post/${post.slug}`}
-                            className="hover:underline"
-                          >
+                        )}
+                        <CardHeader className={post.cover_image ? "pb-3" : "pb-3 pt-5"}>
+                          <div className="flex items-center space-x-3 mb-3">
+                            <Avatar className="w-8 h-8 ring-2 ring-background">
+                              <AvatarImage src={post.author?.avatar_url || ""} />
+                              <AvatarFallback className="bg-foreground text-background font-semibold text-xs">
+                                {post.author?.full_name?.[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold truncate ui-text text-sm">
+                                {post.author?.full_name}
+                              </p>
+                              <p className="text-xs text-muted-foreground ui-text">
+                                @{post.author?.username}
+                              </p>
+                            </div>
+                          </div>
+                          <CardTitle className="line-clamp-2 group-hover:text-primary transition-colors brand-text text-lg leading-tight">
                             {post.title}
-                          </Link>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-0 pb-6">
-                        <p className="text-muted-foreground mb-4 line-clamp-3 leading-relaxed content">
-                          {post.excerpt}
-                        </p>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0 pb-5">
+                          <p className="text-muted-foreground mb-3 line-clamp-2 leading-relaxed content text-sm">
+                            {post.excerpt}
+                          </p>
 
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {post.tags?.slice(0, 2).map((tag) => (
-                            <Badge
-                              key={tag}
-                              variant="secondary"
-                              className="rounded-full text-xs"
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
+                          {post.tags && post.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mb-3">
+                              {post.tags.slice(0, 2).map((tag) => (
+                                <Badge
+                                  key={tag}
+                                  variant="secondary"
+                                  className="rounded-full text-xs"
+                                >
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
 
-                        <div className="flex items-center justify-between text-sm text-muted-foreground ui-text">
-                          <div className="flex items-center gap-4">
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {post.read_time}m read
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Heart className="w-3 h-3" />
-                              {post.likes[0]?.count || 0}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <MessageCircle className="w-3 h-3" />
-                              {post.comments[0]?.count || 0}
-                            </span>
+                          <div className="flex items-center justify-between text-xs text-muted-foreground ui-text">
+                            <div className="flex items-center gap-3">
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {post.read_time}m
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Heart className="w-3 h-3" />
+                                {post.likes[0]?.count || 0}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <MessageCircle className="w-3 h-3" />
+                                {post.comments[0]?.count || 0}
+                              </span>
+                            </div>
                           </div>
-                          <span className="text-xs">
-                            {new Date(post.published_at!).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    </Link>
                   </motion.div>
                 ))}
             </div>
@@ -420,7 +362,7 @@ export default function HomePage() {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-center mt-16"
+              className="text-center mt-10"
             >
               <Button
                 variant="outline"
@@ -437,21 +379,20 @@ export default function HomePage() {
         </section>
 
         {/* Features Section */}
-        <section className="py-24 lg:py-32 bg-foreground text-background">
+        <section className="py-16 lg:py-20 bg-foreground text-background">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-              className="text-center mb-16"
+              className="text-center mb-12"
             >
-              <h2 className="text-4xl lg:text-5xl font-bold mb-6 brand-text tracking-tight">
+              <h2 className="text-3xl lg:text-4xl font-bold mb-4 brand-text tracking-tight">
                 Why Choose The Fourth Clover?
               </h2>
-              <p className="text-xl lead-text text-background/80 max-w-2xl mx-auto leading-relaxed">
-                Built for writers who value simplicity, quality, and meaningful
-                connections
+              <p className="text-lg lead-text text-background/80 max-w-2xl mx-auto">
+                Built for writers who value simplicity and quality
               </p>
             </motion.div>
 
@@ -497,14 +438,14 @@ export default function HomePage() {
                   <motion.div
                     whileHover={{ scale: 1.05 }}
                     transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                    className="w-16 h-16 rounded-full bg-background/10 flex items-center justify-center mx-auto mb-6 group-hover:bg-background/20 transition-colors duration-300"
+                    className="w-14 h-14 rounded-full bg-background/10 flex items-center justify-center mx-auto mb-4 group-hover:bg-background/20 transition-colors duration-300"
                   >
-                    <feature.icon className="w-8 h-8 text-background" />
+                    <feature.icon className="w-7 h-7 text-background" />
                   </motion.div>
-                  <h3 className="text-xl font-semibold mb-3 brand-text">
+                  <h3 className="text-lg font-semibold mb-2 brand-text">
                     {feature.title}
                   </h3>
-                  <p className="text-background/70 leading-relaxed content">
+                  <p className="text-background/70 text-sm leading-relaxed content">
                     {feature.description}
                   </p>
                 </motion.div>
@@ -514,7 +455,7 @@ export default function HomePage() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-24 lg:py-32 bg-gradient-to-br from-muted/30 to-background">
+        <section className="py-16 lg:py-20 bg-gradient-to-br from-muted/30 to-background">
           <div className="container mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -530,14 +471,14 @@ export default function HomePage() {
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
-                className="text-6xl mb-8"
+                className="text-5xl mb-6"
               >
                 🍀
               </motion.div>
-              <h2 className="text-4xl lg:text-5xl font-bold mb-6 brand-text tracking-tight">
+              <h2 className="text-3xl lg:text-4xl font-bold mb-4 brand-text tracking-tight">
                 Ready to Share Your Story?
               </h2>
-              <p className="text-xl lead-text mb-10 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-lg lead-text mb-8 max-w-2xl mx-auto">
                 Join thousands of writers who have found their voice on The
                 Fourth Clover. Your story matters.
               </p>
@@ -548,12 +489,12 @@ export default function HomePage() {
                 <Button
                   size="lg"
                   asChild
-                  className="rounded-full px-12 py-6 text-xl font-semibold bg-foreground text-background hover:bg-foreground/90 shadow-lg hover:shadow-xl transition-all duration-300 ease-out medium-hover ui-text"
+                  className="rounded-full px-10 py-5 text-lg font-semibold bg-foreground text-background hover:bg-foreground/90 shadow-lg hover:shadow-xl transition-all duration-300 ease-out medium-hover ui-text"
                 >
                   <Link href={user ? "/write" : "/auth/signup"}>
-                    <Sparkles className="mr-3 w-6 h-6" />
+                    <Sparkles className="mr-2 w-5 h-5" />
                     Start Writing Today
-                    <ArrowRight className="ml-3 w-6 h-6" />
+                    <ArrowRight className="ml-2 w-5 h-5" />
                   </Link>
                 </Button>
               </motion.div>
@@ -563,7 +504,7 @@ export default function HomePage() {
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.8, delay: 0.5 }}
-                className="mt-8 text-sm text-muted-foreground ui-text"
+                className="mt-6 text-sm text-muted-foreground ui-text"
               >
                 Free forever. No credit card required.
               </motion.p>

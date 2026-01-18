@@ -31,22 +31,33 @@ This phase establishes the foundational features of a functional, modern bloggin
 
 ---
 
-### Phase 2: Social Engagement & Interaction
+### Phase 2: Social Engagement & Interaction - ✅ Complete
 
 This phase focuses on building community and making the platform more interactive. The database is already prepared for these features.
 
-- [ ] **Commenting System**:
-  - [ ] Implement UI for posting comments on articles.
-  - [ ] Add support for nested replies to create threaded conversations.
-  - [ ] Allow users to edit or delete their own comments.
-- [ ] **Like System**:
-  - [ ] Add the ability for users to "like" or "heart" posts.
-  - [ ] Display the total like count on each post.
-- [ ] **Social Sharing**:
-  - [ ] Implement share buttons on post pages (Copy Link, Twitter, WhatsApp).
-- [ ] **Enhanced Profiles**:
-  - [ ] Display a list of the user's published posts on their profile page.
-  - [ ] Add fields for social links (e.g., Twitter, GitHub, personal website).
+- [x] **Commenting System**:
+  - [x] Implement UI for posting comments on articles.
+  - [x] Add support for nested replies to create threaded conversations.
+  - [x] Allow users to edit or delete their own comments.
+- [x] **Like System**:
+  - [x] Add the ability for users to "like" or "heart" posts.
+  - [x] Display the total like count on each post.
+- [x] **Social Sharing**:
+  - [x] Implement share buttons on post pages (Copy Link, Twitter, WhatsApp).
+- [x] **Enhanced Profiles**:
+  - [x] Display a list of the user's published posts on their profile page.
+  - [x] Add fields for social links (e.g., Twitter, GitHub, personal website).
+  - [x] Display user statistics (total posts, likes, comments).
+- [x] **UI/UX Improvements**:
+  - [x] Comprehensive UI polish across all pages.
+  - [x] Enhanced card designs with premium hover effects.
+  - [x] Improved comment section with elegant cards and animations.
+  - [x] Better loading states with skeleton loaders.
+  - [x] Clickable post cards throughout the platform.
+- [x] **Data Validation**:
+  - [x] Username validation to prevent spaces and special characters.
+  - [x] URL decoding for existing usernames with spaces.
+  - [x] Real-time input sanitization during signup.
 
 ---
 
@@ -54,6 +65,11 @@ This phase focuses on building community and making the platform more interactiv
 
 This phase will improve content discovery and refine the user experience.
 
+- [ ] **Post Scheduling**:
+  - [ ] Add `scheduled_at` field to database.
+  - [ ] Implement datetime picker in Write page.
+  - [ ] Create scheduled posts section in dashboard.
+  - [ ] Implement auto-publish functionality.
 - [ ] **Advanced Feed Filtering**:
   - [ ] Implement robust filters on the home feed: "Latest," "Trending," and "My Posts."
   - [ ] Develop a basic algorithm to determine "Trending" posts (e.g., based on recent likes and comments).
