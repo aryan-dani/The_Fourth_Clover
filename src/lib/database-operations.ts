@@ -255,6 +255,62 @@ export class DatabaseOperations {
 
     return allTags;
   }
+
+  // Get scheduled posts for a user
+  static async getScheduledPosts(
+    authorId: string
+  ): Promise<
+    QueryResultArray<
+      Post & { likes: { count: number }[]; comments: { count: number }[] }
+    >
+  > {
+    return await supabase
+      .from("posts")
+      .select("*, likes(count), comments(count)")
+      .eq("author_id", authorId)
+      .eq("status", "draft")
+      .not("scheduled_at", "is", null)
+      .order("scheduled_at", { ascending: true });
+  }
+
+  // Check if user is admin
+  static async isUserAdmin(userId: string): Promise<boolean> {
+    const { data } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", userId)
+      .single();
+
+    return data?.is_admin || false;
+  }
+
+  // Get all users (admin only)
+  static async getAllUsers(limit = 50): Promise<any> {
+    return await supabase
+      .from("profiles")
+      .select("*")
+      .limit(limit)
+      .order("created_at", { ascending: false });
+  }
+
+  // Get all posts (admin only, includes drafts)
+  static async getAllPostsAdmin(limit = 50): Promise<any> {
+    return await supabase
+      .from("posts")
+      .select(`
+        *,
+        author:profiles!posts_author_id_fkey (
+          id,
+          username,
+          full_name,
+          avatar_url
+        ),
+        likes(count),
+        comments(count)
+      `)
+      .limit(limit)
+      .order("created_at", { ascending: false });
+  }
 }
 
 // Export convenience functions
@@ -278,4 +334,9 @@ export const {
   getPostWithAuthorBySlug,
   getPostsByTag,
   getAllTags,
+  getScheduledPosts,
+  isUserAdmin,
+  getAllUsers,
+  getAllPostsAdmin,
 } = DatabaseOperations;
+

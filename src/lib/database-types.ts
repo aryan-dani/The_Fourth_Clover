@@ -12,6 +12,7 @@ export interface Profile {
   website: string | null;
   twitter: string | null;
   github: string | null;
+  is_admin: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -19,6 +20,8 @@ export interface Profile {
 export type Post = Database["public"]["Tables"]["posts"]["Row"];
 export type Comment = Database["public"]["Tables"]["comments"]["Row"];
 export type Like = Database["public"]["Tables"]["likes"]["Row"];
+export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
+
 
 export type PostWithAuthor = Post & {
   author: Pick<Profile, "id" | "username" | "full_name" | "avatar_url">;
@@ -159,13 +162,11 @@ export const QueryBuilder = {
 
   // Common combinations
   publishedPosts: (limit?: number) =>
-    `select('*').eq('status', 'published').order('published_at', { ascending: false })${
-      limit ? `.limit(${limit})` : ""
+    `select('*').eq('status', 'published').order('published_at', { ascending: false })${limit ? `.limit(${limit})` : ""
     }`,
 
   userPosts: (authorId: string, status?: "draft" | "published") =>
-    `select('*').eq('author_id', '${authorId}')${
-      status ? `.eq('status', '${status}')` : ""
+    `select('*').eq('author_id', '${authorId}')${status ? `.eq('status', '${status}')` : ""
     }.order('created_at', { ascending: false })`,
 };
 

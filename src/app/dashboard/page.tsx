@@ -188,7 +188,8 @@ export default function DashboardPage() {
   };
 
   const published = posts.filter((post) => post.status === "published");
-  const drafts = posts.filter((post) => post.status === "draft");
+  const drafts = posts.filter((post) => post.status === "draft" && !post.scheduled_at);
+  const scheduled = posts.filter((post) => post.status === "draft" && post.scheduled_at);
 
   const columns: ColumnDef<DashboardPost>[] = [
     {
@@ -365,12 +366,16 @@ export default function DashboardPage() {
           transition={{ delay: 0.2 }}
         >
           <Tabs defaultValue="all" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-8">
+            <TabsList className="grid w-full grid-cols-4 mb-8">
               <TabsTrigger value="all">All Posts ({posts.length})</TabsTrigger>
               <TabsTrigger value="published">
                 Published ({published.length})
               </TabsTrigger>
               <TabsTrigger value="drafts">Drafts ({drafts.length})</TabsTrigger>
+              <TabsTrigger value="scheduled">
+                <Clock className="w-3 h-3 mr-1" />
+                Scheduled ({scheduled.length})
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="all">
@@ -381,6 +386,71 @@ export default function DashboardPage() {
             </TabsContent>
             <TabsContent value="drafts">
               <DataTable columns={columns} data={drafts} />
+            </TabsContent>
+            <TabsContent value="scheduled">
+              {scheduled.length === 0 ? (
+                <Card className="glass">
+                  <CardContent className="p-12 text-center">
+                    <Clock className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-semibold mb-2">No scheduled posts</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Schedule posts to be published at a specific date and time.
+                    </p>
+                    <Button asChild>
+                      <Link href="/write">Schedule a Post</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {scheduled.map((post) => (
+                    <Card key={post.id} className="glass">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <Link
+                              href={`/write?edit=${post.id}`}
+                              className="font-medium hover:text-primary transition-colors"
+                            >
+                              {post.title}
+                            </Link>
+                            <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                              <Clock className="w-3 h-3" />
+                              <span>
+                                Scheduled for {new Date(post.scheduled_at!).toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary">
+                              <Calendar className="w-3 h-3 mr-1" />
+                              {formatRelativeTime(post.scheduled_at!)}
+                            </Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              asChild
+                            >
+                              <Link href={`/write?edit=${post.id}`}>
+                                <Edit3 className="w-3 h-3 mr-1" />
+                                Edit
+                              </Link>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeletePost(post.id)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </motion.div>

@@ -36,6 +36,7 @@ export function useMutatePost(postId?: string) {
       excerpt: "",
       slug: "",
       featured_image: null,
+      scheduled_at: null,
     },
   });
 
@@ -54,6 +55,7 @@ export function useMutatePost(postId?: string) {
           excerpt: data.excerpt || "",
           slug: data.slug,
           featured_image: data.featured_image || null,
+          scheduled_at: data.scheduled_at || null,
         });
       }
     } catch (error) {
@@ -94,6 +96,7 @@ export function useMutatePost(postId?: string) {
         published_at:
           values.status === "published" ? new Date().toISOString() : null,
         featured_image: values.featured_image || null,
+        scheduled_at: values.scheduled_at || null,
       };
 
       let result;
@@ -141,6 +144,7 @@ export function useMutatePost(postId?: string) {
         // Don't update published_at for drafts
         published_at: null,
         featured_image: values.featured_image || null,
+        scheduled_at: values.scheduled_at || null,
       };
 
       let result;

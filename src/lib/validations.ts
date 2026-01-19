@@ -15,7 +15,9 @@ export const postSchema = z.object({
     .optional(),
   slug: z.string().min(3, "Slug must be at least 3 characters"),
   featured_image: z.string().url().optional().nullable(),
+  scheduled_at: z.string().optional().nullable(),
 });
+
 
 export const profileSchema = z.object({
   username: z

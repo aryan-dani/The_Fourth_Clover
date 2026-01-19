@@ -5,24 +5,33 @@ import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/lib/auth-context";
-import { runAllTests } from "@/lib/debug-supabase";
 import {
   Save,
   Send,
   ArrowLeft,
-  Image,
-  Tag,
-  Eye,
+  ImageIcon,
   Loader2,
   X,
-  Edit3,
-  Upload,
+  Clock,
+  Calendar,
+  Tag,
+  Eye,
+  FileText,
+  Check,
+  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/layout/Header";
@@ -45,9 +54,9 @@ function WritePageContent() {
   const { user, loading } = useAuth();
 
   const [tagInput, setTagInput] = useState("");
-  const [debugMode, setDebugMode] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const {
     form,
@@ -64,16 +73,12 @@ function WritePageContent() {
     content,
     tags: tagsString,
     cover_image,
-    excerpt,
     status,
+    scheduled_at,
   } = form.watch();
-  const postData = form.getValues(); // Keep for other references if needed, or use destructured values
 
   const tags = tagsString
-    ? tagsString
-      .split(",")
-      .map((t: string) => t.trim())
-      .filter(Boolean)
+    ? tagsString.split(",").map((t: string) => t.trim()).filter(Boolean)
     : [];
 
   // Auto-generate slug from title
@@ -81,10 +86,7 @@ function WritePageContent() {
     if (!editId && title) {
       const slug = generateSlug(title);
       const currentSlug = form.getValues("slug");
-      if (
-        !currentSlug ||
-        (currentSlug !== slug && !form.getFieldState("slug").isDirty)
-      ) {
+      if (!currentSlug || (currentSlug !== slug && !form.getFieldState("slug").isDirty)) {
         form.setValue("slug", slug, { shouldValidate: true });
       }
     }
@@ -99,8 +101,6 @@ function WritePageContent() {
       clearTimeout(autoSaveTimerRef.current);
     }
 
-    // Only autosave if we have a title OR content, and it's not already submitting
-    // We check if title or content is present to avoid saving empty drafts initially
     if ((title || content) && !isLoading && !isUploading) {
       autoSaveTimerRef.current = setTimeout(async () => {
         const values = form.getValues();
@@ -113,9 +113,9 @@ function WritePageContent() {
           lastSavedValuesRef.current = values;
           setLastSaved(new Date());
           setIsAutoSaving(false);
-          toast.success("Draft autosaved", { duration: 2000, id: "autosave" });
+          toast.success("Draft saved", { duration: 2000, id: "autosave" });
         }
-      }, 3000); // Autosave after 3 seconds of inactivity
+      }, 3000);
     }
 
     return () => {
@@ -132,9 +132,7 @@ function WritePageContent() {
     }
   }, [user, loading, router]);
 
-  const handleImageFileChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       handleImageUpload(file);
@@ -149,432 +147,364 @@ function WritePageContent() {
   };
 
   const removeTag = (tagToRemove: string) => {
-    const newTags = tags
-      .filter((tag: string) => tag !== tagToRemove)
-      .join(", ");
+    const newTags = tags.filter((tag: string) => tag !== tagToRemove).join(", ");
     form.setValue("tags", newTags);
   };
 
-  const handleTagInputKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addTag(tagInput);
-      setTagInput("");
-    }
-  };
-
-  const handleAddTagClick = () => {
-    addTag(tagInput);
-    setTagInput("");
-  };
-
-  const runDebugTests = async () => {
-    setDebugMode(true);
-    try {
-      const results = await runAllTests();
-      const failedTests = Object.entries(results).filter(
-        ([_, result]) => !result.success
-      );
-      if (failedTests.length === 0) {
-        toast.success("🎉 All Supabase tests passed!");
-      } else {
-        toast.error(
-          `❌ ${failedTests.length} tests failed. Check console for details.`
-        );
-      }
-    } catch (error) {
-      toast.error("Debug tests failed - check console");
-    } finally {
-      setDebugMode(false);
-    }
-  };
+  // Stats
+  const wordCount = (content || "").trim().split(/\s+/).filter((word: string) => word.length > 0).length;
+  const readTime = calculateReadTime(content || "");
 
   if (!user) return null;
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-8"
-        >
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" asChild className="ui-text">
-              <Link href="/dashboard" className="flex items-center ui-text">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Dashboard
-              </Link>
-            </Button>
-            <div className="flex items-center space-x-2">
-              <Edit3 className="w-5 h-5" />
-              <h1 className="text-2xl font-bold brand-text">
-                {!!editId ? "Edit Your Story" : "Write Your Story"}
-              </h1>
-            </div>
-          </div>
 
-          <div className="flex items-center space-x-2">
-            {/* Autosave Indicator */}
-            <div className="text-xs text-muted-foreground mr-2">
-              {isAutoSaving ? (
-                <span className="flex items-center">
-                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                  Saving...
-                </span>
-              ) : lastSaved ? (
-                <span>
-                  Saved{" "}
-                  {lastSaved.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              ) : null}
+      {/* Sticky Top Bar */}
+      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="flex items-center justify-between h-14">
+            {/* Left */}
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/dashboard" className="flex items-center gap-2">
+                  <ArrowLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">Dashboard</span>
+                </Link>
+              </Button>
+
+              <Separator orientation="vertical" className="h-5" />
+
+              <span className="text-sm text-muted-foreground">
+                {editId ? "Editing" : "New post"}
+              </span>
             </div>
 
-            <Button
-              onClick={form.handleSubmit(handleFormSubmit)}
-              disabled={isLoading}
-              className="bg-foreground text-background hover:bg-foreground/90 ui-text"
-            >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              <Send className="w-4 h-4 mr-2" />
-              {status === "draft"
-                ? "Save Draft"
-                : !!editId
-                  ? "Update"
-                  : "Publish"}
-            </Button>
+            {/* Right */}
+            <div className="flex items-center gap-3">
+              {/* Save Status */}
+              <div className="text-xs text-muted-foreground hidden sm:flex items-center gap-1.5">
+                {isAutoSaving ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Saving...
+                  </>
+                ) : lastSaved ? (
+                  <>
+                    <Check className="w-3 h-3 text-green-500" />
+                    Saved
+                  </>
+                ) : null}
+              </div>
+
+              {/* Settings Toggle */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSettings(!showSettings)}
+                className="gap-2"
+              >
+                <Eye className="w-4 h-4" />
+                <span className="hidden sm:inline">Settings</span>
+              </Button>
+
+              {/* Main Action */}
+              <Button
+                onClick={form.handleSubmit(handleFormSubmit)}
+                disabled={isLoading}
+                size="sm"
+              >
+                {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {status === "draft" ? (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Draft
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    {editId ? "Update" : "Publish"}
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
-        </motion.div>
+        </div>
+      </div>
 
-        {submissionMessage && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <Alert variant="destructive" className="mb-6">
-              <AlertDescription>{submissionMessage}</AlertDescription>
-            </Alert>
-          </motion.div>
-        )}
+      {/* Error Message */}
+      {submissionMessage && (
+        <div className="container mx-auto px-4 max-w-4xl mt-4">
+          <Alert variant="destructive">
+            <AlertCircle className="w-4 h-4" />
+            <AlertDescription>{submissionMessage}</AlertDescription>
+          </Alert>
+        </div>
+      )}
 
-        {/* 🔍 Debug Panel - Only show in development */}
-        {process.env.NODE_ENV === "development" && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6"
-          >
-            <Card className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-yellow-800 dark:text-yellow-200 text-sm flex items-center">
-                  🔍 Debug Panel
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex items-center space-x-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={runDebugTests}
-                    disabled={debugMode}
-                    className="text-yellow-800 border-yellow-300"
-                  >
-                    {debugMode ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Testing...
-                      </>
-                    ) : (
-                      "Test Supabase Connection"
-                    )}
-                  </Button>
-                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                    Run this if you&apos;re experiencing publishing issues
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
+      <div className="container mx-auto px-4 max-w-4xl py-8">
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleFormSubmit)}
-            className="grid grid-cols-1 lg:grid-cols-3 gap-8"
-          >
-            {/* Main Editor */}
-            <div className="lg:col-span-2">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <Card className="elegant-card">
-                  <CardContent className="p-6">
-                    <div className="space-y-6">
-                      <FormField
-                        control={form.control}
-                        name="title"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                placeholder="Enter your story title..."
-                                {...field}
-                                className="text-2xl font-bold border-none p-0 placeholder:text-muted-foreground focus-visible:ring-0 content"
-                                maxLength={100}
-                              />
-                            </FormControl>
-                            <div className="text-xs text-muted-foreground mt-1 ui-text">
-                              {field.value.length}/100 characters
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
 
-                      <FormField
-                        control={form.control}
-                        name="cover_image"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm font-medium flex items-center space-x-2">
-                              <Image className="w-4 h-4" />
-                              <span>Cover Image</span>
-                            </FormLabel>
-                            <div className="mt-2 space-y-3">
-                              <div className="flex items-center space-x-2">
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={handleImageFileChange}
-                                  className="hidden"
-                                  id="imageUpload"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() =>
-                                    document
-                                      .getElementById("imageUpload")
-                                      ?.click()
-                                  }
-                                  disabled={isUploading}
-                                  className="ui-text"
-                                >
-                                  {isUploading ? (
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                  ) : (
-                                    <Upload className="w-4 h-4 mr-2" />
-                                  )}
-                                  {isUploading
-                                    ? "Uploading..."
-                                    : "Upload Image"}
-                                </Button>
-                                <span className="text-sm text-muted-foreground">
-                                  or paste URL
-                                </span>
-                              </div>
-                              <FormControl>
-                                <Input
-                                  placeholder="https://images.pexels.com/your-image.jpg"
-                                  {...field}
-                                  className="focus-ring"
-                                />
-                              </FormControl>
-                            </div>
+            {/* Settings Panel (Collapsible) */}
+            {showSettings && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-muted/30 rounded-lg p-6 border space-y-6"
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium">Post Settings</h3>
+                  <Button variant="ghost" size="sm" onClick={() => setShowSettings(false)}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Status */}
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="draft">Draft</SelectItem>
+                            <SelectItem value="published">Published</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Schedule */}
+                  <FormField
+                    control={form.control}
+                    name="scheduled_at"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <Calendar className="w-3.5 h-3.5" />
+                          Schedule
+                        </FormLabel>
+                        <FormControl>
+                          <div className="flex gap-2">
+                            <Input
+                              type="datetime-local"
+                              value={field.value ? new Date(field.value).toISOString().slice(0, 16) : ""}
+                              min={new Date().toISOString().slice(0, 16)}
+                              onChange={(e) => {
+                                field.onChange(e.target.value ? new Date(e.target.value).toISOString() : null);
+                              }}
+                              className="flex-1"
+                            />
                             {field.value && (
-                              <div className="mt-3 rounded-lg overflow-hidden relative">
-                                <img
-                                  src={field.value}
-                                  alt="Cover preview"
-                                  className="w-full h-48 object-cover"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = "none";
-                                  }}
-                                />
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() =>
-                                    form.setValue("cover_image", "")
-                                  }
-                                  className="absolute top-2 right-2 ui-text"
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
-                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => field.onChange(null)}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
                             )}
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                          </div>
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-                      <FormField
-                        control={form.control}
-                        name="content"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Textarea
-                                placeholder="Tell your story..."
-                                {...field}
-                                className="min-h-[400px] border-none p-0 resize-none placeholder:text-muted-foreground focus-visible:ring-0 content"
-                              />
-                            </FormControl>
-                            <div className="text-xs text-muted-foreground mt-1 ui-text">
-                              {field.value.length} characters
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="excerpt"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm font-medium">
-                              Excerpt (optional)
-                            </FormLabel>
-                            <FormControl>
-                              <Textarea
-                                placeholder="Brief description of your post..."
-                                {...field}
-                                className="mt-2 max-h-24"
-                                rows={3}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                {/* Tags */}
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <Tag className="w-3.5 h-3.5" />
+                    Tags
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Add a tag and press Enter"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addTag(tagInput);
+                          setTagInput("");
+                        }
+                      }}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        addTag(tagInput);
+                        setTagInput("");
+                      }}
+                      disabled={!tagInput}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map((tag: string) => (
+                        <Badge
+                          key={tag}
+                          variant="secondary"
+                          className="gap-1 cursor-pointer hover:bg-destructive/10"
+                          onClick={() => removeTag(tag)}
+                        >
+                          {tag}
+                          <X className="w-3 h-3" />
+                        </Badge>
+                      ))}
                     </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </div>
+                  )}
+                </div>
 
-            {/* Sidebar */}
-            <div className="space-y-6">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <Card className="elegant-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-lg">
-                      <Tag className="w-4 h-4 mr-2" />
-                      Tags
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-2">
-                        <Input
-                          placeholder="Add tags..."
-                          value={tagInput}
-                          onChange={(e) => setTagInput(e.target.value)}
-                          onKeyPress={handleTagInputKeyPress}
-                          className="flex-1"
+                {/* Excerpt */}
+                <FormField
+                  control={form.control}
+                  name="excerpt"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <FileText className="w-3.5 h-3.5" />
+                        Excerpt
+                        <span className="text-muted-foreground font-normal">(optional)</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="A brief summary that appears in post previews..."
+                          {...field}
+                          rows={2}
+                          maxLength={300}
                         />
-                        <Button size="sm" onClick={handleAddTagClick}>
-                          Add
-                        </Button>
+                      </FormControl>
+                      <div className="text-xs text-muted-foreground text-right">
+                        {(field.value || "").length}/300
                       </div>
-
-                      {tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {tags.map((tag: string) => (
-                            <Badge
-                              key={tag}
-                              variant="secondary"
-                              className="flex items-center space-x-1"
-                            >
-                              <span>{tag}</span>
-                              <X
-                                className="w-3 h-3 cursor-pointer hover:text-destructive"
-                                onClick={() => removeTag(tag)}
-                              />
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                    </FormItem>
+                  )}
+                />
               </motion.div>
+            )}
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <Card className="elegant-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-lg">
-                      <Eye className="w-4 h-4 mr-2" />
-                      Post Info
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Words:</span>
-                        <span>
-                          {
-                            (content || "")
-                              .trim()
-                              .split(/\s+/)
-                              .filter((word: string) => word.length > 0).length
-                          }
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Characters:
-                        </span>
-                        <span>{(content || "").length}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Read time:
-                        </span>
-                        <span>{calculateReadTime(content || "")}m</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Status:</span>
-                        <FormField
-                          control={form.control}
-                          name="status"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormControl>
-                                <select {...field} className="bg-transparent">
-                                  <option value="draft">Draft</option>
-                                  <option value="published">Published</option>
-                                </select>
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      {!!editId && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Mode:</span>
-                          <Badge variant="outline">Editing</Badge>
-                        </div>
-                      )}
+            {/* Cover Image */}
+            <FormField
+              control={form.control}
+              name="cover_image"
+              render={({ field }) => (
+                <FormItem>
+                  {field.value ? (
+                    <div className="relative rounded-lg overflow-hidden">
+                      <img
+                        src={field.value}
+                        alt="Cover"
+                        className="w-full h-64 object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => form.setValue("cover_image", "")}
+                        className="absolute top-3 right-3"
+                      >
+                        <X className="w-4 h-4 mr-1" />
+                        Remove
+                      </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+                  ) : (
+                    <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageFileChange}
+                        className="hidden"
+                        id="coverUpload"
+                      />
+                      <label htmlFor="coverUpload" className="cursor-pointer block">
+                        {isUploading ? (
+                          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                            <Loader2 className="w-8 h-8 animate-spin" />
+                            <span>Uploading...</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                            <ImageIcon className="w-8 h-8" />
+                            <span className="font-medium">Add a cover image</span>
+                            <span className="text-xs">Click to upload or drag and drop</span>
+                          </div>
+                        )}
+                      </label>
+                    </div>
+                  )}
+                </FormItem>
+              )}
+            />
+
+            {/* Title */}
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input
+                      placeholder="Title"
+                      {...field}
+                      className="text-4xl font-bold border-none px-0 h-auto py-2 placeholder:text-muted-foreground/40 focus-visible:ring-0"
+                      maxLength={100}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Content */}
+            <FormField
+              control={form.control}
+              name="content"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Tell your story..."
+                      {...field}
+                      className="min-h-[60vh] text-lg leading-relaxed border-none px-0 resize-none placeholder:text-muted-foreground/40 focus-visible:ring-0"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Bottom Stats Bar */}
+            <div className="flex items-center justify-between text-sm text-muted-foreground border-t pt-4">
+              <div className="flex items-center gap-4">
+                <span>{wordCount} words</span>
+                <span>{readTime} min read</span>
+              </div>
+              {scheduled_at && (
+                <div className="flex items-center gap-1.5 text-primary">
+                  <Clock className="w-3.5 h-3.5" />
+                  Scheduled for {new Date(scheduled_at).toLocaleDateString()}
+                </div>
+              )}
             </div>
           </form>
         </Form>
@@ -588,7 +518,7 @@ export default function WritePage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin" />
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
       }
     >

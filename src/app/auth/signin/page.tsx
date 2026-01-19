@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, ArrowLeft, Mail, Lock, Sparkles } from "lucide-react";
+import { Loader2, ArrowLeft, Mail, Lock, LogIn } from "lucide-react";
 import { useSignIn } from "@/hooks/useSignIn";
 import GoogleSignIn from "@/components/auth/GoogleSignIn";
 import { motion } from "framer-motion";
@@ -39,43 +38,18 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Floating background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          animate={{
-            rotate: 360,
-            scale: [1, 1.1, 1],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-          className="absolute top-20 left-10 w-32 h-32 rounded-full border border-muted/20"
-        />
-        <motion.div
-          animate={{
-            rotate: -360,
-            scale: [1, 0.9, 1],
-          }}
-          transition={{
-            duration: 25,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-          className="absolute bottom-20 right-10 w-48 h-48 rounded-full border border-muted/30"
-        />
-      </div>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
+      {/* Subtle background pattern */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(120,119,198,0.1),rgba(255,255,255,0))]" />
 
       <div className="w-full max-w-md relative z-10">
         {/* Back Button */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="mb-8"
+          className="mb-6"
         >
-          <Button variant="ghost" asChild className="rounded-full">
+          <Button variant="ghost" size="sm" asChild>
             <Link
               href="/"
               className="flex items-center text-muted-foreground hover:text-foreground transition-colors"
@@ -87,77 +61,64 @@ export default function SignInPage() {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 30, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
         >
-          <Card className="border-0 shadow-2xl bg-card/80 backdrop-blur-xl rounded-3xl overflow-hidden">
-            <CardHeader className="space-y-6 text-center pb-8 bg-gradient-to-b from-muted/10 to-transparent">
-              <motion.div
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{
-                  duration: 1,
-                  delay: 0.3,
-                  type: "spring",
-                  stiffness: 120,
-                }}
-                className="flex items-center justify-center"
-              >
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-foreground to-foreground/80 flex items-center justify-center shadow-lg ring-4 ring-background">
-                  <span className="text-2xl text-background">🍀</span>
+          <Card className="border shadow-sm">
+            <CardHeader className="space-y-4 text-center pb-6">
+              {/* Logo */}
+              <div className="flex items-center justify-center">
+                <div className="w-14 h-14 rounded-full bg-foreground flex items-center justify-center">
+                  <span className="text-xl text-background">🍀</span>
                 </div>
-              </motion.div>
-              <div>
-                <CardTitle className="text-3xl font-bold brand-text mb-2">
-                  Welcome Back
+              </div>
+              <div className="space-y-1">
+                <CardTitle className="text-2xl font-semibold">
+                  Sign In
                 </CardTitle>
-                <CardDescription className="text-base text-muted-foreground">
-                  Sign in to continue your writing journey
+                <CardDescription>
+                  Enter your credentials to access your account
                 </CardDescription>
               </div>
             </CardHeader>
-            <CardContent className="p-8">
-              <form onSubmit={handleSubmit} className="space-y-6">
+            <CardContent className="px-6 pb-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <Alert
-                      variant="destructive"
-                      className="rounded-2xl border-0"
-                    >
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  </motion.div>
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
                 )}
 
-                <div className="space-y-3">
-                  <Label htmlFor="email" className="text-sm font-medium">
-                    Email
-                  </Label>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       id="email"
                       name="email"
                       type="email"
-                      placeholder="Enter your email"
+                      placeholder="name@example.com"
                       value={formData.email}
                       onChange={handleChange}
                       required
-                      className="pl-11 h-12 rounded-2xl border-0 bg-muted/30 focus:bg-muted/50 transition-colors"
+                      className="pl-10"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <Label htmlFor="password" className="text-sm font-medium">
-                    Password
-                  </Label>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    <Link
+                      href="/auth/forgot-password"
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       id="password"
                       name="password"
@@ -166,41 +127,36 @@ export default function SignInPage() {
                       value={formData.password}
                       onChange={handleChange}
                       required
-                      className="pl-11 h-12 rounded-2xl border-0 bg-muted/30 focus:bg-muted/50 transition-colors"
+                      className="pl-10"
                     />
                   </div>
                 </div>
 
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
                 >
-                  <Button
-                    type="submit"
-                    className="w-full h-12 rounded-2xl bg-foreground text-background hover:bg-foreground/90 font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Signing In...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 h-5 w-5" />
-                        Sign In
-                      </>
-                    )}
-                  </Button>
-                </motion.div>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="mr-2 h-4 w-4" />
+                      Sign In
+                    </>
+                  )}
+                </Button>
               </form>
 
-              <div className="relative my-8">
+              <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-muted/30" />
+                  <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-4 text-muted-foreground font-medium">
+                  <span className="bg-card px-2 text-muted-foreground">
                     Or continue with
                   </span>
                 </div>
@@ -208,17 +164,15 @@ export default function SignInPage() {
 
               <GoogleSignIn />
 
-              <div className="mt-8 text-center">
-                <p className="text-muted-foreground">
-                  Don&apos;t have an account?{" "}
-                  <Link
-                    href="/auth/signup"
-                    className="text-foreground hover:underline font-medium transition-colors"
-                  >
-                    Sign up
-                  </Link>
-                </p>
-              </div>
+              <p className="mt-6 text-center text-sm text-muted-foreground">
+                Don&apos;t have an account?{" "}
+                <Link
+                  href="/auth/signup"
+                  className="font-medium text-foreground hover:underline"
+                >
+                  Sign up
+                </Link>
+              </p>
             </CardContent>
           </Card>
         </motion.div>

@@ -8,14 +8,14 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center space-x-3 mb-6">
+            <Link href="/copyright" className="flex items-center space-x-3 mb-6 w-fit hover:opacity-80 transition-opacity">
               <div className="circle-logo">
                 <span className="text-sm font-bold">🍀</span>
               </div>
               <span className="brand-text text-lg tracking-tight">
                 THE FOURTH CLOVER
               </span>
-            </div>
+            </Link>
             <p className="text-muted-foreground mb-6 max-w-md leading-relaxed">
               A minimalist blogging platform designed for thoughtful writers.
               Share your stories, connect with readers, and build your
@@ -129,9 +129,9 @@ export function Footer() {
         <hr className="border-border my-8" />
 
         <div className="flex flex-col md:flex-row justify-between items-center">
-          <p className="text-muted-foreground text-sm">
-            © 2025 The Fourth Clover. All rights reserved.
-          </p>
+          <Link href="/copyright" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
+            © 2026 The Fourth Clover. All rights reserved.
+          </Link>
           <p className="text-muted-foreground text-sm flex items-center mt-4 md:mt-0">
             Made by{" "}
             <Link

@@ -70,7 +70,7 @@ This phase will improve content discovery and refine the user experience.
   - [ ] Implement datetime picker in Write page.
   - [ ] Create scheduled posts section in dashboard.
   - [ ] Implement auto-publish functionality.
-- [ ] **Advanced Feed Filtering**:
+  - [ ] **Advanced Feed Filtering**:
   - [ ] Implement robust filters on the home feed: "Latest," "Trending," and "My Posts."
   - [ ] Develop a basic algorithm to determine "Trending" posts (e.g., based on recent likes and comments).
 - [ ] **Search Functionality**:

@@ -23,7 +23,6 @@ import {
   TrendingUp,
   MessageCircle,
   Clock,
-  Sparkles,
   Globe,
   Shield,
   Feather,
@@ -75,7 +74,7 @@ export default function HomePage() {
     const fetchPosts = async () => {
       try {
         setLoading(true);
-        const { data, error: dbError } = await getPostsWithAuthor(3);
+        const { data, error: dbError } = await getPostsWithAuthor(6);
         if (dbError) {
           throw new Error(
             typeof dbError === "string"
@@ -213,38 +212,21 @@ export default function HomePage() {
         </motion.section>
 
         {/* Featured Posts */}
-        <section className="py-16 lg:py-20 bg-gradient-to-b from-background to-muted/20">
+        <section className="py-16 lg:py-20">
           <div className="container mx-auto px-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-              className="text-center mb-12"
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{
-                  duration: 0.5,
-                  delay: 0.1,
-                  ease: [0.4, 0, 0.2, 1],
-                }}
-                className="inline-flex items-center gap-2 bg-foreground text-background px-5 py-2 rounded-full mb-4 font-medium text-sm"
-              >
-                <Sparkles className="w-4 h-4" />
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center bg-foreground text-background px-4 py-1.5 rounded-full mb-4 text-sm font-medium">
                 Featured Stories
-              </motion.div>
-              <h2 className="text-3xl lg:text-4xl font-bold mb-4 brand-text tracking-tight">
+              </div>
+              <h2 className="text-3xl lg:text-4xl font-bold mb-3 brand-text tracking-tight">
                 Stories That Inspire
               </h2>
-              <p className="text-lg lead-text max-w-2xl mx-auto">
+              <p className="text-muted-foreground max-w-2xl mx-auto">
                 Discover exceptional writing from our community
               </p>
-            </motion.div>
+            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6 max-w-6xl mx-auto">
               {loading &&
                 Array.from({ length: 3 }).map((_, index) => (
                   <motion.div
@@ -455,26 +437,9 @@ export default function HomePage() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-16 lg:py-20 bg-gradient-to-br from-muted/30 to-background">
+        <section className="py-16 lg:py-20 border-t">
           <div className="container mx-auto px-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-              className="text-center max-w-4xl mx-auto"
-            >
-              <motion.div
-                animate={{ rotate: [0, 2, -2, 0] }}
-                transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-                className="text-5xl mb-6"
-              >
-                🍀
-              </motion.div>
+            <div className="text-center max-w-4xl mx-auto">
               <h2 className="text-3xl lg:text-4xl font-bold mb-4 brand-text tracking-tight">
                 Ready to Share Your Story?
               </h2>
@@ -492,7 +457,6 @@ export default function HomePage() {
                   className="rounded-full px-10 py-5 text-lg font-semibold bg-foreground text-background hover:bg-foreground/90 shadow-lg hover:shadow-xl transition-all duration-300 ease-out medium-hover ui-text"
                 >
                   <Link href={user ? "/write" : "/auth/signup"}>
-                    <Sparkles className="mr-2 w-5 h-5" />
                     Start Writing Today
                     <ArrowRight className="ml-2 w-5 h-5" />
                   </Link>
@@ -508,7 +472,7 @@ export default function HomePage() {
               >
                 Free forever. No credit card required.
               </motion.p>
-            </motion.div>
+            </div>
           </div>
         </section>
       </main>

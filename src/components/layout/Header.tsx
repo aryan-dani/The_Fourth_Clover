@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { NotificationBell } from "@/components/ui/NotificationBell";
 
 export function Header() {
   const { user, profile, loading, signOut } = useAuth();
@@ -142,91 +143,96 @@ export function Header() {
           {!isClient || loading ? (
             <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
           ) : user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted/50 transition-colors focus-ring"
-                >
-                  <Avatar className="w-8 h-8 ring-2 ring-background shadow-md">
-                    <AvatarImage
-                      src={
-                        profile?.avatar_url || user.user_metadata?.avatar_url
-                      }
-                    />
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold text-sm">
-                      {profile?.full_name?.[0] ||
-                        user.user_metadata?.full_name?.[0] ||
-                        user.email?.[0]?.toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </motion.button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-56 rounded-2xl border-0 shadow-2xl bg-card/95 backdrop-blur-xl mt-2"
-              >
-                <div className="px-3 py-3 border-b border-border/50">
-                  <p className="text-sm font-semibold">
-                    {profile?.full_name ||
-                      user.user_metadata?.full_name ||
-                      "Writer"}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    @{profile?.username || user.user_metadata?.username || "user"}
-                  </p>
-                </div>
-                <div className="p-1">
-                  <DropdownMenuItem asChild className="rounded-xl cursor-pointer hover:bg-primary/10 focus:bg-primary/10 transition-colors">
-                    <Link
-                      href="/dashboard"
-                      className="flex items-center gap-3 py-2"
-                    >
-                      <LayoutDashboard className="w-4 h-4" />
-                      <span className="font-medium">Dashboard</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="rounded-xl cursor-pointer hover:bg-primary/10 focus:bg-primary/10 transition-colors">
-                    <Link
-                      href={profile?.username ? `/profile/${profile.username}` : "/profile"}
-                      className="flex items-center gap-3 py-2"
-                    >
-                      <User className="w-4 h-4" />
-                      <span className="font-medium">View Profile</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="rounded-xl cursor-pointer hover:bg-primary/10 focus:bg-primary/10 transition-colors">
-                    <Link
-                      href="/profile"
-                      className="flex items-center gap-3 py-2"
-                    >
-                      <Settings className="w-4 h-4" />
-                      <span className="font-medium">Edit Profile</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="rounded-xl cursor-pointer hover:bg-primary/10 focus:bg-primary/10 transition-colors">
-                    <Link
-                      href="/write"
-                      className="flex items-center gap-3 py-2"
-                    >
-                      <PenTool className="w-4 h-4" />
-                      <span className="font-medium">Write</span>
-                    </Link>
-                  </DropdownMenuItem>
-                </div>
-                <DropdownMenuSeparator className="bg-border/50 my-1" />
-                <div className="p-1">
-                  <DropdownMenuItem
-                    onClick={signOut}
-                    className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer rounded-xl flex items-center gap-3 py-2 font-medium"
+            <>
+              {/* Notification Bell */}
+              <NotificationBell />
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted/50 transition-colors focus-ring"
                   >
-                    <LogOut className="w-4 h-4" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    <Avatar className="w-8 h-8 ring-2 ring-background shadow-md">
+                      <AvatarImage
+                        src={
+                          profile?.avatar_url || user.user_metadata?.avatar_url
+                        }
+                      />
+                      <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold text-sm">
+                        {profile?.full_name?.[0] ||
+                          user.user_metadata?.full_name?.[0] ||
+                          user.email?.[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </motion.button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 rounded-2xl border-0 shadow-2xl bg-card/95 backdrop-blur-xl mt-2"
+                >
+                  <div className="px-3 py-3 border-b border-border/50">
+                    <p className="text-sm font-semibold">
+                      {profile?.full_name ||
+                        user.user_metadata?.full_name ||
+                        "Writer"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      @{profile?.username || user.user_metadata?.username || "user"}
+                    </p>
+                  </div>
+                  <div className="p-1">
+                    <DropdownMenuItem asChild className="rounded-xl cursor-pointer hover:bg-primary/10 focus:bg-primary/10 transition-colors">
+                      <Link
+                        href="/dashboard"
+                        className="flex items-center gap-3 py-2"
+                      >
+                        <LayoutDashboard className="w-4 h-4" />
+                        <span className="font-medium">Dashboard</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="rounded-xl cursor-pointer hover:bg-primary/10 focus:bg-primary/10 transition-colors">
+                      <Link
+                        href={profile?.username ? `/profile/${profile.username}` : "/profile"}
+                        className="flex items-center gap-3 py-2"
+                      >
+                        <User className="w-4 h-4" />
+                        <span className="font-medium">Profile</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="rounded-xl cursor-pointer hover:bg-primary/10 focus:bg-primary/10 transition-colors">
+                      <Link
+                        href="/write"
+                        className="flex items-center gap-3 py-2"
+                      >
+                        <PenTool className="w-4 h-4" />
+                        <span className="font-medium">Write</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="rounded-xl cursor-pointer hover:bg-primary/10 focus:bg-primary/10 transition-colors">
+                      <Link
+                        href="/settings"
+                        className="flex items-center gap-3 py-2"
+                      >
+                        <Settings className="w-4 h-4" />
+                        <span className="font-medium">Settings</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </div>
+                  <DropdownMenuSeparator className="bg-border/50 my-1" />
+                  <div className="p-1">
+                    <DropdownMenuItem
+                      onClick={signOut}
+                      className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer rounded-xl flex items-center gap-3 py-2 font-medium"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           ) : (
             <div className="hidden md:flex items-center gap-1">
               <Tooltip>

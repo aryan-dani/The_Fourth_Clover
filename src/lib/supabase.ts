@@ -60,6 +60,7 @@ export type Database = {
           website: string | null;
           twitter: string | null;
           github: string | null;
+          is_admin: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -72,6 +73,7 @@ export type Database = {
           website?: string | null;
           twitter?: string | null;
           github?: string | null;
+          is_admin?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -84,6 +86,7 @@ export type Database = {
           website?: string | null;
           twitter?: string | null;
           github?: string | null;
+          is_admin?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -104,6 +107,7 @@ export type Database = {
           created_at: string;
           updated_at: string;
           published_at: string | null;
+          scheduled_at: string | null;
         };
         Insert: {
           id?: string;
@@ -120,6 +124,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           published_at?: string | null;
+          scheduled_at?: string | null;
         };
         Update: {
           id?: string;
@@ -136,6 +141,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           published_at?: string | null;
+          scheduled_at?: string | null;
         };
       };
       categories: {
@@ -221,6 +227,38 @@ export type Database = {
           id?: string;
           user_id?: string;
           post_id?: string;
+          created_at?: string;
+        };
+      };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: "like" | "comment" | "reply" | "follow";
+          message: string;
+          post_id: string | null;
+          from_user_id: string | null;
+          read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: "like" | "comment" | "reply" | "follow";
+          message: string;
+          post_id?: string | null;
+          from_user_id?: string | null;
+          read?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          type?: "like" | "comment" | "reply" | "follow";
+          message?: string;
+          post_id?: string | null;
+          from_user_id?: string | null;
+          read?: boolean;
           created_at?: string;
         };
       };
