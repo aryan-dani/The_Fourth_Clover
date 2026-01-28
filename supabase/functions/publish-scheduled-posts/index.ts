@@ -1,8 +1,4 @@
-// Supabase Edge Function: Auto-Publish Scheduled Posts
-// Deploy with: supabase functions deploy publish-scheduled-posts
-// Note: This file runs on Deno, not Node.js. IDE errors are expected in VSCode.
 
-// @ts-ignore - Deno runtime import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -29,6 +25,7 @@ Deno.serve(async (req: Request) => {
         // @ts-ignore - Deno.env is a Deno runtime API
         const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
         // @ts-ignore - Deno.env is a Deno runtime API
+        // Issue market - 108 Aryan Dani
         const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
         const supabase = createClient(supabaseUrl, supabaseServiceKey);

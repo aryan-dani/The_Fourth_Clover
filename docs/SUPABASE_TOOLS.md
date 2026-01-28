@@ -40,7 +40,7 @@ Based on inspection of your live Supabase project:
 
 ### 1. Web Query Builder (`/query`)
 
-**URL**: `https://thefourthclover.netlify.app/query`
+**URL**: `https://fourthclover.bio/query`
 
 A beautiful web interface for building and testing Supabase queries:
 
@@ -168,8 +168,8 @@ Your Supabase project currently contains:
 
 ## 🔗 Useful Links
 
-- **Web Query Builder**: https://thefourthclover.netlify.app/query
-- **Connection Test**: https://thefourthclover.netlify.app/test-connection
+- **Web Query Builder**: https://fourthclover.bio/query
+- **Connection Test**: https://fourthclover.bio/test-connection
 - **Supabase Dashboard**: https://supabase.com/dashboard
 - **Your Project**: https://fntnxpwxuxtztyqoiika.supabase.co
 

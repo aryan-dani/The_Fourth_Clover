@@ -16,6 +16,7 @@ import { Footer } from "@/components/layout/Footer";
 import { useAuth } from "@/lib/auth-context";
 import { updateProfile } from "@/lib/database-operations";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
 import {
     User,
     Settings,
@@ -30,6 +31,30 @@ import {
     ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
+
+// Theme Toggle Switch Component
+function ThemeToggleSwitch() {
+    const { theme, setTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) {
+        return <Switch disabled />;
+    }
+
+    return (
+        <Switch
+            checked={theme === "dark"}
+            onCheckedChange={(checked) => {
+                setTheme(checked ? "dark" : "light");
+                toast.success(`Switched to ${checked ? "dark" : "light"} mode`);
+            }}
+        />
+    );
+}
 
 export default function SettingsPage() {
     const router = useRouter();
@@ -382,6 +407,32 @@ export default function SettingsPage() {
                                                 Reset Password
                                             </Link>
                                         </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Appearance Card */}
+                            <Card className="glass">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Settings className="w-5 h-5" />
+                                        Appearance
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Customize how the app looks
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex items-center justify-between p-4 rounded-lg border">
+                                        <div>
+                                            <p className="font-medium">Dark Mode</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                Switch between light and dark themes
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <ThemeToggleSwitch />
+                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>

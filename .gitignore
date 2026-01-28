@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # Dependencies
-/node_modules
+node_modules
 /.pnp
 .pnp.js
 .yarn/
@@ -13,17 +13,17 @@
 !.yarn/versions
 
 # Testing
-/coverage
+coverage
 *.lcov
 .nyc_output
 
 # Next.js
-/.next/
-/out/
+.next/
+out/
 
 # Production builds
-/build
-/dist
+build
+dist
 
 # Runtime data
 pids

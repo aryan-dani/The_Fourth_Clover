@@ -46,30 +46,47 @@
   }
 
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    /* Refined dark mode - warmer charcoal instead of pure black */
+    --background: 240 10% 8%;
+    --foreground: 0 0% 95%;
+
+    /* Cards should be slightly elevated from background */
+    --card: 240 8% 12%;
+    --card-foreground: 0 0% 95%;
+
+    /* Popovers/dropdowns slightly elevated from cards */
+    --popover: 240 8% 14%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 0 0% 95%;
+    --primary-foreground: 240 10% 10%;
+
+    /* Secondary elements with subtle elevation */
+    --secondary: 240 6% 18%;
+    --secondary-foreground: 0 0% 90%;
+
+    /* Muted backgrounds for hover states */
+    --muted: 240 6% 16%;
+    --muted-foreground: 240 5% 65%;
+
+    /* Accent for interactive hover */
+    --accent: 240 6% 20%;
+    --accent-foreground: 0 0% 95%;
+
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+
+    /* Subtle borders that provide structure without being harsh */
+    --border: 240 6% 20%;
+    --input: 240 6% 20%;
+    --ring: 240 5% 65%;
+
+    /* Charts with better contrast */
+    --chart-1: 220 70% 55%;
+    --chart-2: 160 60% 50%;
+    --chart-3: 30 80% 60%;
+    --chart-4: 280 65% 65%;
+    --chart-5: 340 75% 60%;
   }
 }
 
@@ -136,6 +153,7 @@
 }
 
 @layer components {
+
   /* Floating navbar glass effect */
   .floating-nav {
     background-color: hsl(var(--card) / 0.7);
@@ -146,9 +164,10 @@
   }
 
   .dark .floating-nav {
-    background-color: hsl(var(--card) / 0.6);
-    border: 1px solid hsl(var(--border) / 0.2);
-    box-shadow: 0 8px 32px rgb(0 0 0 / 0.2), 0 2px 8px rgb(0 0 0 / 0.1);
+    background-color: hsl(var(--card) / 0.85);
+    border: 1px solid hsl(var(--border) / 0.5);
+    box-shadow: 0 8px 32px rgb(0 0 0 / 0.4), 0 2px 8px rgb(0 0 0 / 0.25),
+      inset 0 1px 0 hsl(var(--border) / 0.3);
   }
 
   .elegant-card {
@@ -301,6 +320,7 @@
     opacity: 0;
     transform: translateY(4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -312,6 +332,7 @@
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -319,20 +340,24 @@
 }
 
 @keyframes gentle-float {
+
   0%,
   100% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-2px);
   }
 }
 
 @keyframes subtle-scale {
+
   0%,
   100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.01);
   }
@@ -456,6 +481,7 @@ select:focus-visible {
 
 /* Reduce motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {

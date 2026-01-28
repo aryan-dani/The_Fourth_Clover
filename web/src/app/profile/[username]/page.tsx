@@ -169,7 +169,9 @@ export default function ProfilePage({
               {profile.website && (
                 <Button variant="outline" size="sm" asChild className="hover:border-primary/50 hover:bg-primary/10 transition-all">
                   <a
-                    href={profile.website}
+                    href={profile.website.startsWith('http://') || profile.website.startsWith('https://')
+                      ? profile.website
+                      : `https://${profile.website}`}
                     target="_blank"
                     rel="noopener noreferrer"
                   >

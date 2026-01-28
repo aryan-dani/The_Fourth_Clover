@@ -4,11 +4,11 @@ import { Heart, Github, Twitter, Mail } from "lucide-react";
 export function Footer() {
   return (
     <footer className="border-t border-border bg-background">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div className="container mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
-            <Link href="/copyright" className="flex items-center space-x-3 mb-6 w-fit hover:opacity-80 transition-opacity">
+            <Link href="/copyright" className="flex items-center space-x-3 mb-4 w-fit hover:opacity-80 transition-opacity">
               <div className="circle-logo">
                 <span className="text-sm font-bold">🍀</span>
               </div>
@@ -16,7 +16,7 @@ export function Footer() {
                 THE FOURTH CLOVER
               </span>
             </Link>
-            <p className="text-muted-foreground mb-6 max-w-md leading-relaxed">
+            <p className="text-muted-foreground mb-4 max-w-md leading-relaxed text-sm">
               A minimalist blogging platform designed for thoughtful writers.
               Share your stories, connect with readers, and build your
               community.
@@ -50,7 +50,7 @@ export function Footer() {
           {/* Platform */}
           <div>
             <h3 className="font-semibold mb-4 brand-text">Platform</h3>
-            <ul className="space-y-3">
+            <ul className="space-y-2">
               <li>
                 <Link
                   href="/explore"
@@ -89,7 +89,7 @@ export function Footer() {
           {/* Support */}
           <div>
             <h3 className="font-semibold mb-4 brand-text">Support</h3>
-            <ul className="space-y-3">
+            <ul className="space-y-2">
               <li>
                 <Link
                   href="/help"
@@ -126,7 +126,7 @@ export function Footer() {
           </div>
         </div>
 
-        <hr className="border-border my-8" />
+        <hr className="border-border my-4" />
 
         <div className="flex flex-col md:flex-row justify-between items-center">
           <Link href="/copyright" className="text-muted-foreground text-sm hover:text-foreground transition-colors">
