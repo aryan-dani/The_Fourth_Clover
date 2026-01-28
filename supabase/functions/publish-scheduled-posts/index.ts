@@ -1,4 +1,5 @@
 
+// @ts-ignore - Deno remote import, not recognized by TypeScript in Node.js IDEs
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -25,7 +26,6 @@ Deno.serve(async (req: Request) => {
         // @ts-ignore - Deno.env is a Deno runtime API
         const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
         // @ts-ignore - Deno.env is a Deno runtime API
-        // Issue market - 108 Aryan Dani
         const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
         const supabase = createClient(supabaseUrl, supabaseServiceKey);

@@ -69,7 +69,33 @@ export function Header() {
 
   return (
     <TooltipProvider delayDuration={0}>
-      {/* Center - Navigation Pill with Logo in the middle */}
+      {/* Left - Logo */}
+      <motion.header
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="fixed top-4 left-4 z-50"
+      >
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link href="/" className="group">
+              <motion.div
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.95 }}
+                transition={pillSpring}
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-foreground"
+              >
+                <span className="text-base text-background">🍀</span>
+              </motion.div>
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" sideOffset={10}>
+            <p className="text-xs font-medium">Home</p>
+          </TooltipContent>
+        </Tooltip>
+      </motion.header>
+
+      {/* Center - Navigation Pill */}
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -79,8 +105,8 @@ export function Header() {
         <motion.nav
           layout
           className={`flex items-center gap-0.5 px-1.5 py-1.5 rounded-full backdrop-blur-xl pointer-events-auto transition-all duration-500 ${scrolled
-              ? "shadow-xl bg-background/95 border border-border/50"
-              : "shadow-lg bg-background/80 border border-border/30"
+            ? "shadow-xl bg-background/95 border border-border/50"
+            : "shadow-lg bg-background/80 border border-border/30"
             }`}
         >
           {/* Explore */}
@@ -89,8 +115,8 @@ export function Header() {
               <Link
                 href="/explore"
                 className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 ${isActive("/explore")
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
                   }`}
               >
                 {isActive("/explore") && (
@@ -114,39 +140,14 @@ export function Header() {
             </TooltipContent>
           </Tooltip>
 
-          {/* Divider */}
-          <div className="w-px h-5 bg-border/50 mx-0.5" />
-
-          {/* Logo in Center */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link href="/" className="group">
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  whileTap={{ scale: 0.95 }}
-                  transition={pillSpring}
-                  className="flex items-center justify-center w-10 h-10 rounded-full bg-foreground mx-0.5"
-                >
-                  <span className="text-base text-background">🍀</span>
-                </motion.div>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" sideOffset={10}>
-              <p className="text-xs font-medium">Home</p>
-            </TooltipContent>
-          </Tooltip>
-
-          {/* Divider */}
-          <div className="w-px h-5 bg-border/50 mx-0.5" />
-
           {/* Write */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
                 href="/write"
                 className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 ${isActive("/write")
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
                   }`}
               >
                 {isActive("/write") && (
@@ -201,8 +202,8 @@ export function Header() {
                     href="/"
                     onClick={() => setIsOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${pathname === "/"
-                        ? "bg-accent text-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                      ? "bg-accent text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                       }`}
                   >
                     <span className="text-lg">🍀</span>
@@ -214,8 +215,8 @@ export function Header() {
                       href={item.href}
                       onClick={() => setIsOpen(false)}
                       className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive(item.href)
-                          ? "bg-accent text-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                        ? "bg-accent text-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                         }`}
                     >
                       <item.icon className="w-5 h-5" strokeWidth={1.8} />
@@ -245,6 +246,7 @@ export function Header() {
           </Sheet>
         </motion.nav>
       </motion.header>
+
 
       {/* Right - Profile Pill (centered vertically with nav) */}
       <motion.div
