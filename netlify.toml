@@ -1,12 +1,13 @@
 [build]
+  base = "web"
   command = "npm run build"
+  publish = ".next"
   functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "20.19.6"
   NEXT_TELEMETRY_DISABLED = "1"
   NEXT_CACHE_DIR = ".next/cache"
-  # Disable secrets scanning for NEXT_PUBLIC_ variables (they're meant to be public)
   SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY"
 
 # Essential for Next.js App Router
