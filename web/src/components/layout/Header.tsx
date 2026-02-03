@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,7 +22,8 @@ import {
   LogIn,
   UserPlus,
   LayoutDashboard,
-  ChevronRight,
+  Bell,
+  Check,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -33,18 +34,57 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { NotificationBell } from "@/components/ui/NotificationBell";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  getNotifications,
+  markAsRead,
+  markAllAsRead,
+  getUnreadCount,
+  NotificationWithSender,
+} from "@/lib/notifications";
+import { formatRelativeTime } from "@/lib/utils";
 
 export function Header() {
   const { user, profile, loading, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationWithSender[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifLoading, setNotifLoading] = useState(false);
   const pathname = usePathname();
+
+  const fetchNotifications = useCallback(async () => {
+    if (!user) return;
+    setNotifLoading(true);
+    try {
+      const [notifResult, count] = await Promise.all([
+        getNotifications(user.id, 20),
+        getUnreadCount(user.id),
+      ]);
+      if (notifResult.data) {
+        setNotifications(notifResult.data);
+      }
+      setUnreadCount(count);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    } finally {
+      setNotifLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+      const interval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user, fetchNotifications]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -111,22 +151,20 @@ export function Header() {
         <motion.nav
           layout
           transition={quickSpring}
-          className={`flex items-center gap-0.5 px-1.5 py-1.5 rounded-full backdrop-blur-xl pointer-events-auto transition-shadow duration-200 ${
-            scrolled
-              ? "shadow-xl bg-background border border-border/60"
-              : "shadow-lg bg-background/95 border border-border/40"
-          }`}
+          className={`flex items-center gap-0.5 px-1.5 py-1.5 rounded-full backdrop-blur-xl pointer-events-auto transition-shadow duration-200 ${scrolled
+            ? "shadow-xl bg-background border border-border/60"
+            : "shadow-lg bg-background/95 border border-border/40"
+            }`}
         >
           {/* Explore */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
                 href="/explore"
-                className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-150 ${
-                  isActive("/explore")
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-150 ${isActive("/explore")
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 {isActive("/explore") && (
                   <motion.div
@@ -158,11 +196,10 @@ export function Header() {
             <TooltipTrigger asChild>
               <Link
                 href="/write"
-                className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-150 ${
-                  isActive("/write")
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-150 ${isActive("/write")
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 {isActive("/write") && (
                   <motion.div
@@ -220,11 +257,10 @@ export function Header() {
                   <Link
                     href="/"
                     onClick={() => setIsOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
-                      pathname === "/"
-                        ? "bg-accent text-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                    }`}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${pathname === "/"
+                      ? "bg-accent text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                      }`}
                   >
                     <span className="text-lg">🍀</span>
                     <span className="font-medium">Home</span>
@@ -234,11 +270,10 @@ export function Header() {
                       key={item.name}
                       href={item.href}
                       onClick={() => setIsOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
-                        isActive(item.href)
-                          ? "bg-accent text-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                      }`}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive(item.href)
+                        ? "bg-accent text-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                        }`}
                     >
                       <item.icon className="w-5 h-5" strokeWidth={1.8} />
                       <span className="font-medium">{item.name}</span>
@@ -289,113 +324,139 @@ export function Header() {
         className="fixed top-4 right-4 z-50 hidden md:flex items-center"
       >
         {!isClient || loading ? (
-          <div className="h-11 w-24 rounded-full bg-muted animate-pulse" />
+          <div className="h-11 w-11 rounded-full bg-muted animate-pulse" />
         ) : user ? (
-          <motion.div
-            layout
-            transition={quickSpring}
-            className="flex items-center gap-1 px-1.5 py-1 rounded-full bg-background border border-border/50 shadow-lg"
-          >
-            {/* Notification Bell */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <motion.div
-                  whileHover={{ scale: 1.15 }}
-                  whileTap={{ scale: 0.9 }}
-                  transition={quickSpring}
-                >
-                  <NotificationBell />
-                </motion.div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={10}>
-                <p className="text-xs font-medium">Notifications</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  transition={quickSpring}
-                  className="flex items-center justify-center w-9 h-9 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <Avatar className="w-8 h-8 ring-2 ring-border">
+          <DropdownMenu open={showNotifications} onOpenChange={setShowNotifications}>
+            <DropdownMenuTrigger asChild>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={quickSpring}
+                className="relative flex items-center justify-center p-0.5 rounded-full bg-gradient-to-br from-foreground/20 via-foreground/10 to-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shadow-lg"
+              >
+                <div className="relative">
+                  <Avatar className="w-10 h-10 ring-2 ring-background">
                     <AvatarImage
                       src={
                         profile?.avatar_url || user.user_metadata?.avatar_url
                       }
                     />
-                    <AvatarFallback className="bg-foreground text-background font-bold text-xs">
+                    <AvatarFallback className="bg-foreground text-background font-bold text-sm">
                       {profile?.full_name?.[0] ||
                         user.user_metadata?.full_name?.[0] ||
                         user.email?.[0]?.toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                </motion.button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                sideOffset={12}
-                className="w-56 rounded-2xl border border-border/50 shadow-2xl bg-popover/98 backdrop-blur-xl p-0 overflow-hidden"
-              >
-                <div className="px-4 py-3 border-b border-border/30">
-                  <p className="font-semibold text-sm truncate">
-                    {profile?.full_name ||
-                      user.user_metadata?.full_name ||
-                      "Writer"}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    @{profile?.username || "user"}
-                  </p>
+                  {/* Notification Badge */}
+                  <AnimatePresence>
+                    {unreadCount > 0 && (
+                      <motion.span
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        className="absolute -top-0.5 -right-0.5 h-5 w-5 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-background"
+                      >
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </div>
-
-                <div className="p-1.5">
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/dashboard"
-                      className="flex items-center gap-3 py-2 px-3 cursor-pointer rounded-xl"
-                    >
-                      <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm">Dashboard</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href={
-                        profile?.username
-                          ? `/profile/${profile.username}`
-                          : "/profile"
+              </motion.button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              sideOffset={12}
+              className="w-72 rounded-xl border border-border shadow-lg bg-popover p-0 overflow-hidden"
+            >
+              {/* Profile Header */}
+              <div className="px-4 py-3 border-b border-border">
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-10 h-10">
+                    <AvatarImage
+                      src={
+                        profile?.avatar_url || user.user_metadata?.avatar_url
                       }
-                      className="flex items-center gap-3 py-2 px-3 cursor-pointer rounded-xl"
-                    >
-                      <User className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm">Profile</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/settings"
-                      className="flex items-center gap-3 py-2 px-3 cursor-pointer rounded-xl"
-                    >
-                      <Settings className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm">Settings</span>
-                    </Link>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuSeparator className="my-1.5 bg-border/40" />
-
-                  <DropdownMenuItem
-                    onClick={signOut}
-                    className="flex items-center gap-3 py-2 px-3 cursor-pointer rounded-xl text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span className="text-sm">Sign Out</span>
-                  </DropdownMenuItem>
+                    />
+                    <AvatarFallback className="bg-foreground text-background font-bold text-sm">
+                      {profile?.full_name?.[0] ||
+                        user.user_metadata?.full_name?.[0] ||
+                        user.email?.[0]?.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate">
+                      {profile?.full_name ||
+                        user.user_metadata?.full_name ||
+                        "Writer"}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      @{profile?.username || "user"}
+                    </p>
+                  </div>
                 </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </motion.div>
+              </div>
+
+              {/* Navigation Items */}
+              <div className="p-1.5 border-b border-border">
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center gap-3 py-2 px-3 cursor-pointer rounded-lg"
+                  >
+                    <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Dashboard</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href={
+                      profile?.username
+                        ? `/profile/${profile.username}`
+                        : "/profile"
+                    }
+                    className="flex items-center gap-3 py-2 px-3 cursor-pointer rounded-lg"
+                  >
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/notifications"
+                    className="flex items-center gap-3 py-2 px-3 cursor-pointer rounded-lg"
+                  >
+                    <Bell className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Notifications</span>
+                    {unreadCount > 0 && (
+                      <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold bg-red-500 text-white rounded-full">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/settings"
+                    className="flex items-center gap-3 py-2 px-3 cursor-pointer rounded-lg"
+                  >
+                    <Settings className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+              </div>
+
+              {/* Sign Out */}
+              <div className="p-1.5">
+                <DropdownMenuItem
+                  onClick={signOut}
+                  className="flex items-center gap-3 py-2 px-3 cursor-pointer rounded-lg text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="text-sm font-medium">Sign Out</span>
+                </DropdownMenuItem>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : (
           <motion.div
             layout

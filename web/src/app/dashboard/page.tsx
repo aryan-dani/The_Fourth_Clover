@@ -280,9 +280,9 @@ export default function DashboardPage() {
 
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen flex flex-col bg-background">
         <Header />
-        <div className="container mx-auto px-4 py-16">
+        <div className="flex-1 container mx-auto px-4 py-8 pt-24">
           <div className="animate-pulse">
             <div className="h-8 bg-muted rounded mb-4 w-1/4"></div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -303,10 +303,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8 pt-24">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

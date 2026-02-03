@@ -111,9 +111,9 @@ export default function ExplorePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen flex flex-col bg-background">
         <Header />
-        <div className="container mx-auto px-4 py-16">
+        <main className="flex-1 container mx-auto px-4 py-8 pt-24">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="glass animate-pulse">
@@ -126,17 +126,17 @@ export default function ExplorePage() {
               </Card>
             ))}
           </div>
-        </div>
+        </main>
         <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8 pt-24">
         {/* Hero Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
