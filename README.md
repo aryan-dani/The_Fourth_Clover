@@ -8,48 +8,47 @@
 ![Supabase](https://img.shields.io/badge/Supabase-Database-green?style=flat-square&logo=supabase)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=flat-square&logo=tailwind-css)
 
-## Documentation
+## Docs in this repo
 
-- [Roadmap](docs/ROADMAP.md)
-- [Changelog](CHANGELOG.md)
-- [Supabase Tools](docs/SUPABASE_TOOLS.md)
+- [Changelog](frontend/CHANGELOG.md)
+- [Contributing](CONTRIBUTING.md)
 
 ## Features
 
-### Core Features
-- **Modern Design**: Clean, minimalist interface with a circular, monochrome aesthetic
-- **Rich Writing Experience**: Robust editor with react-hook-form and zod validation
-- **Dynamic Data Tables**: User dashboard with sortable, paginated tables via TanStack Table
-- **Notifications**: Sleek, non-intrusive toast notifications with sonner
-- **Image Upload**: Seamless image upload and management with Supabase Storage
-- **Authentication**: Secure Google OAuth integration with Supabase Auth
-- **Responsive**: Beautiful design that works perfectly on all devices
-- **Performance**: Built with Next.js 13+ for optimal speed and SEO
-- **Real-time**: Live auto-save functionality to prevent data loss
-- **User-Friendly**: Intuitive dashboard for managing drafts and published posts
+### Core features
 
-### Social Features (Phase 2)
-- **Commenting System**: Threaded comments with nested replies
-- **Like System**: Like/unlike posts with real-time updates
-- **Social Sharing**: Share posts to Twitter, WhatsApp, or copy link
-- **Enhanced Profiles**: User statistics and social links display
-- **Username Validation**: Robust validation to ensure URL-safe usernames
+- **Modern design**: Minimal interface with a clear visual hierarchy
+- **Writing experience**: Editor with react-hook-form and Zod validation
+- **Data tables**: Dashboard with sortable, paginated tables (TanStack Table)
+- **Notifications**: Toasts via Sonner
+- **Image upload**: Supabase Storage
+- **Authentication**: Supabase Auth (e.g. Google OAuth)
+- **Responsive** layout and **Next.js App Router** for performance and SEO
+- **Auto-save** and drafts workflow
 
-## Quick Start
+### Social (Phase 2)
+
+- Threaded **comments**
+- **Likes** on posts
+- **Sharing** (Twitter, WhatsApp, copy link)
+- **Profiles** with stats and links
+- **Username** validation for URL-safe handles
+
+## Quick start
 
 ### Prerequisites
 
 - Node.js 18+
 - npm or yarn
-- Supabase account
+- A [Supabase](https://supabase.com) project
 
-### Installation
+### Install and run
 
-1. **Clone the repository**
+1. **Clone and enter the app directory**
 
    ```bash
    git clone https://github.com/aryan-dani/The-Fourth-Clover.git
-   cd The-Fourth-Clover/web
+   cd The-Fourth-Clover/frontend
    ```
 
 2. **Install dependencies**
@@ -58,143 +57,94 @@
    npm install
    ```
 
-3. **Set up environment variables**
+3. **Environment**
 
    ```bash
    cp .env.example .env.local
    ```
 
-   Add your Supabase credentials:
+   Set at least:
 
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
-4. **Set up the database**
+4. **Database**
 
-   - Go to your Supabase dashboard
-   - Run the SQL from `database/setup-storage.sql` in the SQL Editor to set up storage buckets and policies
-   - Run `database/fix-security-issues.sql` and `database/fix-performance-issues.sql` to ensure your database is secure and optimized
-   - Ensure you have the necessary tables created (refer to `database/` folder for schema details)
+   Create tables, RLS, and storage in the **Supabase dashboard** (SQL Editor or your own exported SQL). Types in the app are aligned with `frontend/src/types/database.ts`.
 
-5. **Start the development server**
+5. **Dev server**
 
    ```bash
    npm run dev
    ```
 
-6. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+   Open [http://localhost:3000](http://localhost:3000).
 
-## Tech Stack
+All npm scripts (`dev`, `build`, `start`, `lint`, `type-check`, etc.) run from **`frontend/`** — that is the only `package.json` for the application.
 
-### Frontend
-- **Framework**: Next.js 13+ with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS with custom design system
-- **UI Components**: shadcn/ui (Radix UI)
-- **Form Management**: React Hook Form & Zod
+## Tech stack
+
+- **Framework**: Next.js (App Router), TypeScript
+- **UI**: Tailwind CSS, shadcn/ui (Radix)
+- **Forms**: React Hook Form, Zod
 - **Tables**: TanStack Table
-- **Notifications**: Sonner
-- **Animations**: Framer Motion
-- **Icons**: Lucide React
-- **Typography**: Charter (content), Playfair Display (headings)
+- **Motion / icons**: Framer Motion, Lucide
+- **Typography**: Charter (body), Playfair Display (headings)
+- **Backend**: Supabase (Postgres, Auth, Storage, RLS)
 
-### Backend
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth with Google OAuth
-- **Storage**: Supabase Storage for images
-- **Row Level Security**: Custom RLS policies for data protection
-
-## Project Structure
+## Project layout
 
 ```
 The-Fourth-Clover/
-├── web/                      # Main application code
+├── frontend/                 # Next.js app (single package — install & run here)
 │   ├── src/
-│   │   ├── app/              # Next.js 13+ App Router pages
-│   │   │   ├── auth/         # Authentication pages
-│   │   │   ├── dashboard/    # User dashboard
-│   │   │   ├── explore/      # Post discovery page
-│   │   │   ├── post/         # Individual post pages
-│   │   │   ├── profile/      # User profiles
-│   │   │   └── write/        # Post editor
-│   │   ├── components/       # Reusable components
-│   │   │   ├── comments/     # Comment system components
-│   │   │   ├── layout/       # Header, Footer
-│   │   │   └── ui/           # shadcn/ui components
-│   │   ├── hooks/            # Custom React hooks
-│   │   ├── lib/              # Utility functions and configurations
-│   │   │   ├── auth-context.tsx # Authentication context
-│   │   │   ├── database-operations.ts # Centralized database queries
-│   │   │   ├── database-types.ts # TypeScript type definitions
-│   │   │   └── validations.ts   # Zod validation schemas
-│   │   └── styles/           # Global styles
-│   ├── database/             # Database setup and migration scripts
-│   └── public/               # Static assets
-├── docs/                     # Project documentation
-└── supabase/                 # Supabase edge functions
+│   │   ├── app/              # Routes (groups: marketing, auth, main, account, dev-only)
+│   │   ├── components/       # Layout + shadcn/ui
+│   │   ├── features/         # auth, comments, notifications, data
+│   │   ├── hooks/
+│   │   ├── lib/
+│   │   └── types/
+│   ├── scripts/              # Optional: inspect-schema, query-tool, verify-supabase
+│   └── public/
+├── CONTRIBUTING.md
+├── LICENSE
+├── netlify.toml              # base = "frontend"
+└── README.md
 ```
 
-## Database Schema
+## Database (overview)
 
-### Tables
-- `profiles` - User profiles with social links
-- `posts` - Blog posts with tags and read time
-- `comments` - Threaded comments system
-- `likes` - Post likes/reactions
+- **profiles**, **posts**, **comments**, **likes** (and related policies)
+- RLS on user-facing tables, indexes and FKs as appropriate
 
-### Key Features
-- Row Level Security (RLS) policies on all tables
-- Optimized indexes for performance
-- Foreign key constraints for data integrity
-- Real-time subscriptions support
+## Development helpers
 
-## Development
-
-### Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm start` - Start production server
-- `npm run lint` - Run ESLint
-
-### Testing Database Operations
-
-Use the Supabase debugging tools:
+Optional Node scripts (from repo root, paths relative to clone):
 
 ```bash
-node database/inspect-schema.js
+node frontend/scripts/inspect-schema.js
+node frontend/scripts/verify-supabase.js
 ```
 
-## Deployment
+Run them with a filled-in `frontend/.env.local`.
 
-The application is deployed on Netlify. To deploy your own instance:
+## Deployment (Netlify)
 
-1. Fork this repository
-2. Connect your Netlify account to GitHub
-3. Set environment variables in Netlify dashboard
-4. Deploy
+1. Connect the repo to Netlify.
+2. Set **Base directory** to **`frontend`** (must match `base` in `netlify.toml`).
+3. Configure the same `NEXT_PUBLIC_*` env vars as in `.env.local`.
+4. Deploy (`npm run build` runs inside `frontend/`).
 
 ## Contributing
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Built with Next.js and Supabase
-- UI components from shadcn/ui
-- Inspired by Medium and modern minimalist design principles
-
-## Roadmap
-
-See [ROADMAP.md](docs/ROADMAP.md) for planned features and development phases.
+[MIT](LICENSE).
 
 ## Support
 
-For support, email support@thefourthclover.com or open an issue on GitHub.
+Email support@thefourthclover.com or open a GitHub issue.
