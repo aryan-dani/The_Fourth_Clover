@@ -59,7 +59,7 @@ function ThemeToggleSwitch() {
 
 export default function SettingsPage() {
     const router = useRouter();
-    const { user, profile, loading, refreshProfile } = useAuth();
+    const { user, profile, loading, profileLoading, refreshProfile } = useAuth();
 
     const [saving, setSaving] = useState(false);
     const [formData, setFormData] = useState({
@@ -135,7 +135,7 @@ export default function SettingsPage() {
         toast.success("Notification preference updated");
     };
 
-    if (loading) {
+    if (loading || (user && profileLoading)) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin" />

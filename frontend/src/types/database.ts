@@ -59,6 +59,11 @@ export type QueryResultSingle<T> = QueryResult<T>;
 export type QueryResultArray<T> = QueryResult<T[]>;
 
 // Database operations
+export type ProfileListFields = Pick<
+  Profile,
+  "id" | "username" | "full_name" | "avatar_url" | "bio"
+>;
+
 export interface DatabaseOperations {
   // Profile operations
   getProfile: (id: string) => Promise<QueryResult<Profile>>;
@@ -79,7 +84,7 @@ export interface DatabaseOperations {
     id: string,
     updates: Partial<Post>
   ) => Promise<QueryResultSingle<Post>>;
-  deletePost: (id: string) => Promise<QueryResult<any>>;
+  deletePost: (id: string) => Promise<QueryResult<null>>;
 }
 
 export interface PostFilters {

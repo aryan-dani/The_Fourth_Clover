@@ -1,4 +1,5 @@
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -11,40 +12,33 @@ const defaultKey = "placeholder-key";
 const url = supabaseUrl || defaultUrl;
 const key = supabaseAnonKey || defaultKey;
 
-// Singleton instance
+/**
+ * Browser Supabase client must use cookie storage (via @supabase/ssr) so sessions
+ * are visible to createSupabaseServerClient() in Server Components (e.g. /explore/following).
+ * A plain supabase-js client with localStorage-only breaks SSR auth checks.
+ */
 let supabaseInstance: SupabaseClient | null = null;
+let serverSideFallback: SupabaseClient | null = null;
 
-// Create a function to get the Supabase client
-// This ensures it's only created on the client side with proper storage
 function getSupabaseClient(): SupabaseClient {
-  if (supabaseInstance) {
+  if (typeof window !== "undefined") {
+    if (!supabaseInstance) {
+      if (!supabaseUrl || !supabaseAnonKey) {
+        console.error(
+          "Missing Supabase environment variables. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your environment variables."
+        );
+      }
+      supabaseInstance = createBrowserClient(url, key);
+    }
     return supabaseInstance;
   }
 
-  const isClient = typeof window !== "undefined";
-
-  if (isClient && (!supabaseUrl || !supabaseAnonKey)) {
-    console.error(
-      "Missing Supabase environment variables. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your environment variables."
-    );
+  if (!serverSideFallback) {
+    serverSideFallback = createBrowserClient(url, key);
   }
-
-  supabaseInstance = createClient(url, key, {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: isClient,
-      // Disable automatic URL detection - we handle it manually in the callback page
-      detectSessionInUrl: false,
-      flowType: "pkce",
-      storage: isClient ? window.localStorage : undefined,
-      // Use default storage key (based on Supabase URL) for consistent PKCE handling
-    },
-  });
-
-  return supabaseInstance;
+  return serverSideFallback;
 }
 
-// Export a getter that always returns the singleton
 export const supabase = getSupabaseClient();
 
 export type Database = {
@@ -227,6 +221,23 @@ export type Database = {
           id?: string;
           user_id?: string;
           post_id?: string;
+          created_at?: string;
+        };
+      };
+      follows: {
+        Row: {
+          follower_id: string;
+          following_id: string;
+          created_at: string;
+        };
+        Insert: {
+          follower_id: string;
+          following_id: string;
+          created_at?: string;
+        };
+        Update: {
+          follower_id?: string;
+          following_id?: string;
           created_at?: string;
         };
       };

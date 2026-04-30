@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { devLog } from "@/lib/dev/log";
 
 export default function AuthCallback() {
   const [status, setStatus] = useState<"loading" | "success" | "error">(
@@ -42,7 +43,7 @@ export default function AuthCallback() {
         } = await supabase.auth.getSession();
 
         if (existingSession) {
-          console.log("Session already exists, redirecting...");
+          devLog("Session already exists, redirecting...");
           setStatus("success");
           setMessage("Sign in successful! Redirecting...");
           setTimeout(() => {

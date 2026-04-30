@@ -18,6 +18,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   loading: true,
+  profileLoading: false,
   signOut: async () => {},
   refreshProfile: async () => {},
 });
@@ -119,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   profileRef.current = profile;
 
   const user = session?.user ?? null;
-  const loading = !initialized || profileLoading;
+  const loading = !initialized;
 
   const fetchProfile = useCallback(async (userId: string) => {
     if (lastFetchedUserId.current === userId && profileRef.current) {
@@ -182,7 +183,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, profile, loading, signOut, refreshProfile }}
+      value={{
+        user,
+        profile,
+        loading,
+        profileLoading,
+        signOut,
+        refreshProfile,
+      }}
     >
       {children}
     </AuthContext.Provider>

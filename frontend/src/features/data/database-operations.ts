@@ -10,6 +10,7 @@ import type {
   QueryResultArray,
   QueryResultSingle,
   PostWithAuthor,
+  ProfileListFields,
 } from "@/types/database";
 
 export class DatabaseOperations {
@@ -27,7 +28,9 @@ export class DatabaseOperations {
       .eq("username", username)
       .single();
   }
-  static async getAllProfiles(limit = 50): Promise<any> {
+  static async getAllProfiles(
+    limit = 50
+  ): Promise<QueryResultArray<ProfileListFields>> {
     return await supabase
       .from("profiles")
       .select("id, username, full_name, avatar_url, bio")
@@ -144,7 +147,7 @@ export class DatabaseOperations {
       .single();
   }
 
-  static async deletePost(id: string): Promise<QueryResult<any>> {
+  static async deletePost(id: string): Promise<QueryResult<null>> {
     return await supabase.from("posts").delete().eq("id", id);
   }
 
@@ -183,8 +186,10 @@ export class DatabaseOperations {
 
   // Posts with author information (join)
   static async getPostsWithAuthor(
-    limit = 20
+    limit = 20,
+    offset = 0
   ): Promise<QueryResultArray<PostWithAuthor>> {
+    const end = offset + limit - 1;
     return await supabase
       .from("posts")
       .select(
@@ -202,7 +207,82 @@ export class DatabaseOperations {
       )
       .eq("status", "published")
       .order("published_at", { ascending: false })
-      .limit(limit);
+      .range(offset, end);
+  }
+
+  static async getPostsByFollowingAuthors(
+    followerId: string,
+    limit = 20,
+    offset = 0
+  ): Promise<QueryResultArray<PostWithAuthor>> {
+    const { data: follows, error: followErr } = await supabase
+      .from("follows")
+      .select("following_id")
+      .eq("follower_id", followerId);
+
+    if (followErr) {
+      return { data: null, error: followErr };
+    }
+
+    const ids = (follows || []).map((f) => f.following_id);
+    if (ids.length === 0) {
+      return { data: [], error: null };
+    }
+
+    const end = offset + limit - 1;
+    return await supabase
+      .from("posts")
+      .select(
+        `
+        *,
+        author:profiles!posts_author_id_fkey (
+          id,
+          username,
+          full_name,
+          avatar_url
+        ),
+        likes(count),
+        comments(count)
+      `
+      )
+      .in("author_id", ids)
+      .eq("status", "published")
+      .order("published_at", { ascending: false })
+      .range(offset, end);
+  }
+
+  static async followUser(
+    followerId: string,
+    followingId: string
+  ): Promise<QueryResult<null>> {
+    return await supabase.from("follows").insert({
+      follower_id: followerId,
+      following_id: followingId,
+    });
+  }
+
+  static async unfollowUser(
+    followerId: string,
+    followingId: string
+  ): Promise<QueryResult<null>> {
+    return await supabase
+      .from("follows")
+      .delete()
+      .eq("follower_id", followerId)
+      .eq("following_id", followingId);
+  }
+
+  static async isFollowingUser(
+    followerId: string,
+    followingId: string
+  ): Promise<boolean> {
+    const { data } = await supabase
+      .from("follows")
+      .select("follower_id")
+      .eq("follower_id", followerId)
+      .eq("following_id", followingId)
+      .maybeSingle();
+    return !!data;
   }
 
   static async getPostWithAuthorBySlug(
@@ -285,7 +365,7 @@ export class DatabaseOperations {
   }
 
   // Get all users (admin only)
-  static async getAllUsers(limit = 50): Promise<any> {
+  static async getAllUsers(limit = 50): Promise<QueryResultArray<Profile>> {
     return await supabase
       .from("profiles")
       .select("*")
@@ -294,7 +374,9 @@ export class DatabaseOperations {
   }
 
   // Get all posts (admin only, includes drafts)
-  static async getAllPostsAdmin(limit = 50): Promise<any> {
+  static async getAllPostsAdmin(
+    limit = 50
+  ): Promise<QueryResultArray<PostWithAuthor>> {
     return await supabase
       .from("posts")
       .select(`
@@ -331,6 +413,10 @@ export const {
   getPostCount,
   getProfileCount,
   getPostsWithAuthor,
+  getPostsByFollowingAuthors,
+  followUser,
+  unfollowUser,
+  isFollowingUser,
   getPostWithAuthorBySlug,
   getPostsByTag,
   getAllTags,

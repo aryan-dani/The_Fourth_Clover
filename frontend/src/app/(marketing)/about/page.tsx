@@ -63,15 +63,15 @@ export default function AboutPage() {
                 </p>
 
                 <p className="text-muted-foreground leading-relaxed">
-                  Hi, I'm Aryan! I built The Fourth Clover to explore the
+                  Hi, I&apos;m Aryan! I built The Fourth Clover to explore the
                   intersection of modern web technology and classic storytelling.
-                  I'm passionate about building clean, accessible, and performant
+                  I&apos;m passionate about building clean, accessible, and performant
                   web applications that solve real problems.
                 </p>
 
                 <p className="text-muted-foreground leading-relaxed">
                   This project showcases my expertise in Next.js, React, Supabase,
-                  and modern UI design. I'm always looking for new challenges and
+                  and modern UI design. I&apos;m always looking for new challenges and
                   opportunities to collaborate.
                 </p>
 

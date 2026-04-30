@@ -3,7 +3,7 @@
 > A modern, minimalist blogging platform built for writers and thinkers.
 
 ![Status](https://img.shields.io/badge/Status-Phase_2_Complete-success?style=flat-square)
-![Next.js](https://img.shields.io/badge/Next.js-13.5-black?style=flat-square&logo=next.js)
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue?style=flat-square&logo=typescript)
 ![Supabase](https://img.shields.io/badge/Supabase-Database-green?style=flat-square&logo=supabase)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=flat-square&logo=tailwind-css)
@@ -70,6 +70,12 @@
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
+   Optional but recommended for correct canonical URLs, Open Graph, and metadata:
+
+   ```env
+   NEXT_PUBLIC_SITE_URL=https://your-production-domain.com
+   ```
+
 4. **Database**
 
    Create tables, RLS, and storage in the **Supabase dashboard** (SQL Editor or your own exported SQL). Types in the app are aligned with `frontend/src/types/database.ts`.
@@ -86,7 +92,7 @@ All npm scripts (`dev`, `build`, `start`, `lint`, `type-check`, etc.) run from *
 
 ## Tech stack
 
-- **Framework**: Next.js (App Router), TypeScript
+- **Framework**: Next.js 16 (App Router), TypeScript
 - **UI**: Tailwind CSS, shadcn/ui (Radix)
 - **Forms**: React Hook Form, Zod
 - **Tables**: TanStack Table
@@ -130,11 +136,15 @@ node frontend/scripts/verify-supabase.js
 
 Run them with a filled-in `frontend/.env.local`.
 
+## CI (GitHub Actions)
+
+On push and pull requests to `main` or `master`, the workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs **`npm run lint`**, **`npm run type-check`**, and **`npm run build`** in `frontend/` (with placeholder Supabase env vars for the build step).
+
 ## Deployment (Netlify)
 
 1. Connect the repo to Netlify.
 2. Set **Base directory** to **`frontend`** (must match `base` in `netlify.toml`).
-3. Configure the same `NEXT_PUBLIC_*` env vars as in `.env.local`.
+3. Configure the same `NEXT_PUBLIC_*` env vars as in `.env.local` (including `NEXT_PUBLIC_SITE_URL` in production for metadata).
 4. Deploy (`npm run build` runs inside `frontend/`).
 
 ## Contributing

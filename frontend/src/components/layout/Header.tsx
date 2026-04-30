@@ -16,6 +16,7 @@ import {
   Menu,
   BookOpen,
   PenTool,
+  Users,
   User,
   LogOut,
   Settings,
@@ -54,10 +55,20 @@ export function Header() {
   const [notifications, setNotifications] = useState<NotificationWithSender[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifLoading, setNotifLoading] = useState(false);
+  const [navPendingHref, setNavPendingHref] = useState<string | null>(null);
   const pathname = usePathname();
 
   const userId = user?.id;
 
+  const handleMainNavClick = useCallback((href: string) => {
+    if (pathname !== href) setNavPendingHref(href);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (navPendingHref && pathname === navPendingHref) {
+      setNavPendingHref(null);
+    }
+  }, [pathname, navPendingHref]);
   const fetchNotifications = useCallback(async () => {
     if (!userId) return;
     setNotifLoading(true);
@@ -83,10 +94,20 @@ export function Header() {
 
   useEffect(() => {
     if (!userId) return;
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+    const t = window.setTimeout(() => {
+      void fetchNotifications();
+    }, 1200);
+    return () => window.clearTimeout(t);
   }, [userId, fetchNotifications]);
+
+  useEffect(() => {
+    if (!userId || !showNotifications) return;
+    void fetchNotifications();
+    const interval = setInterval(() => {
+      void fetchNotifications();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [userId, showNotifications, fetchNotifications]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -96,12 +117,21 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navigation = [
+  const primaryNav: {
+    name: string;
+    href: string;
+    icon: typeof BookOpen;
+  }[] = [
     { name: "Explore", href: "/explore", icon: BookOpen },
+    ...(user
+      ? [{ name: "Following", href: "/explore/following", icon: Users }]
+      : []),
     { name: "Write", href: "/write", icon: PenTool },
   ];
 
   const isActive = (href: string) => pathname === href;
+  const isExploreActive = pathname === "/explore";
+  const isFollowingActive = pathname === "/explore/following";
 
   const pillSpring = {
     type: "spring",
@@ -161,12 +191,14 @@ export function Header() {
             <TooltipTrigger asChild>
               <Link
                 href="/explore"
-                className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-150 ${isActive("/explore")
+                onClick={() => handleMainNavClick("/explore")}
+                className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-150 ${navPendingHref === "/explore" && pathname !== "/explore" ? "opacity-55" : ""
+                  } ${isExploreActive
                   ? "text-primary"
                   : "text-foreground/80 hover:text-foreground dark:text-foreground/85 dark:hover:text-foreground"
                   }`}
               >
-                {isActive("/explore") && (
+                {isExploreActive && (
                   <motion.div
                     layoutId="activeNavBg"
                     className="absolute inset-0 rounded-full bg-primary/15 ring-1 ring-primary/20"
@@ -181,7 +213,7 @@ export function Header() {
                 >
                   <BookOpen
                     className="w-[18px] h-[18px]"
-                    strokeWidth={isActive("/explore") ? 2.5 : 2}
+                    strokeWidth={isExploreActive ? 2.5 : 2}
                   />
                 </motion.div>
               </Link>
@@ -191,12 +223,53 @@ export function Header() {
             </TooltipContent>
           </Tooltip>
 
+          {/* Following (signed in) */}
+          {user && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/explore/following"
+                  onClick={() => handleMainNavClick("/explore/following")}
+                  className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-150 ${navPendingHref === "/explore/following" && pathname !== "/explore/following" ? "opacity-55" : ""
+                    } ${isFollowingActive
+                    ? "text-primary"
+                    : "text-foreground/80 hover:text-foreground dark:text-foreground/85 dark:hover:text-foreground"
+                    }`}
+                >
+                  {isFollowingActive && (
+                    <motion.div
+                      layoutId="activeNavBg"
+                      className="absolute inset-0 rounded-full bg-primary/15 ring-1 ring-primary/20"
+                      transition={pillSpring}
+                    />
+                  )}
+                  <motion.div
+                    whileHover={{ scale: 1.2, rotate: -4 }}
+                    whileTap={{ scale: 0.85 }}
+                    transition={quickSpring}
+                    className="relative z-10"
+                  >
+                    <Users
+                      className="w-[18px] h-[18px]"
+                      strokeWidth={isFollowingActive ? 2.5 : 2}
+                    />
+                  </motion.div>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={10}>
+                <p className="text-xs font-medium">Following</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
           {/* Write */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
                 href="/write"
-                className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-150 ${isActive("/write")
+                onClick={() => handleMainNavClick("/write")}
+                className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-150 ${navPendingHref === "/write" && pathname !== "/write" ? "opacity-55" : ""
+                  } ${isActive("/write")
                   ? "text-primary"
                   : "text-foreground/80 hover:text-foreground dark:text-foreground/85 dark:hover:text-foreground"
                   }`}
@@ -269,7 +342,7 @@ export function Header() {
                     </span>
                     <span className="font-medium">Home</span>
                   </Link>
-                  {navigation.map((item) => (
+                  {primaryNav.map((item) => (
                     <Link
                       key={item.name}
                       href={item.href}

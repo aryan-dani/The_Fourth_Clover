@@ -1,391 +1,56 @@
-"use client";
-
-import { useState, useEffect, useCallback, use } from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/features/auth/auth-context";
-import { logSupabaseError } from "@/lib/dev/debug-supabase";
-import {
-  formatDate,
-  shareToTwitter,
-  shareToWhatsApp,
-  copyToClipboard,
-} from "@/lib/utils";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { PageShell } from "@/components/layout/PageShell";
-import { motionEase } from "@/lib/motion";
-import { toast } from "sonner";
-import {
-  Heart,
-  Clock,
-  Calendar,
-  Twitter,
-  Send,
-  Copy,
-  ArrowLeft,
-} from "lucide-react";
-import Link from "next/link";
-import { CommentSection } from "@/features/comments/components/CommentSection";
-import { getPostWithAuthorBySlug } from "@/features/data/database-operations";
-import { PostWithAuthor } from "@/types/database";
-import { postContentToBlocks } from "@/lib/post-content";
+import { fetchPostBySlugForPage } from "@/features/data/server-queries";
+import { PostPageClient } from "./post-page-client";
+import { absoluteUrl } from "@/lib/site";
 
-export default function PostPage({
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await fetchPostBySlugForPage(slug);
+  if (!post) {
+    return {
+      title: "Post not found",
+      description: "This story could not be found on The Fourth Clover.",
+    };
+  }
+
+  const title = `${post.title} | The Fourth Clover`;
+  const description =
+    (post.excerpt && post.excerpt.slice(0, 160)) ||
+    `A story by ${post.author.full_name || post.author.username} on The Fourth Clover.`;
+
+  const ogImage = post.cover_image ? absoluteUrl(post.cover_image) : undefined;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title: post.title,
+      description,
+      type: "article",
+      publishedTime: post.published_at ?? undefined,
+      ...(ogImage ? { images: [{ url: ogImage }] } : {}),
+    },
+    twitter: {
+      card: ogImage ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(ogImage ? { images: [ogImage] } : {}),
+    },
+  };
+}
+
+export default async function PostPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = use(params);
-  const { user } = useAuth();
-  const [post, setPost] = useState<PostWithAuthor | null>(null);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-
-  const checkIfLiked = useCallback(async (postId: string, userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("likes")
-        .select("id")
-        .eq("post_id", postId)
-        .eq("user_id", userId)
-        .single();
-
-      if (error && error.code !== "PGRST116") {
-        logSupabaseError("Check If Liked", error, { postId, userId });
-        return;
-      }
-      setIsLiked(!!data);
-    } catch (error) {
-      console.error("❌ Unexpected error checking if liked:", error);
-    }
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchPost = async () => {
-      try {
-        setLoading(true);
-        const { data: postData, error: postError } =
-          await getPostWithAuthorBySlug(slug);
-
-        if (cancelled) return;
-
-        if (postError || !postData) {
-          if (postError) {
-            console.error("❌ Error fetching post:", postError);
-            logSupabaseError("Fetch Post by Slug", postError, {
-              slug: slug,
-            });
-          }
-          notFound();
-          return;
-        }
-
-        setPost(postData as PostWithAuthor);
-        const initialLikes = postData.likes?.[0]?.count ?? 0;
-        setLikesCount(initialLikes);
-      } catch (error) {
-        console.error("❌ Error in fetchPost:", error);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    void fetchPost();
-    return () => {
-      cancelled = true;
-    };
-  }, [slug]);
-
-  useEffect(() => {
-    if (!post?.id) return;
-    const uid = user?.id;
-    if (!uid) {
-      setIsLiked(false);
-      return;
-    }
-    void checkIfLiked(post.id, uid);
-  }, [post?.id, user?.id, checkIfLiked]);
-
-  const toggleLike = async () => {
-    if (!user || !post) {
-      toast.error("Please sign in to like posts");
-      return;
-    }
-
-    try {
-      console.log("Toggling like for post:", {
-        post_id: post.id,
-        user_id: user.id,
-        current_state: isLiked ? "liked" : "not_liked",
-      });
-
-      if (isLiked) {
-        // Remove like
-        const { error } = await supabase
-          .from("likes")
-          .delete()
-          .eq("post_id", post.id)
-          .eq("user_id", user.id);
-
-        if (error) {
-          logSupabaseError("Remove Like", error, {
-            post_id: post.id,
-            user_id: user.id,
-          });
-          throw error;
-        }
-
-        setIsLiked(false);
-        setLikesCount((prev) => prev - 1);
-        console.log("✅ Like removed successfully");
-        toast.success("Like removed");
-      } else {
-        // Add like
-        const { error } = await supabase.from("likes").insert({
-          post_id: post.id,
-          user_id: user.id,
-        });
-
-        if (error) {
-          logSupabaseError("Add Like", error, {
-            post_id: post.id,
-            user_id: user.id,
-          });
-          throw error;
-        }
-
-        setIsLiked(true);
-        setLikesCount((prev) => prev + 1);
-        console.log("✅ Like added successfully");
-        toast.success("Post liked");
-      }
-    } catch (error) {
-      console.error("Error toggling like:", error);
-      toast.error("Failed to update like");
-    }
-  };
-
-  const handleShare = (platform: "twitter" | "whatsapp" | "copy") => {
-    if (!post) return;
-
-    const url = window.location.href;
-
-    switch (platform) {
-      case "twitter":
-        shareToTwitter(post.title, url);
-        break;
-      case "whatsapp":
-        shareToWhatsApp(post.title, url);
-        break;
-      case "copy":
-        copyToClipboard(url);
-        toast.success("Link copied to clipboard");
-        break;
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="flex-1 pt-20 pb-8">
-          <PageShell
-            variant="reading"
-            className="max-w-[min(56rem,calc(100vw-2rem))] lg:max-w-[60rem]"
-          >
-            <div className="animate-pulse space-y-6">
-              <div className="h-8 bg-muted rounded"></div>
-              <div className="h-4 bg-muted rounded w-1/2"></div>
-              <div className="aspect-video bg-muted rounded"></div>
-              <div className="space-y-4">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-4 bg-muted rounded"></div>
-                ))}
-              </div>
-            </div>
-          </PageShell>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (!post) {
-    notFound();
-  }
-
-  return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
-      <main className="flex-1 pt-20 pb-8">
-        <PageShell
-          variant="reading"
-          className="max-w-[min(56rem,calc(100vw-2rem))] lg:max-w-[60rem]"
-        >
-          {/* Back Button */}
-          <motion.div
-            initial={false}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, ease: motionEase }}
-            className="mb-6"
-          >
-            <Button variant="ghost" asChild className="hover:bg-accent ui-text">
-              <Link href="/explore" className="flex items-center ui-text">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Explore
-              </Link>
-            </Button>
-          </motion.div>
-
-          {/* Article Header */}
-          <motion.article
-            initial={false}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, ease: motionEase }}
-            className="mb-8"
-          >
-            <header className="mb-8">
-              <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground md:text-5xl mb-6 leading-tight">
-                {post.title}
-              </h1>
-
-              {/* Author Info */}
-              <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-                <Link
-                  href={`/profile/${post.author.username}`}
-                  className="flex items-center space-x-4 hover:opacity-80 transition-opacity"
-                >
-                  <Avatar className="w-12 h-12">
-                    <AvatarImage src={post.author.avatar_url || ""} />
-                    <AvatarFallback>
-                      {post.author.full_name?.[0] || post.author.username[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-semibold ui-text">
-                      {post.author.full_name || post.author.username}
-                    </p>
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground ui-text">
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="w-4 h-4" />
-                        <span>{formatDate(post.published_at!)}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <Clock className="w-4 h-4" />
-                        <span>{post.read_time} min read</span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-
-                {/* Engagement Actions */}
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant={isLiked ? "default" : "outline"}
-                    size="sm"
-                    onClick={toggleLike}
-                    className={`flex items-center space-x-2 ${
-                      isLiked
-                        ? "bg-primary text-primary-foreground shadow-md"
-                        : "hover:border-primary/40 hover:bg-primary/10"
-                    }`}
-                  >
-                    <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
-                    <span className="font-semibold">{likesCount}</span>
-                  </Button>
-
-                  <div className="flex items-center space-x-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleShare("twitter")}
-                      className="hover:bg-blue-500/10 hover:border-blue-500/50 hover:text-blue-500 transition-all duration-300"
-                    >
-                      <Twitter className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleShare("whatsapp")}
-                      className="hover:bg-green-500/10 hover:border-green-500/50 hover:text-green-500 transition-all duration-300"
-                    >
-                      <Send className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleShare("copy")}
-                      className="hover:bg-primary/10 hover:border-primary/50 transition-all duration-300"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tags */}
-              {post.tags && post.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-8">
-                  {post.tags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="hover:bg-accent transition-colors"
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              {/* Cover Image */}
-              {post.cover_image && (
-                <div className="aspect-video rounded-lg overflow-hidden mb-8">
-                  <img
-                    src={post.cover_image}
-                    alt={post.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-            </header>
-
-            {/* Article Content */}
-            <div className="prose prose-lg max-w-none mb-12 font-serif">
-              {postContentToBlocks(post.content).map((block, index) =>
-                block.kind === "spacer" ? (
-                  <div
-                    key={`s-${index}`}
-                    className="h-4 sm:h-5"
-                    aria-hidden
-                  />
-                ) : (
-                  <p
-                    key={`p-${index}`}
-                    className="mb-3 leading-relaxed text-lg text-muted-foreground content md:text-xl sm:mb-4"
-                  >
-                    {block.text}
-                  </p>
-                )
-              )}
-            </div>
-          </motion.article>
-
-          {/* Comments Section */}
-          <CommentSection postId={post.id} />
-        </PageShell>
-      </main>
-
-      <Footer />
-    </div>
-  );
+  const { slug } = await params;
+  const post = await fetchPostBySlugForPage(slug);
+  if (!post) notFound();
+  return <PostPageClient initialPost={post} />;
 }

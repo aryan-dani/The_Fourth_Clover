@@ -9,7 +9,11 @@ export function proxy(request: NextRequest) {
   }
 
   const { pathname } = request.nextUrl;
-  if (DEV_ONLY_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+  if (
+    DEV_ONLY_PREFIXES.some(
+      (p) => pathname === p || pathname.startsWith(`${p}/`)
+    )
+  ) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
@@ -17,5 +21,10 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/test-connection", "/query", "/test-connection/:path*", "/query/:path*"],
+  matcher: [
+    "/test-connection",
+    "/query",
+    "/test-connection/:path*",
+    "/query/:path*",
+  ],
 };

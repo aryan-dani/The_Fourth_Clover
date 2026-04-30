@@ -136,7 +136,7 @@ export class NotificationOperations {
         postTitle: string,
         postId: string
     ): Promise<void> {
-        await this.createNotification(
+        await NotificationOperations.createNotification(
             postAuthorId,
             "like",
             `${likerName} liked your post "${postTitle}"`,
@@ -155,7 +155,7 @@ export class NotificationOperations {
         postTitle: string,
         postId: string
     ): Promise<void> {
-        await this.createNotification(
+        await NotificationOperations.createNotification(
             postAuthorId,
             "comment",
             `${commenterName} commented on your post "${postTitle}"`,
@@ -174,12 +174,28 @@ export class NotificationOperations {
         postTitle: string,
         postId: string
     ): Promise<void> {
-        await this.createNotification(
+        await NotificationOperations.createNotification(
             parentCommentAuthorId,
             "reply",
             `${replierName} replied to your comment on "${postTitle}"`,
             replierId,
             postId
+        );
+    }
+
+    /**
+     * Helper: notify a user that someone followed them
+     */
+    static async notifyFollow(
+        followedUserId: string,
+        followerId: string,
+        followerDisplayName: string
+    ): Promise<void> {
+        await NotificationOperations.createNotification(
+            followedUserId,
+            "follow",
+            `${followerDisplayName} started following you`,
+            followerId
         );
     }
 }
@@ -195,4 +211,5 @@ export const {
     notifyLike,
     notifyComment,
     notifyReply,
+    notifyFollow,
 } = NotificationOperations;

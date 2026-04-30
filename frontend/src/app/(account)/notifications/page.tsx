@@ -153,7 +153,7 @@ export default function NotificationsPage() {
                                     <Bell className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
                                     <h3 className="text-lg font-semibold mb-2">No notifications yet</h3>
                                     <p className="text-muted-foreground mb-4">
-                                        When someone interacts with your posts, you'll see it here.
+                                        When someone interacts with your posts, you&apos;ll see it here.
                                     </p>
                                     <Button asChild variant="outline">
                                         <Link href="/explore">
