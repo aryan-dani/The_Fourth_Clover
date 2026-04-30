@@ -9,6 +9,32 @@
   NEXT_CACHE_DIR = ".next/cache"
   SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY"
 
+# Dev-only routes: blocked in production without Next middleware so Netlify does not bundle
+# Node middleware for Edge (fails with Next.js 16 + Turbopack). Kept reachable in local dev.
+[[redirects]]
+  from = "/test-connection"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/test-connection/*"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/query"
+  to = "/"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/query/*"
+  to = "/"
+  status = 302
+  force = true
+
 # Essential for Next.js App Router
 [[plugins]]
   package = "@netlify/plugin-nextjs"
