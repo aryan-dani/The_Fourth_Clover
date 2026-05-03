@@ -277,7 +277,7 @@ export function ExplorePageClient({
                       placeholder="Search posts, authors, or topics..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-12 h-12 text-base border-2 focus:border-primary/50 transition-all"
+                      className="pl-12 h-10 text-base border-2 focus:border-primary/50 transition-all"
                     />
                   </div>
 
@@ -286,7 +286,7 @@ export function ExplorePageClient({
                     onValueChange={(value) => setSortBy(value as typeof sortBy)}
                     className="w-full lg:w-auto"
                   >
-                    <TabsList className="grid w-full grid-cols-3 lg:w-auto h-12">
+                    <TabsList className="grid h-10 w-full grid-cols-3 lg:w-auto">
                       <TabsTrigger
                         value="latest"
                         className="flex items-center space-x-2"

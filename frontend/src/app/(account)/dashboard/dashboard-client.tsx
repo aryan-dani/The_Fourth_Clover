@@ -11,7 +11,7 @@ import { useAuth } from "@/features/auth/auth-context";
 import { formatRelativeTime } from "@/lib/utils";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { PageShell } from "@/components/layout/PageShell";
+import { WriterHubShell } from "@/components/layout/WriterHubShell";
 import { toast } from "sonner";
 import {
   PenTool,
@@ -56,7 +56,7 @@ function StatCard({
   color?: string;
 }) {
   return (
-    <Card className="glass">
+    <Card className="glass rounded-3xl border border-border/60">
       <CardContent className="p-4 md:p-5">
         <div className="flex items-center justify-between">
           <div>
@@ -272,21 +272,17 @@ export function DashboardClient({
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
         <main className="flex-1 pt-20 pb-8">
-          <PageShell variant="wide">
-            <div className="animate-pulse">
-              <div className="h-8 bg-muted rounded mb-4 w-1/4"></div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <WriterHubShell>
+            <div className="animate-pulse space-y-6">
+              <div className="h-10 bg-muted rounded-2xl max-w-md ml-auto" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 {[...Array(4)].map((_, i) => (
-                  <div key={i} className="h-32 bg-muted rounded-lg"></div>
+                  <div key={i} className="h-28 bg-muted rounded-3xl" />
                 ))}
               </div>
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-40 bg-muted rounded-lg"></div>
-                ))}
-              </div>
+              <div className="h-96 bg-muted rounded-3xl" />
             </div>
-          </PageShell>
+          </WriterHubShell>
         </main>
         <Footer />
       </div>
@@ -298,24 +294,29 @@ export function DashboardClient({
       <Header />
 
       <main className="flex-1 pt-20 pb-8">
-        <PageShell
-          variant="wide"
-          title="Dashboard"
-          description="Manage your posts and track your writing progress."
-          headerActions={
-            <Button asChild size="lg" className="animate-glow">
+        <WriterHubShell>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h1 className="font-display text-2xl font-semibold tracking-tight md:text-3xl">
+                Your writing
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1 max-w-xl">
+                Manage drafts, publishing, and how readers see your work.
+              </p>
+            </div>
+            <Button asChild size="lg" className="shrink-0 rounded-2xl shadow-md">
               <Link href="/write">
                 <PenTool className="mr-2 h-5 w-5" />
-                Write new post
+                New post
               </Link>
             </Button>
-          }
-        >
+          </div>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6"
+            className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
           >
             <StatCard
               title="Total Posts"
@@ -344,97 +345,103 @@ export function DashboardClient({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <Tabs defaultValue="all" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 mb-5">
-                <TabsTrigger value="all">All Posts ({posts.length})</TabsTrigger>
-                <TabsTrigger value="published">
-                  Published ({published.length})
-                </TabsTrigger>
-                <TabsTrigger value="drafts">Drafts ({drafts.length})</TabsTrigger>
-                <TabsTrigger value="scheduled">
-                  <Clock className="w-3 h-3 mr-1" />
-                  Scheduled ({scheduled.length})
-                </TabsTrigger>
-              </TabsList>
+            <Card className="rounded-3xl border border-border/70 shadow-lg glass overflow-hidden">
+              <CardContent className="p-4 sm:p-6">
+                <Tabs defaultValue="all" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 gap-2 rounded-2xl bg-muted/50 p-1 h-auto sm:grid-cols-4">
+                    <TabsTrigger value="all" className="rounded-xl">
+                      All ({posts.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="published" className="rounded-xl">
+                      Published ({published.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="drafts" className="rounded-xl">
+                      Drafts ({drafts.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="scheduled" className="rounded-xl gap-1">
+                      <Clock className="w-3 h-3" />
+                      Scheduled ({scheduled.length})
+                    </TabsTrigger>
+                  </TabsList>
 
-              <TabsContent value="all">
-                <DataTable columns={columns} data={posts} />
-              </TabsContent>
-              <TabsContent value="published">
-                <DataTable columns={columns} data={published} />
-              </TabsContent>
-              <TabsContent value="drafts">
-                <DataTable columns={columns} data={drafts} />
-              </TabsContent>
-              <TabsContent value="scheduled">
-                {scheduled.length === 0 ? (
-                  <Card className="glass">
-                    <CardContent className="p-12 text-center">
-                      <Clock className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                      <h3 className="text-lg font-semibold mb-2">
-                        No scheduled posts
-                      </h3>
-                      <p className="text-muted-foreground mb-4">
-                        Schedule posts to be published at a specific date and time.
-                      </p>
-                      <Button asChild>
-                        <Link href="/write">Schedule a Post</Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="space-y-4">
-                    {scheduled.map((post) => (
-                      <Card key={post.id} className="glass">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <Link
-                                href={`/write?edit=${post.id}`}
-                                className="font-medium hover:text-primary transition-colors"
-                              >
-                                {post.title}
-                              </Link>
-                              <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                                <Clock className="w-3 h-3" />
-                                <span>
-                                  Scheduled for{" "}
-                                  {new Date(
-                                    post.scheduled_at!
-                                  ).toLocaleString()}
-                                </span>
+                  <TabsContent value="all" className="mt-6">
+                    <DataTable columns={columns} data={posts} />
+                  </TabsContent>
+                  <TabsContent value="published" className="mt-6">
+                    <DataTable columns={columns} data={published} />
+                  </TabsContent>
+                  <TabsContent value="drafts" className="mt-6">
+                    <DataTable columns={columns} data={drafts} />
+                  </TabsContent>
+                  <TabsContent value="scheduled" className="mt-6">
+                    {scheduled.length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-border/80 p-12 text-center">
+                        <Clock className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                        <h3 className="text-lg font-semibold mb-2">
+                          No scheduled posts
+                        </h3>
+                        <p className="text-muted-foreground mb-4 text-sm max-w-md mx-auto">
+                          Schedule posts to be published at a specific date and time.
+                        </p>
+                        <Button asChild className="rounded-2xl">
+                          <Link href="/write">Schedule a post</Link>
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {scheduled.map((post) => (
+                          <Card key={post.id} className="rounded-2xl glass">
+                            <CardContent className="p-4">
+                              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <Link
+                                    href={`/write?edit=${post.id}`}
+                                    className="font-medium hover:text-primary transition-colors"
+                                  >
+                                    {post.title}
+                                  </Link>
+                                  <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                                    <Clock className="w-3 h-3 shrink-0" />
+                                    <span>
+                                      Scheduled for{" "}
+                                      {new Date(
+                                        post.scheduled_at!
+                                      ).toLocaleString()}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <Badge variant="secondary" className="rounded-lg">
+                                    <Calendar className="w-3 h-3 mr-1" />
+                                    {formatRelativeTime(post.scheduled_at!)}
+                                  </Badge>
+                                  <Button variant="outline" size="sm" className="rounded-xl" asChild>
+                                    <Link href={`/write?edit=${post.id}`}>
+                                      <Edit3 className="w-3 h-3 mr-1" />
+                                      Edit
+                                    </Link>
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeletePost(post.id)}
+                                    className="text-destructive hover:text-destructive rounded-xl"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary">
-                                <Calendar className="w-3 h-3 mr-1" />
-                                {formatRelativeTime(post.scheduled_at!)}
-                              </Badge>
-                              <Button variant="outline" size="sm" asChild>
-                                <Link href={`/write?edit=${post.id}`}>
-                                  <Edit3 className="w-3 h-3 mr-1" />
-                                  Edit
-                                </Link>
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeletePost(post.id)}
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
           </motion.div>
-        </PageShell>
+        </WriterHubShell>
       </main>
 
       <Footer />

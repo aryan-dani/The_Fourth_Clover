@@ -13,11 +13,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/features/auth/auth-context";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { PageShell } from "@/components/layout/PageShell";
+import { WriterHubShell } from "@/components/layout/WriterHubShell";
 import { toast } from "sonner";
 import {
   Save,
-  ArrowLeft,
   User,
   Globe,
   Twitter,
@@ -25,7 +24,6 @@ import {
   Loader2,
   Camera,
 } from "lucide-react";
-import Link from "next/link";
 import { getProfile, updateProfile } from "@/features/data/database-operations";
 import { Profile } from "@/types/database";
 import { supabase } from "@/lib/supabase";
@@ -194,17 +192,13 @@ export default function ProfilePage() {
       <div className="min-h-screen bg-background">
         <Header />
         <main className="flex-1 pt-20 pb-8">
-          <PageShell variant="default">
+          <WriterHubShell>
             <div className="animate-pulse space-y-6">
-              <div className="h-8 bg-muted rounded"></div>
-              <div className="h-32 bg-muted rounded"></div>
-              <div className="space-y-4">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-16 bg-muted rounded"></div>
-                ))}
-              </div>
+              <div className="h-10 bg-muted rounded-3xl max-w-sm" />
+              <div className="h-64 bg-muted rounded-3xl" />
+              <div className="h-48 bg-muted rounded-3xl" />
             </div>
-          </PageShell>
+          </WriterHubShell>
         </main>
         <Footer />
       </div>
@@ -216,77 +210,76 @@ export default function ProfilePage() {
       <Header />
 
       <main className="flex-1 pt-20 pb-8">
-        <PageShell
-          variant="default"
-          title="Edit profile"
-          description="Manage your public information and social links."
-          headerLead={
-            <Button variant="ghost" size="sm" asChild className="w-fit -ml-2">
-              <Link href="/dashboard" className="flex items-center">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to dashboard
-              </Link>
-            </Button>
-          }
-        >
+        <WriterHubShell>
+          <div>
+            <h1 className="font-display text-2xl font-semibold tracking-tight md:text-3xl">
+              Profile &amp; links
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1 max-w-xl">
+              What readers see on your public profile and across the site.
+            </p>
+          </div>
+
           {error && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <Alert variant="destructive" className="mb-6">
+              <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             </motion.div>
           )}
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <Card className="elegant-card border-2 hover:border-primary/50 transition-all duration-300">
-              <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-transparent">
-                <CardTitle className="text-2xl brand-text flex items-center gap-2">
-                  <User className="w-6 h-6" />
-                  Your Profile
-                </CardTitle>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Manage your personal information and social links
-                </p>
-              </CardHeader>
-              <CardContent className="mt-6">
-                <Form {...form}>
-                  <form
-                    onSubmit={form.handleSubmit(handleSave)}
-                    className="space-y-6"
-                  >
-                    {/* Avatar */}
-                    <div className="text-center">
-                      <div className="relative inline-block group">
-                        <Avatar className="w-32 h-32 mx-auto ring-4 ring-primary/10 transition-all duration-300 group-hover:ring-primary/30">
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleSave)}
+              className="space-y-6"
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 }}
+              >
+                <Card className="rounded-3xl border border-border/70 bg-card/70 backdrop-blur-xl shadow-lg glass">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-lg font-display flex items-center gap-2">
+                      <User className="w-5 h-5" />
+                      Public identity
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Name, handle, avatar, and bio shown on your profile.
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex flex-col sm:flex-row gap-6 sm:items-start">
+                      <div className="relative inline-block group shrink-0 mx-auto sm:mx-0">
+                        <Avatar className="w-28 h-28 ring-4 ring-primary/10 transition-all duration-300 group-hover:ring-primary/25 rounded-2xl">
                           <AvatarImage src={form.watch("avatar_url") || ""} />
-                          <AvatarFallback className="text-2xl">
+                          <AvatarFallback className="text-xl rounded-2xl">
                             {form.watch("full_name")?.[0] ||
                               form.watch("username")?.[0] ||
                               user.email?.[0]}
                           </AvatarFallback>
                         </Avatar>
-                        <div
-                          className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer backdrop-blur-sm"
+                        <button
+                          type="button"
+                          className="absolute inset-0 flex flex-col items-center justify-center bg-black/55 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer backdrop-blur-sm"
                           onClick={() =>
                             document.getElementById("avatar-upload")?.click()
                           }
                         >
                           {isUploading ? (
-                            <Loader2 className="w-8 h-8 text-white animate-spin" />
+                            <Loader2 className="w-7 h-7 text-white animate-spin" />
                           ) : (
                             <>
-                              <Camera className="w-8 h-8 text-white mb-1" />
-                              <span className="text-xs text-white font-medium">Upload Photo</span>
+                              <Camera className="w-7 h-7 text-white mb-0.5" />
+                              <span className="text-[10px] text-white font-medium">
+                                Upload
+                              </span>
                             </>
                           )}
-                        </div>
+                        </button>
                         <input
                           type="file"
                           id="avatar-upload"
@@ -296,171 +289,173 @@ export default function ProfilePage() {
                           disabled={isUploading}
                         />
                       </div>
-                      <p className="text-sm text-muted-foreground mt-4">
-                        Click on your avatar to upload a new photo
-                      </p>
+                      <div className="flex-1 space-y-4 w-full min-w-0">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="full_name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Full name</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="Your full name"
+                                    {...field}
+                                    value={field.value || ""}
+                                    className="rounded-xl"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="username"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Username</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="handle"
+                                    {...field}
+                                    className="rounded-xl"
+                                    pattern="[a-zA-Z0-9_-]{3,30}"
+                                    title="3–30 chars: letters, numbers, _, -"
+                                  />
+                                </FormControl>
+                                <p className="text-xs text-muted-foreground">
+                                  3–30 characters. Letters, numbers, underscores,
+                                  hyphens.
+                                </p>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <FormField
+                          control={form.control}
+                          name="bio"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Bio</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Tell readers about you..."
+                                  {...field}
+                                  value={field.value || ""}
+                                  rows={4}
+                                  className="rounded-xl resize-y min-h-[100px]"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-                    {/* Basic Info */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="full_name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm font-medium">
-                              Full Name
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Your full name"
-                                {...field}
-                                value={field.value || ""}
-                                className="mt-1 focus-ring"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm font-medium">
-                              Username
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Your username"
-                                {...field}
-                                className="mt-1 focus-ring"
-                                pattern="[a-zA-Z0-9_-]{3,30}"
-                                title="Username must be 3-30 characters and contain only letters, numbers, underscores, and hyphens"
-                              />
-                            </FormControl>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              3-30 characters. Letters, numbers, underscores, and hyphens only.
-                            </p>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    {/* Bio */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <Card className="rounded-3xl border border-border/70 bg-card/70 backdrop-blur-xl shadow-lg glass">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-lg font-display">
+                      Social &amp; web
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Optional links on your public profile.
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <FormField
                       control={form.control}
-                      name="bio"
+                      name="website"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm font-medium">
-                            Bio
+                          <FormLabel className="flex items-center gap-2">
+                            <Globe className="w-4 h-4" />
+                            Website
                           </FormLabel>
                           <FormControl>
-                            <Textarea
-                              placeholder="Tell us about yourself..."
+                            <Input
+                              placeholder="https://…"
                               {...field}
                               value={field.value || ""}
-                              className="mt-1 focus-ring"
-                              rows={4}
+                              className="rounded-xl"
                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
-                    {/* Social Links */}
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold brand-text">
-                        Social Links
-                      </h3>
-
-                      <FormField
-                        control={form.control}
-                        name="website"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm font-medium flex items-center space-x-2">
-                              <Globe className="w-4 h-4" />
-                              <span>Website</span>
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="https://yourwebsite.com"
-                                {...field}
-                                value={field.value || ""}
-                                className="mt-1 focus-ring"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="twitter"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm font-medium flex items-center space-x-2">
-                              <Twitter className="w-4 h-4" />
-                              <span>Twitter Username</span>
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="yourusername"
-                                {...field}
-                                value={field.value || ""}
-                                className="mt-1 focus-ring"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="github"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-sm font-medium flex items-center space-x-2">
-                              <Github className="w-4 h-4" />
-                              <span>GitHub Username</span>
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="yourusername"
-                                {...field}
-                                value={field.value || ""}
-                                className="mt-1 focus-ring"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    {/* Submit Button */}
-                    <div className="flex justify-end">
-                      <Button type="submit" disabled={isSaving}>
+                    <FormField
+                      control={form.control}
+                      name="twitter"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-2">
+                            <Twitter className="w-4 h-4" />
+                            Twitter
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="username"
+                              {...field}
+                              value={field.value || ""}
+                              className="rounded-xl"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="github"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-2">
+                            <Github className="w-4 h-4" />
+                            GitHub
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="username"
+                              {...field}
+                              value={field.value || ""}
+                              className="rounded-xl"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-end pt-2">
+                      <Button
+                        type="submit"
+                        disabled={isSaving}
+                        size="lg"
+                        className="rounded-2xl"
+                      >
                         {isSaving && (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         )}
                         <Save className="w-4 h-4 mr-2" />
-                        Save Profile
+                        Save profile
                       </Button>
                     </div>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </PageShell>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </form>
+          </Form>
+        </WriterHubShell>
       </main>
 
       <Footer />

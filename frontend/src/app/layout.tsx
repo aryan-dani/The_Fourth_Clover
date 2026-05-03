@@ -6,6 +6,7 @@ import { Inter, Playfair_Display } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import { AppToaster } from '@/components/providers/app-toaster';
 import { NavigationProgress } from '@/components/providers/navigation-progress';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider } from '@/features/auth/auth-context';
 
 import { siteUrl } from '@/lib/site';
@@ -34,13 +35,15 @@ export default function RootLayout({
           enableSystem={true}
           disableTransitionOnChange={false}
         >
-          <AuthProvider>
-            <Suspense fallback={null}>
-              <NavigationProgress />
-            </Suspense>
-            {children}
-            <AppToaster />
-          </AuthProvider>
+          <TooltipProvider delayDuration={0}>
+            <AuthProvider>
+              <Suspense fallback={null}>
+                <NavigationProgress />
+              </Suspense>
+              {children}
+              <AppToaster />
+            </AuthProvider>
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>
