@@ -244,6 +244,14 @@
     overflow: hidden;
   }
 
+  /** Slug / URL fields: must never pick up Playfair or `.content` serif inheritance. */
+  .write-slug-input {
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", Menlo,
+      Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+    font-variant-numeric: tabular-nums;
+    font-weight: 400;
+  }
+
   .medium-hover {
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -335,6 +343,38 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background-color: hsl(var(--muted-foreground) / 0.5);
+}
+
+/**
+ * Post details & similar panels: avoid chunky OS scrollbars; reserve gutter so
+ * text does not sit flush against the track.
+ */
+@layer utilities {
+  .scrollbar-meta {
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.28) transparent;
+  }
+
+  .scrollbar-meta::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  .scrollbar-meta::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-meta::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.22);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .scrollbar-meta::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.4);
+  }
 }
 
 ::selection {

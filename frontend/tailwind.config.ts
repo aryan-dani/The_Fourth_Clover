@@ -44,6 +44,16 @@ const config: Config = {
           "serif",
           ...emojiFallback,
         ],
+        mono: [
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "Monaco",
+          "Consolas",
+          "Liberation Mono",
+          "Courier New",
+          "monospace",
+        ],
       },
       spacing: {
         section: "2rem",

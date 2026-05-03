@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +25,10 @@ export function useMutatePost(postId?: string) {
   const [submissionMessage, setSubmissionMessage] = useState("");
   const createdPostIdRef = useRef<string | null>(null);
 
+  const publishedAtRef = useRef<string | null>(null);
+  const userIdRef = useRef<string | undefined>(undefined);
+  userIdRef.current = user?.id;
+
   const form = useForm<z.infer<typeof postSchema>>({
     resolver: zodResolver(postSchema),
     defaultValues: {
@@ -40,12 +44,17 @@ export function useMutatePost(postId?: string) {
     },
   });
 
+  useEffect(() => {
+    if (!postId) publishedAtRef.current = null;
+  }, [postId]);
+
   const loadPostForEdit = async () => {
     if (!postId) return;
     try {
       const { data, error } = await getPost(postId);
       if (error) throw error;
       if (data) {
+        publishedAtRef.current = data.published_at || null;
         form.reset({
           title: data.title,
           content: data.content || "",
@@ -94,7 +103,9 @@ export function useMutatePost(postId?: string) {
         read_time,
         author_id: user.id,
         published_at:
-          values.status === "published" ? new Date().toISOString() : null,
+          values.status === "published"
+            ? (publishedAtRef.current ?? new Date().toISOString())
+            : null,
         featured_image: values.featured_image || null,
         scheduled_at: values.scheduled_at || null,
       };
@@ -110,9 +121,17 @@ export function useMutatePost(postId?: string) {
 
       if (result.error) throw result.error;
 
+      if (result.data?.published_at) {
+        publishedAtRef.current = result.data.published_at;
+      } else if (values.status === "draft") {
+        publishedAtRef.current = null;
+      }
+
       if (result.data) {
         if (result.data.status === "published") {
           router.push(`/post/${result.data.slug}`);
+        } else if (result.data.id) {
+          router.replace(`/write?edit=${result.data.id}`);
         } else {
           router.push("/dashboard");
         }
@@ -125,63 +144,70 @@ export function useMutatePost(postId?: string) {
     }
   };
 
-  const saveDraft = async (values: z.infer<typeof postSchema>) => {
-    if (!user) return null;
+  const saveDraft = useCallback(
+    async (values: z.infer<typeof postSchema>) => {
+      const authorId = userIdRef.current;
+      if (!authorId) return null;
 
-    try {
-      const read_time = calculateReadTime(values.content);
-      const tagsArray = values.tags
-        ? values.tags.split(",").map((t: string) => t.trim())
-        : [];
+      try {
+        const read_time = calculateReadTime(values.content);
+        const tagsArray = values.tags
+          ? values.tags.split(",").map((t: string) => t.trim())
+          : [];
 
-      const postPayload = {
-        ...values,
-        cover_image: values.cover_image || null,
-        excerpt: values.excerpt || null,
-        tags: tagsArray,
-        read_time,
-        author_id: user.id,
-        // Don't update published_at for drafts
-        published_at: null,
-        featured_image: values.featured_image || null,
-        scheduled_at: values.scheduled_at || null,
-      };
+        const postPayload = {
+          ...values,
+          cover_image: values.cover_image || null,
+          excerpt: values.excerpt || null,
+          tags: tagsArray,
+          read_time,
+          author_id: authorId,
+          featured_image: values.featured_image || null,
+          scheduled_at: values.scheduled_at || null,
+          published_at:
+            values.status === "draft"
+              ? null
+              : (publishedAtRef.current ?? new Date().toISOString()),
+        };
 
-      let result;
-      const currentPostId = postId || createdPostIdRef.current;
+        let result;
+        const currentPostId = postId || createdPostIdRef.current;
 
-      if (currentPostId) {
-        result = await updatePost(currentPostId, postPayload);
-      } else {
-        result = await createPost(postPayload);
-        if (result.data) {
-          createdPostIdRef.current = result.data.id;
+        if (currentPostId) {
+          result = await updatePost(currentPostId, postPayload);
+        } else {
+          result = await createPost(postPayload);
+          if (result.data) {
+            createdPostIdRef.current = result.data.id;
+          }
         }
+
+        if (result.error) throw result.error;
+
+        if (result.data?.published_at) {
+          publishedAtRef.current = result.data.published_at;
+        } else if (values.status === "draft") {
+          publishedAtRef.current = null;
+        }
+
+        if (!currentPostId && result.data) {
+          const newUrl = `/write?edit=${result.data.id}`;
+          window.history.replaceState(
+            { ...window.history.state, as: newUrl, url: newUrl },
+            "",
+            newUrl
+          );
+          router.replace(newUrl);
+        }
+
+        return result.data;
+      } catch (error: any) {
+        console.error("Error auto-saving post:", error);
+        return null;
       }
-
-      if (result.error) throw result.error;
-
-      // If we just created a new post as a draft, update the URL so subsequent saves are updates
-      if (!currentPostId && result.data) {
-        const newUrl = `/write?edit=${result.data.id}`;
-        window.history.replaceState(
-          { ...window.history.state, as: newUrl, url: newUrl },
-          "",
-          newUrl
-        );
-        // We also need to tell the form/hook that we now have an ID,
-        // but since this hook relies on the prop passed in, we might need to reload or
-        // let the parent handle the ID change.
-        // For now, the router.replace/push might be safer to ensure state consistency.
-        router.replace(newUrl);
-      }
-
-      return result.data;
-    } catch (error: any) {
-      console.error("Error auto-saving post:", error);
-      return null;
-    }
-  };
+    },
+    [postId, router],
+  );
 
   const handleDelete = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
