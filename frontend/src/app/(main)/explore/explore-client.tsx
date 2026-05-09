@@ -196,28 +196,6 @@ export function ExplorePageClient({
         {loadError && posts.length === 0 ? (
           <div className="py-10 sm:py-14">
             <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <span>{loadError}</span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="shrink-0 border-destructive/40 bg-background/80"
-                onClick={() => void loadExploreData()}
-              >
-                Retry
-              </Button>
-            </AlertDescription>
-          </Alert>
-          <p className="text-center text-sm text-muted-foreground">
-            Once loading succeeds, search and filters will appear here.
-          </p>
-        </div>
-      ) : (
-        <>
-          {loadError && (
-            <Alert variant="destructive" className="mb-6">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <span>{loadError}</span>
@@ -232,237 +210,265 @@ export function ExplorePageClient({
                 </Button>
               </AlertDescription>
             </Alert>
-          )}
-
-          {/* Hero Section */}
-          <m.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, ease: motionEase }}
-            className="text-center mb-6 px-1 sm:px-0"
-          >
-            <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground md:text-5xl lg:text-6xl mb-6 leading-tight">
-              Discover amazing <span className="gradient-text">stories</span>
-            </h1>
-            <p className="font-serif text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-              Explore the latest posts from our community of writers and find
-              your next favorite read.
+            <p className="text-center text-sm text-muted-foreground">
+              Once loading succeeds, search and filters will appear here.
             </p>
-          </m.div>
+          </div>
+        ) : (
+          <>
+            {loadError && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <span>{loadError}</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 border-destructive/40 bg-background/80"
+                    onClick={() => void loadExploreData()}
+                  >
+                    Retry
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
 
-          {/* Search and Filters */}
-          <m.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.08, duration: 0.45, ease: motionEase }}
-            className="mb-8"
-          >
-            <Card className="glass border-2 hover:border-primary/30 transition-all duration-300">
-              <CardContent className="p-5 sm:p-6">
-                <div className="flex flex-col lg:flex-row gap-4">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input
-                      placeholder="Search posts, authors, or topics..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-12 h-10 text-base border-2 focus:border-primary/50 transition-all"
-                    />
+            {/* Hero Section */}
+            <m.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: motionEase }}
+              className="text-center mb-6 px-1 sm:px-0"
+            >
+              <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground md:text-5xl lg:text-6xl mb-6 leading-tight">
+                Discover amazing <span className="gradient-text">stories</span>
+              </h1>
+              <p className="font-serif text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+                Explore the latest posts from our community of writers and find
+                your next favorite read.
+              </p>
+            </m.div>
+
+            {/* Search and Filters */}
+            <m.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08, duration: 0.45, ease: motionEase }}
+              className="mb-8"
+            >
+              <Card className="glass border-2 hover:border-primary/30 transition-all duration-300">
+                <CardContent className="p-5 sm:p-6">
+                  <div className="flex flex-col lg:flex-row gap-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Input
+                        placeholder="Search posts, authors, or topics..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-12 h-10 text-base border-2 focus:border-primary/50 transition-all"
+                      />
+                    </div>
+
+                    <Tabs
+                      value={sortBy}
+                      onValueChange={(value) =>
+                        setSortBy(value as typeof sortBy)
+                      }
+                      className="w-full lg:w-auto"
+                    >
+                      <TabsList className="grid h-10 w-full grid-cols-3 lg:w-auto">
+                        <TabsTrigger
+                          value="latest"
+                          className="flex items-center space-x-2"
+                        >
+                          <Calendar className="w-4 h-4" />
+                          <span>Latest</span>
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="trending"
+                          className="flex items-center space-x-2"
+                        >
+                          <TrendingUp className="w-4 h-4" />
+                          <span>Trending</span>
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="popular"
+                          className="flex items-center space-x-2"
+                        >
+                          <Heart className="w-4 h-4" />
+                          <span>Popular</span>
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
                   </div>
 
-                  <Tabs
-                    value={sortBy}
-                    onValueChange={(value) => setSortBy(value as typeof sortBy)}
-                    className="w-full lg:w-auto"
-                  >
-                    <TabsList className="grid h-10 w-full grid-cols-3 lg:w-auto">
-                      <TabsTrigger
-                        value="latest"
-                        className="flex items-center space-x-2"
-                      >
-                        <Calendar className="w-4 h-4" />
-                        <span>Latest</span>
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="trending"
-                        className="flex items-center space-x-2"
-                      >
-                        <TrendingUp className="w-4 h-4" />
-                        <span>Trending</span>
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="popular"
-                        className="flex items-center space-x-2"
-                      >
-                        <Heart className="w-4 h-4" />
-                        <span>Popular</span>
-                      </TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </div>
-
-                {allTags.length > 0 && (
-                  <div className="mt-6">
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        variant={selectedTag === "" ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setSelectedTag("")}
-                        className="transition-all hover:scale-105"
-                      >
-                        All Topics
-                      </Button>
-                      {allTags.slice(0, 8).map((tag) => (
+                  {allTags.length > 0 && (
+                    <div className="mt-6">
+                      <div className="flex flex-wrap gap-2">
                         <Button
-                          key={tag}
-                          variant={selectedTag === tag ? "default" : "outline"}
+                          variant={selectedTag === "" ? "default" : "outline"}
                           size="sm"
-                          onClick={() =>
-                            setSelectedTag(selectedTag === tag ? "" : tag)
-                          }
+                          onClick={() => setSelectedTag("")}
                           className="transition-all hover:scale-105"
                         >
-                          {tag}
+                          All Topics
                         </Button>
-                      ))}
+                        {allTags.slice(0, 8).map((tag) => (
+                          <Button
+                            key={tag}
+                            variant={
+                              selectedTag === tag ? "default" : "outline"
+                            }
+                            size="sm"
+                            onClick={() =>
+                              setSelectedTag(selectedTag === tag ? "" : tag)
+                            }
+                            className="transition-all hover:scale-105"
+                          >
+                            {tag}
+                          </Button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </m.div>
+                  )}
+                </CardContent>
+              </Card>
+            </m.div>
 
-          <m.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.15, duration: 0.4, ease: motionEase }}
-          >
-            {filteredPosts.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Search className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">No posts found</h3>
-                <p className="text-muted-foreground">
-                  Try adjusting your search terms or filters to find what
-                  you&apos;re looking for.
-                </p>
-              </div>
-            ) : (
-              <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
-                {filteredPosts.map((post: PostWithAuthor, index: number) => (
-                  <m.div
-                    key={post.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="break-inside-avoid mb-8"
-                  >
-                    <Link href={`/post/${post.slug}`} className="block">
-                      <Card className="group overflow-hidden hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 glass border-2 hover:border-primary/30 hover:-translate-y-2 cursor-pointer">
-                        {post.cover_image && (
-                          <div className="aspect-video overflow-hidden relative bg-muted/30">
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
-                            <Image
-                              src={post.cover_image}
-                              alt={post.title}
-                              width={640}
-                              height={360}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                              sizes="(max-width: 768px) 100vw, (max-width:1200px) 50vw, 33vw"
-                            />
-                          </div>
-                        )}
-                        <CardContent className="p-6 flex flex-col flex-1">
-                          <div className="flex items-center space-x-4 mb-4">
-                            <Avatar className="ring-2 ring-primary/10 group-hover:ring-primary/30 transition-all">
-                              <AvatarImage src={post.author.avatar_url || ""} />
-                              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10">
-                                {post.author.full_name?.[0] || "A"}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-semibold text-sm">
-                                {post.author.full_name}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                @{post.author.username}
-                              </p>
-                            </div>
-                          </div>
-
-                          <h3 className="font-bold text-xl mb-2 line-clamp-2 group-hover:text-primary transition-colors duration-300">
-                            {post.title}
-                          </h3>
-
-                          <p className="text-muted-foreground text-sm line-clamp-3 mb-4 flex-1">
-                            {post.excerpt}
-                          </p>
-
-                          {post.tags && post.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-4">
-                              {post.tags.slice(0, 3).map((tag: string) => (
-                                <Badge
-                                  key={tag}
-                                  variant="secondary"
-                                  className="text-xs hover:bg-primary/20 transition-colors"
-                                >
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-
-                          <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto pt-4 border-t border-primary/10">
-                            <div className="flex items-center space-x-4">
-                              <div className="flex items-center space-x-1 hover:text-primary transition-colors">
-                                <Clock className="w-3.5 h-3.5" />
-                                <span>{post.read_time}m read</span>
-                              </div>
-                              <div className="flex items-center space-x-1 hover:text-red-500 transition-colors">
-                                <Heart className="w-3.5 h-3.5" />
-                                <span>{post.likes[0]?.count || 0}</span>
-                              </div>
-                              <div className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
-                                <MessageCircle className="w-3.5 h-3.5" />
-                                <span>{post.comments[0]?.count || 0}</span>
-                              </div>
-                            </div>
-                            <span>
-                              {post.published_at
-                                ? formatRelativeTime(post.published_at)
-                                : ""}
-                            </span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  </m.div>
-                ))}
-              </div>
-            )}
-          </m.div>
-
-          {filteredPosts.length > 0 && canPaginateServer && hasMore && (
             <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.2, ease: motionEase }}
-              className="text-center mt-6"
+              transition={{ delay: 0.15, duration: 0.4, ease: motionEase }}
             >
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                disabled={loadingMore}
-                onClick={() => void loadMorePosts()}
-              >
-                {loadingMore ? "Loading…" : "Load More Posts"}
-              </Button>
+              {filteredPosts.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <Search className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">No posts found</h3>
+                  <p className="text-muted-foreground">
+                    Try adjusting your search terms or filters to find what
+                    you&apos;re looking for.
+                  </p>
+                </div>
+              ) : (
+                <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
+                  {filteredPosts.map((post: PostWithAuthor, index: number) => (
+                    <m.div
+                      key={post.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="break-inside-avoid mb-8"
+                    >
+                      <Link href={`/post/${post.slug}`} className="block">
+                        <Card className="group overflow-hidden hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 glass border-2 hover:border-primary/30 hover:-translate-y-2 cursor-pointer">
+                          {post.cover_image && (
+                            <div className="aspect-video overflow-hidden relative bg-muted/30">
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
+                              <Image
+                                src={post.cover_image}
+                                alt={post.title}
+                                width={640}
+                                height={360}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                sizes="(max-width: 768px) 100vw, (max-width:1200px) 50vw, 33vw"
+                              />
+                            </div>
+                          )}
+                          <CardContent className="p-6 flex flex-col flex-1">
+                            <div className="flex items-center space-x-4 mb-4">
+                              <Avatar className="ring-2 ring-primary/10 group-hover:ring-primary/30 transition-all">
+                                <AvatarImage
+                                  src={post.author.avatar_url || ""}
+                                />
+                                <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10">
+                                  {post.author.full_name?.[0] || "A"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-semibold text-sm">
+                                  {post.author.full_name}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  @{post.author.username}
+                                </p>
+                              </div>
+                            </div>
+
+                            <h3 className="font-bold text-xl mb-2 line-clamp-2 group-hover:text-primary transition-colors duration-300">
+                              {post.title}
+                            </h3>
+
+                            <p className="text-muted-foreground text-sm line-clamp-3 mb-4 flex-1">
+                              {post.excerpt}
+                            </p>
+
+                            {post.tags && post.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mb-4">
+                                {post.tags.slice(0, 3).map((tag: string) => (
+                                  <Badge
+                                    key={tag}
+                                    variant="secondary"
+                                    className="text-xs hover:bg-primary/20 transition-colors"
+                                  >
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto pt-4 border-t border-primary/10">
+                              <div className="flex items-center space-x-4">
+                                <div className="flex items-center space-x-1 hover:text-primary transition-colors">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>{post.read_time}m read</span>
+                                </div>
+                                <div className="flex items-center space-x-1 hover:text-red-500 transition-colors">
+                                  <Heart className="w-3.5 h-3.5" />
+                                  <span>{post.likes[0]?.count || 0}</span>
+                                </div>
+                                <div className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
+                                  <MessageCircle className="w-3.5 h-3.5" />
+                                  <span>{post.comments[0]?.count || 0}</span>
+                                </div>
+                              </div>
+                              <span>
+                                {post.published_at
+                                  ? formatRelativeTime(post.published_at)
+                                  : ""}
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    </m.div>
+                  ))}
+                </div>
+              )}
             </m.div>
-          )}
-        </>
-      )}
+
+            {filteredPosts.length > 0 && canPaginateServer && hasMore && (
+              <m.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2, ease: motionEase }}
+                className="text-center mt-6"
+              >
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  disabled={loadingMore}
+                  onClick={() => void loadMorePosts()}
+                >
+                  {loadingMore ? "Loading…" : "Load More Posts"}
+                </Button>
+              </m.div>
+            )}
+          </>
+        )}
       </LazyMotion>
     </PageShell>
   );
