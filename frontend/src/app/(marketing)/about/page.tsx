@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Github, Twitter, Linkedin, Globe } from "lucide-react";
+import { Github, Linkedin, Globe } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { PageShell } from "@/components/layout/PageShell";
@@ -88,16 +88,6 @@ export default function AboutPage() {
                   </Button>
                   <Button variant="outline" size="icon" asChild>
                     <Link
-                      href="https://twitter.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Twitter className="w-5 h-5" />
-                      <span className="sr-only">Twitter</span>
-                    </Link>
-                  </Button>
-                  <Button variant="outline" size="icon" asChild>
-                    <Link
                       href="https://www.linkedin.com/in/aryandani/"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -108,7 +98,7 @@ export default function AboutPage() {
                   </Button>
                   <Button variant="outline" size="icon" asChild>
                     <Link
-                      href="https://aryan-dani.github.io/Portfolio/"
+                      href="https://www.aryandani.com"
                       target="_blank"
                       rel="noopener noreferrer"
                     >

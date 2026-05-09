@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Github, Twitter } from "lucide-react";
+import { Github, Linkedin } from "lucide-react";
 import { motion } from "framer-motion";
 import { motionEase } from "@/lib/motion";
 
@@ -76,15 +76,15 @@ export function Footer() {
                   <Github className="h-4 w-4" />
                 </motion.a>
                 <motion.a
-                  href="https://twitter.com/thefourthclover"
+                  href="https://www.linkedin.com/in/aryandani/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label="Twitter"
+                  aria-label="LinkedIn"
                   whileHover={{ scale: 1.08 }}
                   whileTap={{ scale: 0.94 }}
                   className="flex h-9 w-9 items-center justify-center rounded-full border border-border/80 bg-card text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
                 >
-                  <Twitter className="h-4 w-4" />
+                  <Linkedin className="h-4 w-4" />
                 </motion.a>
               </div>
             </div>
