@@ -13,9 +13,7 @@ const POSTS_WITH_AUTHOR_SELECT = `
   comments(count)
 `;
 
-function normalizeTags(
-  rows: { tags: string[] | null }[] | null
-): string[] {
+function normalizeTags(rows: { tags: string[] | null }[] | null): string[] {
   if (!rows?.length) return [];
   const allTags = rows
     .flatMap((post) => post.tags || [])
@@ -26,7 +24,7 @@ function normalizeTags(
 
 export async function fetchExploreInitialData(
   limit = 20,
-  offset = 0
+  offset = 0,
 ): Promise<{
   posts: PostWithAuthor[];
   tags: string[];
@@ -71,7 +69,7 @@ export async function fetchExploreInitialData(
 }
 
 export async function fetchPostBySlugForPage(
-  slug: string
+  slug: string,
 ): Promise<PostWithAuthor | null> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
@@ -162,7 +160,7 @@ export async function fetchDashboardInitialData(): Promise<{
           *,
           likes (count),
           comments (count)
-        `
+        `,
     )
     .eq("author_id", user.id)
     .order("created_at", { ascending: false });
@@ -172,24 +170,41 @@ export async function fetchDashboardInitialData(): Promise<{
   }
 
   const userPosts = (data || []) as DashboardPostRow[];
-  const totalLikes = userPosts.reduce(
-    (sum, post) => sum + (post.likes?.[0]?.count || 0),
-    0
+
+  // Targeted aggregation queries for dashboard stats
+  const { count: totalPosts } = await supabase
+    .from("posts")
+    .select("*", { count: "exact", head: true })
+    .eq("author_id", user.id);
+
+  const { count: publishedPosts } = await supabase
+    .from("posts")
+    .select("*", { count: "exact", head: true })
+    .eq("author_id", user.id)
+    .eq("status", "published");
+
+  // Fetch only necessary fields for like/comment sums instead of mapping entire post bodies
+  const { data: relations } = await supabase
+    .from("posts")
+    .select("likes(count), comments(count)")
+    .eq("author_id", user.id);
+
+  const totalLikes = (relations || []).reduce(
+    (sum, post: any) => sum + (post.likes?.[0]?.count || 0),
+    0,
   );
-  const totalComments = userPosts.reduce(
-    (sum, post) => sum + (post.comments?.[0]?.count || 0),
-    0
+
+  const totalComments = (relations || []).reduce(
+    (sum, post: any) => sum + (post.comments?.[0]?.count || 0),
+    0,
   );
-  const publishedPosts = userPosts.filter(
-    (p) => p.status === "published"
-  ).length;
 
   return {
     userId: user.id,
     posts: userPosts,
     stats: {
-      totalPosts: userPosts.length,
-      publishedPosts,
+      totalPosts: totalPosts || 0,
+      publishedPosts: publishedPosts || 0,
       totalLikes,
       totalComments,
     },
@@ -235,7 +250,7 @@ export type RssPostRow = Pick<
 >;
 
 export async function listRecentPublishedPostsForRss(
-  limit = RSS_POST_LIMIT
+  limit = RSS_POST_LIMIT,
 ): Promise<RssPostRow[]> {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
@@ -251,7 +266,7 @@ export async function listRecentPublishedPostsForRss(
 export async function fetchFollowingFeedInitial(
   userId: string,
   limit = 20,
-  offset = 0
+  offset = 0,
 ): Promise<{ posts: PostWithAuthor[]; error: string | null }> {
   try {
     const supabase = await createSupabaseServerClient();
@@ -292,7 +307,7 @@ export async function fetchFollowingFeedInitial(
 }
 
 export async function countAccountsFollowedByUser(
-  userId: string
+  userId: string,
 ): Promise<number> {
   const supabase = await createSupabaseServerClient();
   const { count } = await supabase
@@ -304,7 +319,7 @@ export async function countAccountsFollowedByUser(
 
 export async function getProfileFollowMeta(
   viewerId: string | null,
-  profileUserId: string
+  profileUserId: string,
 ): Promise<{
   isFollowing: boolean;
   followerCount: number;

@@ -53,7 +53,7 @@ export function FollowingFeedClient({
       const { data, error } = await getPostsByFollowingAuthors(
         viewerId,
         pageSize,
-        posts.length
+        posts.length,
       );
       if (error) throw error;
       const next = (data || []) as PostWithAuthor[];
@@ -62,14 +62,15 @@ export function FollowingFeedClient({
     } catch (e) {
       console.error("Following feed load more:", e);
       setLoadError(
-        "We couldn't load more from people you follow. Try again in a moment."
+        "We couldn't load more from people you follow. Try again in a moment.",
       );
     } finally {
       setLoadingMore(false);
     }
   }, [hasMore, loadingMore, viewerId, pageSize, posts.length]);
 
-  const emptyNoWriters = posts.length === 0 && !loadError && accountsYouFollow === 0;
+  const emptyNoWriters =
+    posts.length === 0 && !loadError && accountsYouFollow === 0;
   const emptyQuietFeed =
     posts.length === 0 && !loadError && accountsYouFollow > 0;
 
@@ -109,8 +110,7 @@ export function FollowingFeedClient({
                 className="text-center mb-8 px-1 sm:px-0"
               >
                 <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground md:text-5xl mb-4 leading-tight">
-                  From people you{" "}
-                  <span className="gradient-text">follow</span>
+                  From people you <span className="gradient-text">follow</span>
                 </h1>
                 <p className="font-serif text-lg text-muted-foreground max-w-xl mx-auto">
                   New publishes from writers you care about, newest first.
@@ -160,13 +160,12 @@ export function FollowingFeedClient({
                         <Link href={`/post/${post.slug}`} className="block">
                           <Card className="group overflow-hidden hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 glass border-2 hover:border-primary/30 hover:-translate-y-2 cursor-pointer">
                             {post.cover_image && (
-                              <div className="aspect-video overflow-hidden relative">
+                              <div className="aspect-video overflow-hidden relative bg-muted/30">
                                 <Image
                                   src={post.cover_image}
                                   alt={post.title}
                                   width={640}
                                   height={360}
-                                  unoptimized
                                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                   sizes="(max-width: 768px) 100vw, (max-width:1200px) 50vw, 33vw"
                                 />

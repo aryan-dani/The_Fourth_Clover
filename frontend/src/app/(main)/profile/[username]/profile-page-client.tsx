@@ -90,13 +90,7 @@ export function ProfilePageClient({
     } finally {
       setFollowBusy(false);
     }
-  }, [
-    viewerId,
-    isOwnProfile,
-    isFollowing,
-    profile.id,
-    followerNotifyName,
-  ]);
+  }, [viewerId, isOwnProfile, isFollowing, profile.id, followerNotifyName]);
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -312,14 +306,13 @@ export function ProfilePageClient({
                     <Link href={`/post/${post.slug}`} className="block h-full">
                       <Card className="group overflow-hidden hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 glass h-full border-2 hover:border-primary/30 hover:-translate-y-2 cursor-pointer">
                         {post.cover_image && (
-                          <div className="aspect-video overflow-hidden relative">
+                          <div className="aspect-video overflow-hidden relative bg-muted/30">
                             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
                             <Image
                               src={post.cover_image}
                               alt={post.title}
                               width={640}
                               height={360}
-                              unoptimized
                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                               sizes="(max-width: 768px) 100vw, 50vw"
                             />

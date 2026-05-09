@@ -43,7 +43,7 @@ export function PostPageClient({ initialPost }: PostPageClientProps) {
   const [post] = useState<PostWithAuthor>(initialPost);
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(
-    initialPost.likes?.[0]?.count ?? 0
+    initialPost.likes?.[0]?.count ?? 0,
   );
 
   const checkIfLiked = useCallback(async (postId: string, userId: string) => {
@@ -216,7 +216,9 @@ export function PostPageClient({ initialPost }: PostPageClientProps) {
                         : "hover:border-primary/40 hover:bg-primary/10"
                     }`}
                   >
-                    <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
+                    <Heart
+                      className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`}
+                    />
                     <span className="font-semibold">{likesCount}</span>
                   </Button>
 
@@ -264,12 +266,11 @@ export function PostPageClient({ initialPost }: PostPageClientProps) {
               )}
 
               {post.cover_image && (
-                <div className="aspect-video rounded-lg overflow-hidden mb-8 relative">
+                <div className="aspect-video rounded-lg overflow-hidden mb-8 relative bg-muted/30">
                   <Image
                     src={post.cover_image}
                     alt={post.title}
                     fill
-                    unoptimized
                     className="object-cover"
                     sizes="(max-width: 1024px) 100vw, 960px"
                     priority
@@ -281,11 +282,7 @@ export function PostPageClient({ initialPost }: PostPageClientProps) {
             <div className="prose prose-lg max-w-none mb-12 font-serif">
               {postContentToBlocks(post.content).map((block, index) =>
                 block.kind === "spacer" ? (
-                  <div
-                    key={`s-${index}`}
-                    className="h-4 sm:h-5"
-                    aria-hidden
-                  />
+                  <div key={`s-${index}`} className="h-4 sm:h-5" aria-hidden />
                 ) : (
                   <p
                     key={`p-${index}`}
@@ -293,7 +290,7 @@ export function PostPageClient({ initialPost }: PostPageClientProps) {
                   >
                     {block.text}
                   </p>
-                )
+                ),
               )}
             </div>
           </motion.article>

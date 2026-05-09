@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { motion } from "framer-motion";
+import { LazyMotion, domAnimation, m } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -25,10 +25,8 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  getPostsWithAuthor,
-  getAllTags,
-} from "@/features/data/database-operations";
+import { loadMoreExplorePostsAction } from "@/features/data/server-actions";
+import { getAllTags } from "@/features/data/database-operations";
 import { PostWithAuthor } from "@/types/database";
 
 type ExplorePageClientProps = {
@@ -56,28 +54,31 @@ export function ExplorePageClient({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTag, setSelectedTag] = useState("");
   const [sortBy, setSortBy] = useState<"latest" | "trending" | "popular">(
-    "latest"
+    "latest",
   );
-
+  // Sync state if server route sends new items
+  useEffect(() => {
+    setPosts(initialPosts);
+    setHasMore(initialHasMore);
+    setAllTags(initialTags);
+  }, [initialPosts, initialHasMore, initialTags]);
   const loadExploreData = useCallback(async () => {
     setLoadError(null);
     setLoading(true);
     try {
       const [postsResult, tagsResult] = await Promise.all([
-        getPostsWithAuthor(pageSize, 0),
+        loadMoreExplorePostsAction(pageSize, 0),
         getAllTags(),
       ]);
 
-      if (postsResult.error) throw postsResult.error;
-
-      const nextPosts = (postsResult.data || []) as PostWithAuthor[];
+      const nextPosts = postsResult as PostWithAuthor[];
       setPosts(nextPosts);
       setHasMore(nextPosts.length === pageSize);
       setAllTags(tagsResult || []);
     } catch (error) {
       console.error("Error fetching explore page data:", error);
       setLoadError(
-        "We couldn't load stories right now. Check your connection and try again."
+        "We couldn't load stories right now. Check your connection and try again.",
       );
     } finally {
       setLoading(false);
@@ -89,15 +90,13 @@ export function ExplorePageClient({
     setLoadError(null);
     setLoadingMore(true);
     try {
-      const { data, error } = await getPostsWithAuthor(pageSize, posts.length);
-      if (error) throw error;
-      const next = (data || []) as PostWithAuthor[];
+      const next = await loadMoreExplorePostsAction(pageSize, posts.length);
       setPosts((prev) => [...prev, ...next]);
       setHasMore(next.length === pageSize);
     } catch (error) {
       console.error("Error loading more posts:", error);
       setLoadError(
-        "We couldn't load more stories. Check your connection and try again."
+        "We couldn't load more stories. Check your connection and try again.",
       );
     } finally {
       setLoadingMore(false);
@@ -123,13 +122,13 @@ export function ExplorePageClient({
           post.title.toLowerCase().includes(lowercasedTerm) ||
           (post.excerpt &&
             post.excerpt.toLowerCase().includes(lowercasedTerm)) ||
-          post.author.full_name?.toLowerCase().includes(lowercasedTerm)
+          post.author.full_name?.toLowerCase().includes(lowercasedTerm),
       );
     }
 
     if (selectedTag) {
       filtered = filtered.filter((post: PostWithAuthor) =>
-        post.tags?.includes(selectedTag)
+        post.tags?.includes(selectedTag),
       );
     }
 
@@ -139,13 +138,13 @@ export function ExplorePageClient({
           (a: PostWithAuthor, b: PostWithAuthor) =>
             (b.likes[0]?.count || 0) +
             (b.comments[0]?.count || 0) -
-            ((a.likes[0]?.count || 0) + (a.comments[0]?.count || 0))
+            ((a.likes[0]?.count || 0) + (a.comments[0]?.count || 0)),
         );
         break;
       case "popular":
         filtered.sort(
           (a: PostWithAuthor, b: PostWithAuthor) =>
-            (b.likes[0]?.count || 0) - (a.likes[0]?.count || 0)
+            (b.likes[0]?.count || 0) - (a.likes[0]?.count || 0),
         );
         break;
       case "latest":
@@ -153,7 +152,7 @@ export function ExplorePageClient({
         filtered.sort(
           (a: PostWithAuthor, b: PostWithAuthor) =>
             new Date(b.published_at!).getTime() -
-            new Date(a.published_at!).getTime()
+            new Date(a.published_at!).getTime(),
         );
         break;
     }
@@ -165,104 +164,93 @@ export function ExplorePageClient({
 
   if (loading && posts.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
-        <Header />
-        <main className="flex-1 pt-20 pb-8">
-          <PageShell variant="wide">
-            <div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-              aria-busy="true"
-              aria-live="polite"
-            >
-              {[...Array(6)].map((_, i) => (
-                <Card key={i} className="glass animate-pulse">
-                  <div className="aspect-video bg-muted rounded-t-lg"></div>
-                  <CardContent className="p-6">
-                    <div className="h-4 bg-muted rounded mb-2"></div>
-                    <div className="h-4 bg-muted rounded w-3/4 mb-4"></div>
-                    <div className="h-3 bg-muted rounded w-1/2"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            {slowHint && (
-              <p className="text-center text-sm text-muted-foreground mt-8">
-                Still loading… this can take a moment on a slow connection.
-              </p>
-            )}
-          </PageShell>
-        </main>
-        <Footer />
-      </div>
+      <PageShell variant="wide">
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          aria-busy="true"
+          aria-live="polite"
+        >
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="glass animate-pulse">
+              <div className="aspect-video bg-muted rounded-t-lg"></div>
+              <CardContent className="p-6">
+                <div className="h-4 bg-muted rounded mb-2"></div>
+                <div className="h-4 bg-muted rounded w-3/4 mb-4"></div>
+                <div className="h-3 bg-muted rounded w-1/2"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        {slowHint && (
+          <p className="text-center text-sm text-muted-foreground mt-8">
+            Still loading… this can take a moment on a slow connection.
+          </p>
+        )}
+      </PageShell>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
-
-      <main className="flex-1 pt-20 pb-8">
-        <PageShell variant="wide">
-          {loadError && posts.length === 0 ? (
-            <div className="py-10 sm:py-14">
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <span>{loadError}</span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0 border-destructive/40 bg-background/80"
-                    onClick={() => void loadExploreData()}
-                  >
-                    Retry
-                  </Button>
-                </AlertDescription>
-              </Alert>
-              <p className="text-center text-sm text-muted-foreground">
-                Once loading succeeds, search and filters will appear here.
-              </p>
-            </div>
-          ) : (
-            <>
-              {loadError && (
-                <Alert variant="destructive" className="mb-6">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <span>{loadError}</span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="shrink-0 border-destructive/40 bg-background/80"
-                      onClick={() => void loadExploreData()}
-                    >
-                      Retry
-                    </Button>
-                  </AlertDescription>
-                </Alert>
-              )}
+    <PageShell variant="wide">
+      {loadError && posts.length === 0 ? (
+        <div className="py-10 sm:py-14">
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <span>{loadError}</span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0 border-destructive/40 bg-background/80"
+                onClick={() => void loadExploreData()}
+              >
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+          <p className="text-center text-sm text-muted-foreground">
+            Once loading succeeds, search and filters will appear here.
+          </p>
+        </div>
+      ) : (
+        <>
+          {loadError && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <span>{loadError}</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 border-destructive/40 bg-background/80"
+                  onClick={() => void loadExploreData()}
+                >
+                  Retry
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Hero Section */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease: motionEase }}
             className="text-center mb-6 px-1 sm:px-0"
           >
             <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground md:text-5xl lg:text-6xl mb-6 leading-tight">
-              Discover amazing{" "}
-              <span className="gradient-text">stories</span>
+              Discover amazing <span className="gradient-text">stories</span>
             </h1>
             <p className="font-serif text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
               Explore the latest posts from our community of writers and find
               your next favorite read.
             </p>
-          </motion.div>
+          </m.div>
 
           {/* Search and Filters */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.08, duration: 0.45, ease: motionEase }}
@@ -341,9 +329,9 @@ export function ExplorePageClient({
                 )}
               </CardContent>
             </Card>
-          </motion.div>
+          </m.div>
 
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.15, duration: 0.4, ease: motionEase }}
@@ -362,7 +350,7 @@ export function ExplorePageClient({
             ) : (
               <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
                 {filteredPosts.map((post: PostWithAuthor, index: number) => (
-                  <motion.div
+                  <m.div
                     key={post.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -372,14 +360,13 @@ export function ExplorePageClient({
                     <Link href={`/post/${post.slug}`} className="block">
                       <Card className="group overflow-hidden hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 glass border-2 hover:border-primary/30 hover:-translate-y-2 cursor-pointer">
                         {post.cover_image && (
-                          <div className="aspect-video overflow-hidden relative">
+                          <div className="aspect-video overflow-hidden relative bg-muted/30">
                             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
                             <Image
                               src={post.cover_image}
                               alt={post.title}
                               width={640}
                               height={360}
-                              unoptimized
                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                               sizes="(max-width: 768px) 100vw, (max-width:1200px) 50vw, 33vw"
                             />
@@ -449,38 +436,32 @@ export function ExplorePageClient({
                         </CardContent>
                       </Card>
                     </Link>
-                  </motion.div>
+                  </m.div>
                 ))}
               </div>
             )}
-          </motion.div>
+          </m.div>
 
-          {filteredPosts.length > 0 &&
-            canPaginateServer &&
-            hasMore && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2, ease: motionEase }}
-                className="text-center mt-6"
+          {filteredPosts.length > 0 && canPaginateServer && hasMore && (
+            <m.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2, ease: motionEase }}
+              className="text-center mt-6"
+            >
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                disabled={loadingMore}
+                onClick={() => void loadMorePosts()}
               >
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="lg"
-                  disabled={loadingMore}
-                  onClick={() => void loadMorePosts()}
-                >
-                  {loadingMore ? "Loading…" : "Load More Posts"}
-                </Button>
-              </motion.div>
-            )}
-            </>
+                {loadingMore ? "Loading…" : "Load More Posts"}
+              </Button>
+            </m.div>
           )}
-        </PageShell>
-      </main>
-
-      <Footer />
-    </div>
+        </>
+      )}
+    </PageShell>
   );
 }

@@ -157,4 +157,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Support
 
-Email support@thefourthclover.com or open a GitHub issue.
+Email daniaryan212@gmail.com or open a GitHub issue.
