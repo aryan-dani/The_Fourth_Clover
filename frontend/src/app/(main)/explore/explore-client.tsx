@@ -192,9 +192,10 @@ export function ExplorePageClient({
 
   return (
     <PageShell variant="wide">
-      {loadError && posts.length === 0 ? (
-        <div className="py-10 sm:py-14">
-          <Alert variant="destructive" className="mb-4">
+      <LazyMotion features={domAnimation}>
+        {loadError && posts.length === 0 ? (
+          <div className="py-10 sm:py-14">
+            <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <span>{loadError}</span>
@@ -462,6 +463,7 @@ export function ExplorePageClient({
           )}
         </>
       )}
+      </LazyMotion>
     </PageShell>
   );
 }

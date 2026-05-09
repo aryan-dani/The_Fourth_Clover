@@ -12,6 +12,11 @@ const nextConfig = {
         hostname: "*.supabase.co",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "miro.medium.com",
+        pathname: "/**",
+      },
     ],
   },
   webpack: (config, { isServer }) => {
