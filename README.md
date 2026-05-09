@@ -20,19 +20,21 @@ If you like what you see, please consider giving this repository a ⭐ to help o
 
 - [Changelog](frontend/CHANGELOG.md)
 - [Contributing Guidelines](CONTRIBUTING.md)
-- [Feedback & Survey](https://forms.gle/your-feedback-form-link) *(Please share your thoughts!)*
+- [Feedback & Survey](https://forms.gle/your-feedback-form-link) _(Please share your thoughts!)_
 
 ---
 
 ## ✨ Features
 
-### 🚀 Performance & Architecture 
+### 🚀 Performance & Architecture
+
 - **Next.js App Router**: Leverages React Server Components to strip JavaScript from the initial load.
 - **Bundle Deflation**: Granular `Framer Motion` imports via `<LazyMotion>` drastically reduces client-side JS overhead.
 - **Optimized Data Pipeline**: Smart `<Image>` sizes attributes & granular targeted Supabase RPC queries instead of heavy client iterations.
 - **Seamless UX**: Zero layout shift (CLS) through intelligent Skeleton layouts and Server Component caching.
 
 ### 📝 Core Platform Capabilities
+
 - **Modern Minimal Design**: Seamless dark/light layouts crafted with `shadcn/ui` and `Tailwind`.
 - **Rich Editor**: Robust write experience mapped to `react-hook-form` and `zod` schema validations.
 - **Content Dashboard**: Data tables mapped with sorting and pagination via TanStack Table.
@@ -41,6 +43,7 @@ If you like what you see, please consider giving this repository a ⭐ to help o
 - **Auth**: Fully backed by Supabase Auth protocols (OAuth & Email).
 
 ### 👥 Social Dynamics
+
 - Threaded **comments**
 - **Likes** and follower feeds.
 - **Dynamic Profiles** featuring user stats, avatars, and linked networks.
@@ -58,22 +61,27 @@ If you like what you see, please consider giving this repository a ⭐ to help o
 ### Installation Pipeline
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/aryan-dani/The-Fourth-Clover.git
    cd The-Fourth-Clover/frontend
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Environment Setup**
    Copy the example environment pattern:
+
    ```bash
    cp .env.example .env.local
    ```
+
    Provide your Supabase keys:
+
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -90,7 +98,7 @@ If you like what you see, please consider giving this repository a ⭐ to help o
    ```
    Visit [http://localhost:3000](http://localhost:3000)
 
-*(Note: All configuration and scripts are run out of the `frontend/` directory).*
+_(Note: All configuration and scripts are run out of the `frontend/` directory)._
 
 ---
 
@@ -109,6 +117,7 @@ If you like what you see, please consider giving this repository a ⭐ to help o
 ## 🤝 Contributing
 
 We heartily welcome community input! Check out the [Contributing Guide](CONTRIBUTING.md) to get involved. Feel free to:
+
 1. Open an Issue with feedback or suggestions
 2. Create PRs for feature enhancements
 3. Star the repo to show support ⭐
@@ -116,6 +125,7 @@ We heartily welcome community input! Check out the [Contributing Guide](CONTRIBU
 ## 📄 License
 
 This repository is available under the [MIT License](LICENSE).
+
 - **Backend**: Supabase (Postgres, Auth, Storage, RLS)
 
 ## Project layout
