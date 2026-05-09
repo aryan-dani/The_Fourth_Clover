@@ -25,7 +25,8 @@ export function Footer() {
               </span>
             </div>
             <p className="font-sans text-sm leading-relaxed text-muted-foreground">
-              A calm place to write, read, and grow. Built for clarity and connection.
+              A calm place to write, read, and grow. Built for clarity and
+              connection.
             </p>
           </div>
 
@@ -35,13 +36,22 @@ export function Footer() {
                 Product
               </p>
               <nav className="mt-3 flex flex-col gap-2 font-sans text-sm text-muted-foreground">
-                <Link href="/explore" className="hover:text-foreground transition-colors">
+                <Link
+                  href="/explore"
+                  className="hover:text-foreground transition-colors"
+                >
                   Explore
                 </Link>
-                <Link href="/write" className="hover:text-foreground transition-colors">
+                <Link
+                  href="/write"
+                  className="hover:text-foreground transition-colors"
+                >
                   Write
                 </Link>
-                <Link href="/about" className="hover:text-foreground transition-colors">
+                <Link
+                  href="/about"
+                  className="hover:text-foreground transition-colors"
+                >
                   About
                 </Link>
               </nav>
@@ -51,10 +61,16 @@ export function Footer() {
                 Legal
               </p>
               <nav className="mt-3 flex flex-col gap-2 font-sans text-sm text-muted-foreground">
-                <Link href="/privacy" className="hover:text-foreground transition-colors">
+                <Link
+                  href="/privacy"
+                  className="hover:text-foreground transition-colors"
+                >
                   Privacy
                 </Link>
-                <Link href="/copyright" className="hover:text-foreground transition-colors">
+                <Link
+                  href="/copyright"
+                  className="hover:text-foreground transition-colors"
+                >
                   Copyright
                 </Link>
               </nav>
@@ -92,8 +108,12 @@ export function Footer() {
         </div>
 
         <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-border/50 pt-4 font-sans text-xs text-muted-foreground sm:flex-row">
-          <p>© {new Date().getFullYear()} The Fourth Clover. All rights reserved.</p>
-          <p className="hidden sm:block text-center">Crafted with care for readers and writers.</p>
+          <p>
+            © {new Date().getFullYear()} The Fourth Clover. All rights reserved.
+          </p>
+          <p className="hidden sm:block text-center">
+            Crafted with care for readers and writers.
+          </p>
         </div>
       </div>
     </motion.footer>
