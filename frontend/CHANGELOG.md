@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-05-10
+
+### Phase 2: Performance Output & Render Architecture
+
+This release focuses heavily on stripping JavaScript payload bloat, fixing layout shift algorithms, and ensuring Next.js strict adherence regarding Server & Client boundaries. 
+
+### Added
+- **Global `LazyMotion` Infrastructure**: Animated framer components were wrapped and migrated to `<m.div>` tags fed by `domAnimation`, slicing the main thread payload size aggressively.
+- **Image Shift Stabilization**: Re-engineered `<Image>` blocks across all feed and profile pages to properly load sizing vectors with `bg-muted/30` fallbacks, eliminating Cumulative Layout Shift (CLS) popping while assets stream in.
+- **Server Action Paginators**: Replaced client-sided chunking queries with native secure server action payloads `loadMoreExplorePostsAction` via Supabase to keep large computations away from client devices.
+
+### Changed
+- **Navigation Shells Restructured**: Offloaded the common `<Header>` and `<Footer>` wrappers from the individual page roots into native App Router Server `<Layout>` trees.
+- **Dashboard Hooks**: Extracted and centralized cross-navigation cache hydration within the dashboard stats views inside clean `useEffect` pipelines.
+- **TypeScript Compatibility**: Bumped core TS config `target` bounds from `es5` up to `es2015` native, fixing deprecation flags and allowing native ECMA iterables. 
+
+---
+
 ## [1.0.0] - 2025-09-21
 
 ### Phase 1: Comprehensive Refactoring and Robustness Review
