@@ -6,8 +6,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { PageShell } from "@/components/layout/PageShell";
 import { useAuth } from "@/features/auth/auth-context";
 import {
@@ -92,7 +90,6 @@ export default function NotificationsPage() {
     if (loading || authLoading) {
         return (
             <div className="min-h-screen flex flex-col bg-background">
-                <Header />
                 <main className="flex-1 pt-20 pb-8">
                     <PageShell variant="default">
                         <div className="animate-pulse space-y-4 max-w-2xl mx-auto">
@@ -106,14 +103,12 @@ export default function NotificationsPage() {
                         </div>
                     </PageShell>
                 </main>
-                <Footer />
             </div>
         );
     }
 
     return (
         <div className="min-h-screen flex flex-col bg-background">
-            <Header />
 
             <main className="flex-1 pt-20 pb-8">
                     <PageShell
@@ -231,7 +226,6 @@ export default function NotificationsPage() {
                     </PageShell>
             </main>
 
-            <Footer />
         </div>
     );
 }

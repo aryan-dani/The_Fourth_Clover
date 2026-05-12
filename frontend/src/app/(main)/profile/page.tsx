@@ -11,8 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/features/auth/auth-context";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { WriterHubShell } from "@/components/layout/WriterHubShell";
 import { toast } from "sonner";
 import {
@@ -190,7 +188,6 @@ export default function ProfilePage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <main className="flex-1 pt-20 pb-8">
           <WriterHubShell>
             <div className="animate-pulse space-y-6">
@@ -200,14 +197,12 @@ export default function ProfilePage() {
             </div>
           </WriterHubShell>
         </main>
-        <Footer />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
 
       <main className="flex-1 pt-20 pb-8">
         <WriterHubShell>
@@ -458,7 +453,6 @@ export default function ProfilePage() {
         </WriterHubShell>
       </main>
 
-      <Footer />
     </div>
   );
 }

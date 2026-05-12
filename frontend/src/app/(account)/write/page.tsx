@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { Header } from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { useAuth } from "@/features/auth/auth-context";
@@ -167,7 +166,6 @@ function WritePageContent() {
 
   return (
     <div className="relative min-h-screen bg-background">
-      <Header />
       <Form {...form}>
         <WriteToolbar
           editId={editId}

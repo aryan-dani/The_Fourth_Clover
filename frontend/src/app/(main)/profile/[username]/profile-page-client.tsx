@@ -9,8 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatRelativeTime } from "@/lib/utils";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { PageShell } from "@/components/layout/PageShell";
 import {
   Heart,
@@ -93,7 +91,6 @@ export function ProfilePageClient({
   }, [viewerId, isOwnProfile, isFollowing, profile.id, followerNotifyName]);
   return (
     <div className="min-h-screen bg-background">
-      <Header />
 
       <main className="flex-1 pt-20 pb-8">
         <PageShell variant="wide" className="max-w-4xl">
@@ -373,7 +370,6 @@ export function ProfilePageClient({
         </PageShell>
       </main>
 
-      <Footer />
     </div>
   );
 }

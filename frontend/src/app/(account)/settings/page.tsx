@@ -11,8 +11,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { PageShell } from "@/components/layout/PageShell";
 import { useAuth } from "@/features/auth/auth-context";
 import { updateProfile } from "@/features/data/database-operations";
@@ -147,7 +145,6 @@ export default function SettingsPage() {
 
     return (
         <div className="min-h-screen bg-background">
-            <Header />
 
             <main className="flex-1 pt-20 pb-8">
                 <PageShell
@@ -463,7 +460,6 @@ export default function SettingsPage() {
                 </PageShell>
             </main>
 
-            <Footer />
         </div>
     );
 }

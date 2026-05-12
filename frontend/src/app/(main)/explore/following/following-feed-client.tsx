@@ -9,8 +9,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { formatRelativeTime } from "@/lib/utils";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { PageShell } from "@/components/layout/PageShell";
 import { motionEase } from "@/lib/motion";
 import {
@@ -76,7 +74,6 @@ export function FollowingFeedClient({
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header />
       <main className="flex-1 pt-20 pb-8">
         <PageShell variant="wide">
           {loadError && posts.length === 0 ? (
@@ -243,7 +240,6 @@ export function FollowingFeedClient({
           )}
         </PageShell>
       </main>
-      <Footer />
     </div>
   );
 }

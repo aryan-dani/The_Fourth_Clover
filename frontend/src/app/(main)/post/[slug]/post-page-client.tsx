@@ -15,8 +15,6 @@ import {
   shareToWhatsApp,
   copyToClipboard,
 } from "@/lib/utils";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { PageShell } from "@/components/layout/PageShell";
 import { motionEase } from "@/lib/motion";
 import { toast } from "sonner";
@@ -145,7 +143,6 @@ export function PostPageClient({ initialPost }: PostPageClientProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
 
       <main className="flex-1 pt-20 pb-8">
         <PageShell
@@ -299,7 +296,6 @@ export function PostPageClient({ initialPost }: PostPageClientProps) {
         </PageShell>
       </main>
 
-      <Footer />
     </div>
   );
 }

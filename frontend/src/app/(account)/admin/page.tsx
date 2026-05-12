@@ -23,8 +23,6 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { PageShell } from "@/components/layout/PageShell";
 import { useAuth } from "@/features/auth/auth-context";
 import { isUserAdmin, getAllUsers, getAllPostsAdmin, deletePost } from "@/features/data/database-operations";
@@ -136,7 +134,6 @@ export default function AdminPage() {
     if (!isAdmin) {
         return (
             <div className="min-h-screen bg-background">
-                <Header />
                 <main className="flex-1 pt-20 pb-8">
                     <PageShell
                         variant="reading"
@@ -160,14 +157,12 @@ export default function AdminPage() {
                     </motion.div>
                     </PageShell>
                 </main>
-                <Footer />
             </div>
         );
     }
 
     return (
         <div className="min-h-screen bg-background">
-            <Header />
 
             <main className="flex-1 pt-20 pb-8">
                 <PageShell
@@ -448,7 +443,6 @@ export default function AdminPage() {
                 </PageShell>
             </main>
 
-            <Footer />
         </div>
     );
 }
