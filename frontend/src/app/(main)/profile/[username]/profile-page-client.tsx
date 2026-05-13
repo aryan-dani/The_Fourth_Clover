@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { formatRelativeTime } from "@/lib/utils";
+import { formatRelativeTime, toTitleCase } from "@/lib/utils";
 import { PageShell } from "@/components/layout/PageShell";
 import {
   Heart,
@@ -285,7 +285,7 @@ export function ProfilePageClient({
             {posts.length === 0 ? (
               <div className="text-center py-10">
                 <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">No posts yet</h3>
+                <h3 className="text-xl font-semibold mb-2">No Posts Yet</h3>
                 <p className="text-muted-foreground">
                   {profile.full_name || profile.username} hasn&apos;t published
                   any posts yet.
@@ -332,7 +332,7 @@ export function ProfilePageClient({
                                   variant="secondary"
                                   className="text-xs hover:bg-primary/20 transition-colors"
                                 >
-                                  {tag}
+                                  {toTitleCase(tag)}
                                 </Badge>
                               ))}
                             </div>

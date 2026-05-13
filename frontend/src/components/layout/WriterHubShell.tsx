@@ -88,25 +88,20 @@ export function WriterHubShell({ children }: { children: React.ReactNode }) {
               <Button variant="ghost" className={cn(navClass("posts"), "h-10")} asChild>
                 <Link href="/dashboard">
                   <LayoutDashboard className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
-                  My posts
+                  My Posts
                 </Link>
               </Button>
               <Button variant="ghost" className={cn(navClass("profile"), "h-10")} asChild>
                 <Link href="/profile">
                   <UserRound className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
-                  Profile &amp; links
+                  Profile &amp; Links
                 </Link>
               </Button>
-              <Button variant="ghost" className={cn(secondaryNav(writeActive), "h-10")} asChild>
-                <Link href="/write">
-                  <PenTool className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
-                  Write
-                </Link>
-              </Button>
+
               <Button variant="ghost" className={cn(secondaryNav(false), "h-10")} asChild>
                 <Link href={publicHref}>
                   <ExternalLink className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
-                  Public profile
+                  Public Profile
                 </Link>
               </Button>
             </nav>

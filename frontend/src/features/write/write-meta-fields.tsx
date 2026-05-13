@@ -31,7 +31,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { postSchema } from "@/lib/validations";
-import { cn } from "@/lib/utils";
+import { cn, toTitleCase } from "@/lib/utils";
 
 export type PostFormValues = z.infer<typeof postSchema>;
 
@@ -211,7 +211,7 @@ export function WriteMetaFields({
                 className="cursor-pointer gap-1 rounded-md py-0.5 pl-2 pr-1 font-sans text-xs font-normal hover:bg-destructive/15"
                 onClick={() => removeTag(tag)}
               >
-                {tag}
+                {toTitleCase(tag)}
                 <X className="h-3 w-3 opacity-70" />
               </Badge>
             ))}
@@ -226,7 +226,7 @@ export function WriteMetaFields({
             className="flex w-full items-center justify-between gap-2 rounded-lg border border-border/60 bg-muted/25 px-3 py-2.5 text-left transition-colors hover:bg-muted/35"
           >
             <span className="text-xs font-medium text-foreground/90">
-              More options
+              More Options
               <span className="ml-1.5 font-normal text-muted-foreground/70">
                 — schedule, excerpt
               </span>

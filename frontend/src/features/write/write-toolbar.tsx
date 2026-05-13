@@ -87,9 +87,9 @@ export function WriteToolbar({
             <p className="truncate font-sans text-sm font-semibold tracking-tight text-foreground">
               {editId
                 ? status === "published"
-                  ? "Editing live post"
-                  : "Editing draft"
-                : "New draft"}
+                  ? "Editing Live Post"
+                  : "Editing Draft"
+                : "New Draft"}
             </p>
             <p className="truncate font-sans text-[11px] text-muted-foreground/70">
               {status === "published"
@@ -147,7 +147,7 @@ export function WriteToolbar({
             >
               <SheetHeader className="border-b border-border/40 px-6 py-5">
                 <SheetTitle className="font-sans text-base font-semibold">
-                  Post settings
+                  Post Settings
                 </SheetTitle>
                 <SheetDescription className="font-sans text-xs text-muted-foreground/70">
                   Cover, slug, tags. Use “More options” for schedule and excerpt.

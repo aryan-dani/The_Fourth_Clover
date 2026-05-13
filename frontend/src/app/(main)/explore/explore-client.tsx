@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { formatRelativeTime } from "@/lib/utils";
+import { formatRelativeTime, toTitleCase } from "@/lib/utils";
 import { PageShell } from "@/components/layout/PageShell";
 import { motionEase } from "@/lib/motion";
 import {
@@ -240,7 +240,7 @@ export function ExplorePageClient({
               className="text-center mb-6 px-1 sm:px-0"
             >
               <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground md:text-5xl lg:text-6xl mb-6 leading-tight">
-                Discover amazing <span className="gradient-text">stories</span>
+                Discover Amazing <span className="gradient-text">Stories</span>
               </h1>
               <p className="font-serif text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
                 Explore the latest posts from our community of writers and find
@@ -324,7 +324,7 @@ export function ExplorePageClient({
                             }
                             className="transition-all hover:scale-105"
                           >
-                            {tag}
+                            {toTitleCase(tag)}
                           </Button>
                         ))}
                       </div>
@@ -411,7 +411,7 @@ export function ExplorePageClient({
                                     variant="secondary"
                                     className="text-xs hover:bg-primary/20 transition-colors"
                                   >
-                                    {tag}
+                                    {toTitleCase(tag)}
                                   </Badge>
                                 ))}
                               </div>

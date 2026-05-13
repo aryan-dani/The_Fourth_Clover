@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/features/auth/auth-context";
-import { formatRelativeTime } from "@/lib/utils";
+import { formatRelativeTime, toTitleCase } from "@/lib/utils";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { WriterHubShell } from "@/components/layout/WriterHubShell";
@@ -218,7 +218,7 @@ export function DashboardClient({
           <Badge
             variant={post.status === "published" ? "default" : "secondary"}
           >
-            {post.status}
+            {toTitleCase(post.status)}
           </Badge>
         );
       },
@@ -296,7 +296,7 @@ export function DashboardClient({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-semibold tracking-tight md:text-3xl">
-            Your writing
+            Your Writing
           </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-xl">
             Manage drafts, publishing, and how readers see your work.
@@ -305,7 +305,7 @@ export function DashboardClient({
         <Button asChild size="lg" className="shrink-0 rounded-2xl shadow-md">
           <Link href="/write">
             <PenTool className="mr-2 h-5 w-5" />
-            New post
+            New Post
           </Link>
         </Button>
       </div>

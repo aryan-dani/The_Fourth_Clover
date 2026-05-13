@@ -14,6 +14,7 @@ import {
   shareToTwitter,
   shareToWhatsApp,
   copyToClipboard,
+  toTitleCase,
 } from "@/lib/utils";
 import { PageShell } from "@/components/layout/PageShell";
 import { motionEase } from "@/lib/motion";
@@ -256,7 +257,7 @@ export function PostPageClient({ initialPost }: PostPageClientProps) {
                       variant="secondary"
                       className="hover:bg-accent transition-colors"
                     >
-                      {tag}
+                      {toTitleCase(tag)}
                     </Badge>
                   ))}
                 </div>

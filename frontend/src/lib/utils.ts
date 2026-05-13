@@ -79,6 +79,16 @@ export function shareToWhatsApp(title: string, url: string) {
   window.open(`https://wa.me/?text=${text}`, "_blank");
 }
 
+
 export function copyToClipboard(text: string) {
   navigator.clipboard.writeText(text);
 }
+
+export function toTitleCase(str: string): string {
+  if (!str) return "";
+  return str
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+

@@ -419,7 +419,7 @@ export function Header() {
                 {user && (
                   <div className="px-3 pb-3 space-y-2 border-b border-border/50">
                     <p className="px-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                      Appearance & alerts
+                      Appearance & Alerts
                     </p>
                     <div className="flex items-center gap-2 px-2">
                       <ThemeToggle />
@@ -545,7 +545,7 @@ export function Header() {
                       }}
                     >
                       <Check className="w-3.5 h-3.5 mr-1" />
-                      Mark all read
+                      Mark All Read
                     </Button>
                   )}
                 </div>
@@ -620,7 +620,7 @@ export function Header() {
                 <div className="border-t border-border p-2">
                   <Button variant="ghost" size="sm" className="w-full rounded-xl" asChild>
                     <Link href="/notifications" onClick={() => setNotifPopoverOpen(false)}>
-                      View all notifications
+                      View All Notifications
                     </Link>
                   </Button>
                 </div>
@@ -704,7 +704,7 @@ export function Header() {
                       className="flex items-center gap-3 py-2 px-3 cursor-pointer rounded-lg"
                     >
                       <User className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">Edit profile</span>
+                      <span className="text-sm font-medium">Edit Profile</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -724,7 +724,7 @@ export function Header() {
                     className="flex items-center gap-3 py-2 px-3 cursor-pointer rounded-lg text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span className="text-sm font-medium">Sign out</span>
+                    <span className="text-sm font-medium">Sign Out</span>
                   </DropdownMenuItem>
                 </div>
               </DropdownMenuContent>

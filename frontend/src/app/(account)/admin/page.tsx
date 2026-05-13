@@ -137,7 +137,7 @@ export default function AdminPage() {
                 <main className="flex-1 pt-20 pb-8">
                     <PageShell
                         variant="reading"
-                        title="Access denied"
+                        title="Access Denied"
                         description="You don't have permission to access the admin panel. This area is restricted to administrators only."
                     >
                     <motion.div
@@ -167,13 +167,13 @@ export default function AdminPage() {
             <main className="flex-1 pt-20 pb-8">
                 <PageShell
                     variant="wide"
-                    title="Admin panel"
+                    title="Admin Panel"
                     description="Manage users and content across the platform."
                     headerLead={
                         <Button variant="ghost" size="sm" asChild className="w-fit -ml-2">
                             <Link href="/dashboard" className="flex items-center gap-2">
                                 <ArrowLeft className="w-4 h-4" />
-                                Back to dashboard
+                                Back to Dashboard
                             </Link>
                         </Button>
                     }
