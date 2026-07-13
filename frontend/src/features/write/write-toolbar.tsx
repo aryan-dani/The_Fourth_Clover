@@ -29,7 +29,7 @@ import {
 } from "./layout-classes";
 
 type Props = {
-  editId: string | null;
+  editId: string | null | undefined;
   isAutoSaving: boolean;
   lastSaved: Date | null;
   settingsOpen: boolean;
@@ -150,7 +150,7 @@ export function WriteToolbar({
                   Post Settings
                 </SheetTitle>
                 <SheetDescription className="font-sans text-xs text-muted-foreground/70">
-                  Cover, slug, tags. Use “More options” for schedule and excerpt.
+                  Cover, slug, tags. Use “More options” for excerpt.
                 </SheetDescription>
               </SheetHeader>
               <div className="scrollbar-meta flex-1 overflow-y-auto px-6 py-6 pr-5">

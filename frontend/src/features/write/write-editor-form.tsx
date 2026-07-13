@@ -9,7 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Clock, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
 import type { PostFormValues } from "@/features/write/write-meta-fields";
 
@@ -19,7 +19,6 @@ type Props = {
   submissionMessage: string;
   wordCount: number;
   readTime: number;
-  scheduled_at: string | null | undefined;
 };
 
 export function WriteEditorForm({
@@ -28,7 +27,6 @@ export function WriteEditorForm({
   submissionMessage,
   wordCount,
   readTime,
-  scheduled_at,
 }: Props) {
   return (
     <>
@@ -82,23 +80,10 @@ export function WriteEditorForm({
           />
         </div>
 
-        <div className="mt-10 flex flex-col gap-2 border-t border-border/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3 font-sans text-[11px] tabular-nums tracking-wide text-muted-foreground/50">
-            <span>{wordCount} words</span>
-            <span className="h-2.5 w-px bg-border/25" aria-hidden />
-            <span>{readTime} min read</span>
-          </div>
-          {scheduled_at && (
-            <div className="flex items-center gap-1.5 text-[11px] text-primary">
-              <Clock className="h-3 w-3 shrink-0 opacity-80" />
-              <span className="font-sans text-muted-foreground">
-                Scheduled{" "}
-                <span className="text-primary">
-                  {new Date(scheduled_at).toLocaleString()}
-                </span>
-              </span>
-            </div>
-          )}
+        <div className="mt-10 flex items-center gap-3 border-t border-border/10 pt-4 font-sans text-[11px] tabular-nums tracking-wide text-muted-foreground/50">
+          <span>{wordCount} words</span>
+          <span className="h-2.5 w-px bg-border/25" aria-hidden />
+          <span>{readTime} min read</span>
         </div>
       </form>
     </>

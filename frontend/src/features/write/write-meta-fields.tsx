@@ -24,7 +24,6 @@ import {
   ImageIcon,
   Loader2,
   X,
-  Calendar,
   Tag,
   FileText,
   Link2,
@@ -48,7 +47,7 @@ export type WriteMetaFieldsProps = {
   handleImageFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isUploading: boolean;
   idPrefix: string;
-  /** Open “More options” when editing a post that already uses these fields */
+  /** Open “More options” when editing a post that already has an excerpt */
   expandMoreInitially?: boolean;
 };
 
@@ -108,7 +107,7 @@ export function WriteMetaFields({
               <div className="flex min-h-[104px] flex-col items-center justify-center rounded-xl border border-dashed border-border/55 bg-muted/[0.11] px-4 py-5 text-center transition-colors hover:border-primary/35 hover:bg-muted/20">
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
                   onChange={handleImageFileChange}
                   className="hidden"
                   id={coverId}
@@ -226,9 +225,9 @@ export function WriteMetaFields({
             className="flex w-full items-center justify-between gap-2 rounded-lg border border-border/60 bg-muted/25 px-3 py-2.5 text-left transition-colors hover:bg-muted/35"
           >
             <span className="text-xs font-medium text-foreground/90">
-              More Options
+              More options
               <span className="ml-1.5 font-normal text-muted-foreground/70">
-                — schedule, excerpt
+                — excerpt
               </span>
             </span>
             <ChevronDown
@@ -240,51 +239,6 @@ export function WriteMetaFields({
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent className="space-y-4 overflow-hidden pt-1">
-          <FormField
-            control={form.control}
-            name="scheduled_at"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="inline-flex items-center gap-2 text-xs font-medium leading-none text-foreground/90">
-                  <Calendar className="h-3.5 w-3.5 shrink-0 translate-y-px text-muted-foreground" />
-                  Schedule
-                </FormLabel>
-                <FormControl>
-                  <div className="flex gap-2">
-                    <Input
-                      type="datetime-local"
-                      value={
-                        field.value
-                          ? new Date(field.value).toISOString().slice(0, 16)
-                          : ""
-                      }
-                      min={new Date().toISOString().slice(0, 16)}
-                      onChange={(e) => {
-                        field.onChange(
-                          e.target.value
-                            ? new Date(e.target.value).toISOString()
-                            : null,
-                        );
-                      }}
-                      className={cn(META_CONTROL, "h-9 min-w-0 flex-1 text-sm")}
-                    />
-                    {field.value && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 shrink-0 rounded-lg"
-                        onClick={() => field.onChange(null)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
           <FormField
             control={form.control}
             name="excerpt"

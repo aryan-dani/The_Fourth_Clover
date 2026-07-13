@@ -1,17 +1,39 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, ArrowLeft, Lock, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import {
+  Loader2,
+  ArrowLeft,
+  Lock,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+} from "lucide-react";
 import { motion } from "framer-motion";
+import type { EmailOtpType } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { AuthShell } from "@/components/layout/AuthShell";
+
+const ERROR_COPY: Record<string, string> = {
+  invalid_or_expired: "This reset link is no longer valid.",
+  pkce_failed:
+    "This link was opened in a way that cleared its security check (common with email scanners). Request a new link and open it in the same browser.",
+  confirm_failed: "We could not verify this reset link.",
+  missing_token: "This reset link is incomplete.",
+};
 
 function ResetPasswordContent() {
   const router = useRouter();
@@ -24,53 +46,87 @@ function ResetPasswordContent() {
   const [success, setSuccess] = useState(false);
   const [isValidSession, setIsValidSession] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
+  const ranRef = useRef(false);
 
   useEffect(() => {
-    const handlePasswordReset = async () => {
-      const code = searchParams.get("code");
+    if (ranRef.current) return;
+    ranRef.current = true;
 
-      if (code) {
-        try {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-
-          if (error) {
-            console.error("Code exchange error:", error);
-            setError(error.message);
-            setIsValidSession(false);
-          } else if (data.session) {
-            setIsValidSession(true);
-          }
-        } catch (err) {
-          console.error("Error exchanging code:", err);
-          setIsValidSession(false);
-        }
+    const establishRecoverySession = async () => {
+      const urlError = searchParams.get("error");
+      if (urlError) {
+        setError(ERROR_COPY[urlError] ?? decodeURIComponent(urlError));
+        setIsValidSession(false);
         setCheckingSession(false);
         return;
       }
 
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
+      const tokenHash = searchParams.get("token_hash");
+      const otpType = searchParams.get("type") as EmailOtpType | null;
+      const code = searchParams.get("code");
+
+      try {
+        if (tokenHash && otpType) {
+          const { error: otpError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: otpType,
+          });
+          if (otpError) throw otpError;
           setIsValidSession(true);
           setCheckingSession(false);
+          // Drop secrets from the address bar
+          window.history.replaceState({}, "", "/auth/reset-password");
+          return;
         }
-      });
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session) {
-        setIsValidSession(true);
+        if (code) {
+          const { data, error: exchangeError } =
+            await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) throw exchangeError;
+          if (data.session) {
+            setIsValidSession(true);
+            window.history.replaceState({}, "", "/auth/reset-password");
+          }
+          setCheckingSession(false);
+          return;
+        }
+
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange((event, session) => {
+          if (
+            event === "PASSWORD_RECOVERY" ||
+            (event === "SIGNED_IN" && session)
+          ) {
+            setIsValidSession(true);
+            setCheckingSession(false);
+          }
+        });
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session) {
+          setIsValidSession(true);
+        }
+        setCheckingSession(false);
+
+        return () => subscription.unsubscribe();
+      } catch (err) {
+        console.error("Password recovery session error:", err);
+        const message =
+          err instanceof Error ? err.message : "Failed to verify reset link";
+        setError(
+          message.includes("code verifier")
+            ? ERROR_COPY.pkce_failed
+            : message,
+        );
+        setIsValidSession(false);
+        setCheckingSession(false);
       }
-      setCheckingSession(false);
-
-      return () => {
-        subscription.unsubscribe();
-      };
     };
 
-    handlePasswordReset();
+    void establishRecoverySession();
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,19 +138,19 @@ function ResetPasswordContent() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password,
+      const { error: updateError } = await supabase.auth.updateUser({
+        password,
       });
 
-      if (error) throw error;
+      if (updateError) throw updateError;
       setSuccess(true);
 
       await supabase.auth.signOut();
@@ -113,7 +169,10 @@ function ResetPasswordContent() {
     return (
       <AuthShell quote="Almost there — choose a strong password you’ll remember.">
         <div className="flex flex-col items-center gap-3 py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-hidden />
+          <Loader2
+            className="h-8 w-8 animate-spin text-muted-foreground"
+            aria-hidden
+          />
           <p className="text-sm text-muted-foreground">Verifying link…</p>
         </div>
       </AuthShell>
@@ -124,7 +183,7 @@ function ResetPasswordContent() {
     return (
       <AuthShell quote="Links expire for your safety. Request a fresh one anytime.">
         <Card className="border-border/80 shadow-lg">
-          <CardContent className="space-y-4 pt-8 pb-8 text-center">
+          <CardContent className="space-y-4 pb-8 pt-8 text-center">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-destructive/15">
               <Lock className="h-7 w-7 text-destructive" />
             </div>
@@ -132,9 +191,12 @@ function ResetPasswordContent() {
               Invalid or expired link
             </h2>
             <p className="font-sans text-sm text-muted-foreground">
-              This reset link is no longer valid. Request a new one from sign in.
+              This reset link is no longer valid. Request a new one from sign
+              in.
             </p>
-            {error ? <p className="text-xs text-destructive">{error}</p> : null}
+            {error ? (
+              <p className="px-2 text-xs text-destructive">{error}</p>
+            ) : null}
             <Button asChild className="w-full">
               <Link href="/auth/forgot-password">Request new link</Link>
             </Button>
@@ -146,16 +208,27 @@ function ResetPasswordContent() {
 
   return (
     <AuthShell quote="Pick a password only you know — we’ll sign you out of other sessions.">
-      <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} className="mb-6">
+      <motion.div
+        initial={{ opacity: 0, x: -12 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="mb-6"
+      >
         <Button variant="ghost" size="sm" asChild>
-          <Link href="/auth/signin" className="flex items-center text-muted-foreground hover:text-foreground">
+          <Link
+            href="/auth/signin"
+            className="flex items-center text-muted-foreground hover:text-foreground"
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to sign in
           </Link>
         </Button>
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45 }}
+      >
         <Card className="border-border/80 shadow-lg">
           <CardHeader className="space-y-2 pb-2 text-center">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-primary/25 bg-primary/10">
@@ -172,8 +245,12 @@ function ResetPasswordContent() {
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/15">
                   <CheckCircle2 className="h-8 w-8 text-primary" />
                 </div>
-                <h3 className="font-display text-lg font-semibold">Password updated</h3>
-                <p className="font-sans text-sm text-muted-foreground">Redirecting to sign in…</p>
+                <h3 className="font-display text-lg font-semibold">
+                  Password updated
+                </h3>
+                <p className="font-sans text-sm text-muted-foreground">
+                  Redirecting to sign in…
+                </p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -190,20 +267,26 @@ function ResetPasswordContent() {
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="At least 6 characters"
+                      placeholder="At least 8 characters"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      minLength={6}
+                      minLength={8}
                       className="pl-10 pr-10"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -219,12 +302,17 @@ function ResetPasswordContent() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
+                      minLength={8}
                       className="pl-10"
                     />
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isLoading || !password || !confirmPassword}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading || !password || !confirmPassword}
+                >
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -249,7 +337,10 @@ export default function ResetPasswordPage() {
       fallback={
         <AuthShell>
           <div className="flex justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-hidden />
+            <Loader2
+              className="h-8 w-8 animate-spin text-muted-foreground"
+              aria-hidden
+            />
           </div>
         </AuthShell>
       }

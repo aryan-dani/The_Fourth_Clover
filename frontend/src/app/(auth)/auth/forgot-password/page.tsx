@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: `${window.location.origin}/auth/confirm?next=${encodeURIComponent("/auth/reset-password")}`,
       });
 
       if (error) throw error;
@@ -94,7 +94,7 @@ export default function ForgotPasswordPage() {
                   <span className="font-medium text-foreground">{email}</span>
                 </p>
                 <p className="font-sans text-xs text-muted-foreground">
-                  Nothing there? Check spam, or{" "}
+                  Nothing there? Check spam/promotions, or{" "}
                   <button
                     type="button"
                     onClick={() => setSuccess(false)}
@@ -102,6 +102,7 @@ export default function ForgotPasswordPage() {
                   >
                     try again
                   </button>
+                  . Open the link in this browser when it arrives.
                 </p>
               </motion.div>
             ) : (

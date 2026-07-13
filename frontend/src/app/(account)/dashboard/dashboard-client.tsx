@@ -167,17 +167,29 @@ export function DashboardClient({
   };
 
   const handlePublish = async (post: Post) => {
-    if (post.status === "published") {
-      await updatePost(post.id, { status: "draft", published_at: null });
-      toast.success("Post unpublished and moved to drafts.");
-    } else {
-      await updatePost(post.id, {
-        status: "published",
-        published_at: new Date().toISOString(),
-      });
-      toast.success("Post published successfully!");
+    try {
+      if (post.status === "published") {
+        const { error } = await updatePost(post.id, {
+          status: "draft",
+          published_at: null,
+        });
+        if (error) throw error;
+        toast.success("Post unpublished and moved to drafts.");
+      } else {
+        const { error } = await updatePost(post.id, {
+          status: "published",
+          published_at: new Date().toISOString(),
+        });
+        if (error) throw error;
+        toast.success("Post published successfully!");
+      }
+      fetchPosts(false);
+    } catch (error: unknown) {
+      console.error("Error updating publish status:", error);
+      const message =
+        error instanceof Error ? error.message : "Could not update post";
+      toast.error(`Error: ${message}`);
     }
-    fetchPosts(false);
   };
 
   const published = posts.filter((post) => post.status === "published");
