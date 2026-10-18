@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-10-18
+
+### Phase 3: CSI Tech Blog, Editorial Review Workflow, and Rich Markdown Engine
+
+This release introduces the dedicated CSI MIT-WPU Tech Blog publication (`/csi`), a multi-role editorial review workflow (`draft -> in_review -> published`), sanitized Markdown rendering with syntax highlighting, and inline multi-image uploads.
+
+### Added
+
+- **Publications & Review Schema (`supabase/migrations/20261018150000_add_csi_publications.sql`)**:
+  - Added `publications` and `publication_members` (`writer` and `editor` roles) tables with RLS policies and seeded the `csi` publication.
+  - Extended `posts` with `publication_id`, `review_note`, and `in_review` status, backed by restrictive RLS policies and a `BEFORE INSERT OR UPDATE` trigger preventing writers from self-publishing publication posts.
+  - Extended `notifications.type` with `review_submitted`, `review_approved`, and `changes_requested`.
+- **CSI Tech Blog Routes**:
+  - `/csi`: Landing page with mission hero, featured technical post, tag filter chips, paginated post grid, and an "Our Writers" member strip.
+  - `/csi/[slug]`: Technical article view with sticky Table of Contents (`h2`/`h3`), syntax-highlighted code blocks, responsive figures with captions, author card, and "More from CSI" recommendations.
+  - `/csi/write`: Member-gated editor supporting draft saves and one-click submission to the CSI editorial review queue.
+  - `/csi/review`: Editor-only queue for CSI Technical Leads and Secretaries to inspect rendered Markdown, approve and publish, or return drafts with editorial notes.
+  - `/csi/feed.xml`: Dedicated RSS 2.0 feed for published CSI articles.
+- **Rich Markdown Renderer & Inline Image Uploads**:
+  - Built `PostBodyRenderer` using `react-markdown`, `remark-gfm`, `rehype-sanitize`, and `rehype-highlight`, with automatic fallback to paragraph blocks for legacy plain-text posts.
+  - Added an "Insert image" toolbar button, drag-and-drop, and clipboard image paste in `WriteEditorForm` with a required alt-text dialog and a live `Write | Preview` toggle.
+
+### Changed
+
+- **Navigation, Dashboard, and Admin**:
+  - Added `CSI` navigation links to `Header` and `Footer`.
+  - Updated `DashboardClient` with an `In Review` tab, `CSI` publication badges, and review-aware status actions.
+  - Updated `AdminPage` with a `CSI Members` tab to assign or remove CSI writers and editors.
+  - Updated `sitemap.ts` and `robots.ts` to index `/csi` and `/csi/[slug]` while disallowing `/write`, `/csi/write`, and `/csi/review`.
+
+---
+
 ## [1.1.0] - 2026-05-10
 
 ### Phase 2: Performance Output & Render Architecture

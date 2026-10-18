@@ -36,10 +36,13 @@ If you like what you see, please consider giving this repository a ⭐ to help o
 ### 📝 Core Platform Capabilities
 
 - **Modern Minimal Design**: Seamless dark/light layouts crafted with `shadcn/ui` and `Tailwind`.
-- **Rich Editor**: Robust write experience mapped to `react-hook-form` and `zod` schema validations.
-- **Content Dashboard**: Data tables mapped with sorting and pagination via TanStack Table.
-- **Notifications & UI**: Toast updates driven by Sonner.
-- **Media Support**: Efficient cover image uploads bound directly to Supabase Storage.
+- **CSI Tech Blog (`/csi`)**: Dedicated publication hub for CSI MIT-WPU technical members with a hero feed, tag filter chips, member directory, editorial review queue (`/csi/review`), and dedicated RSS feed (`/csi/feed.xml`).
+- **Sanitized Markdown & Syntax Highlighting**: Rich technical articles rendered via `react-markdown`, `remark-gfm`, `rehype-sanitize`, and `rehype-highlight`, complete with automatic Table of Contents (`h2`/`h3`) and responsive figures.
+- **Rich Editor with Inline Images**: Write/Preview toggle, multi-image uploads (toolbar button, drag-and-drop, and clipboard paste) with required alt-text prompts, bound to `react-hook-form` and `zod` schema validations.
+- **Editorial Review Workflow**: Role-based `draft -> in_review -> published` pipeline enforced by Supabase RLS and Postgres triggers, with editor approval and change-request notifications.
+- **Content Dashboard**: Data tables mapped with sorting, publication badges, and `In Review` filtering via TanStack Table.
+- **Notifications & UI**: Real-time toast updates driven by Sonner and deep-linked notification routing.
+- **Media Support**: Cover and inline image uploads bound directly to Supabase Storage (`post-images` bucket).
 - **Auth**: Fully backed by Supabase Auth protocols (OAuth & Email).
 
 ### 👥 Social Dynamics
@@ -132,16 +135,18 @@ This repository is available under the [MIT License](LICENSE).
 
 ```
 The-Fourth-Clover/
-├── frontend/                 # Next.js app (single package — install & run here)
+├── frontend/                 # Next.js app (single package - install & run here)
 │   ├── src/
 │   │   ├── app/              # Routes (groups: marketing, auth, main, account, dev-only)
-│   │   ├── components/       # Layout + shadcn/ui
-│   │   ├── features/         # auth, comments, notifications, data
+│   │   ├── components/       # Layout + shadcn/ui + post renderer
+│   │   ├── features/         # auth, comments, notifications, data, write
 │   │   ├── hooks/
 │   │   ├── lib/
 │   │   └── types/
 │   ├── scripts/              # Optional: inspect-schema, query-tool, verify-supabase
 │   └── public/
+├── supabase/
+│   └── migrations/           # SQL schema migrations and RLS policies
 ├── CONTRIBUTING.md
 ├── LICENSE
 ├── netlify.toml              # base = "frontend"
@@ -150,8 +155,9 @@ The-Fourth-Clover/
 
 ## Database (overview)
 
-- **profiles**, **posts**, **comments**, **likes** (and related policies)
-- RLS on user-facing tables, indexes and FKs as appropriate
+- **profiles**, **posts**, **publications**, **publication_members**, **comments**, **likes**, **notifications**, **follows** (and related policies)
+- RLS on all user-facing tables and storage buckets, with restrictive publication workflow enforcement (`draft -> in_review -> published`)
+- Apply migrations with `supabase db push` from the repository root
 
 ## Development helpers
 

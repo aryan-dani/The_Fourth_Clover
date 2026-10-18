@@ -60,6 +60,11 @@ First off, thank you for considering contributing to The Fourth Clover! We welco
 - **Framer Motion**:
   - Heavy animations shouldn't halt the main thread. We utilize `<LazyMotion features={domAnimation}>` paired with `<m.div>` syntax instead of default `<motion.div>` structures. Please preserve this pattern when adding animated UI states!
 - **Component Scalability**: Prefer abstraction using `shadcn/ui` components located in `/components/ui/` rather than repeating custom Tailwind elements globally.
+- **Database & RLS**:
+  - Place all schema and policy changes in timestamped SQL files under `supabase/migrations/` and keep `frontend/src/lib/supabase/client.ts` and `frontend/src/types/database.ts` synchronized.
+  - Enforce authorization in both Server Components/Actions (`features/data/`) and Postgres RLS policies. Never add public `SELECT` listing policies on storage buckets.
+- **Rich Content & Markdown**:
+  - Post content is rendered via `PostBodyRenderer` using `react-markdown`, `remark-gfm`, `rehype-sanitize`, and `rehype-highlight` (with `rehype-sanitize` running before `rehype-highlight` so untrusted HTML is stripped while syntax-highlighting spans are preserved).
 
 ## ✨ Commit Conventions
 
