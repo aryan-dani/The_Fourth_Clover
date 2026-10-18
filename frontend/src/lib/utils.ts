@@ -110,3 +110,48 @@ export function toTitleCase(str: string): string {
     .join(" ");
 }
 
+/**
+ * Returns the ISO week identifier (e.g. "2026-W42") used to lock the
+ * single Weekly LinkedIn Pick for the Sunday-to-Wednesday CSI cycle.
+ */
+export function getCurrentWeekKey(referenceDate: Date = new Date()): string {
+  const d = new Date(
+    Date.UTC(
+      referenceDate.getFullYear(),
+      referenceDate.getMonth(),
+      referenceDate.getDate(),
+    ),
+  );
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(
+    ((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
+  );
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+}
+
+export function formatLinkedinRepostCopy(params: {
+  title: string;
+  authorName: string;
+  excerpt?: string | null;
+  tags?: string[] | null;
+  url: string;
+  weekKey?: string | null;
+}): string {
+  const hashtags = [
+    "#CSIMITWPU",
+    "#TheFourthClover",
+    "#TechBlog",
+    ...(params.tags || [])
+      .slice(0, 4)
+      .map((t) => `#${t.replace(/[^a-zA-Z0-9]/g, "")}`)
+      .filter((t) => t.length > 1),
+  ].join(" ");
+
+  const summary = params.excerpt?.trim()
+    ? `\n\n${params.excerpt.trim()}`
+    : "";
+
+  return `🚀 CSI MIT-WPU Weekly Technical Pick (${params.weekKey || getCurrentWeekKey()})\n\n"${params.title}" by ${params.authorName}${summary}\n\nRead the full technical deep-dive on The Fourth Clover:\n${params.url}\n\n${hashtags}`;
+}

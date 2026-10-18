@@ -57,7 +57,7 @@ export function useMutatePost(
   options?: UseMutatePostOptions,
 ) {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isInlineUploading, setIsInlineUploading] = useState(false);
@@ -122,7 +122,8 @@ export function useMutatePost(
       if (!data) return;
 
       const authorId = userIdRef.current;
-      const isEditor = options?.memberRole === "editor";
+      const isEditor =
+        options?.memberRole === "editor" || Boolean(profile?.is_admin);
       if (authorId && data.author_id !== authorId && !isEditor) {
         toast.error("You don't have access to this post.");
         router.push("/dashboard");
@@ -151,7 +152,14 @@ export function useMutatePost(
       console.error("Error loading post:", error);
       toast.error("Failed to load post data.");
     }
-  }, [postId, form, router, options?.memberRole, options?.publicationId]);
+  }, [
+    postId,
+    form,
+    router,
+    options?.memberRole,
+    options?.publicationId,
+    profile?.is_admin,
+  ]);
 
   useEffect(() => {
     if (postId) {

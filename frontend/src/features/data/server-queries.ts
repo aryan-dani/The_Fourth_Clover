@@ -1,4 +1,9 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { cache } from "react";
+import {
+  createSupabaseServerClient,
+  createSupabasePublicServerClient,
+} from "@/lib/supabase/server";
+import { getCurrentWeekKey } from "@/lib/utils";
 import type {
   PostWithAuthor,
   Post,
@@ -39,7 +44,7 @@ const LEGACY_POSTS_WITH_AUTHOR_SELECT = `
 `;
 
 const FALLBACK_CSI_PUBLICATION: Publication = {
-  id: "00000000-0000-0000-0000-000000000c51",
+  id: "38a1f07f-4ed3-4465-b8fa-9899d69e6ea3",
   slug: "csi",
   name: "CSI Tech Blog",
   description:
@@ -57,190 +62,223 @@ function normalizeTags(rows: { tags: string[] | null }[] | null): string[] {
   return allTags;
 }
 
-export async function getPublicationBySlug(
-  slug: string,
-): Promise<Publication | null> {
-  try {
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase
-      .from("publications")
-      .select("*")
-      .eq("slug", slug)
-      .maybeSingle();
+export const getPublicationBySlug = cache(
+  async (slug: string): Promise<Publication | null> => {
+    try {
+      const supabase = createSupabasePublicServerClient();
+      const { data, error } = await supabase
+        .from("publications")
+        .select("*")
+        .eq("slug", slug)
+        .maybeSingle();
 
-    if (error || !data) {
+      if (error || !data) {
+        if (slug === "csi") return FALLBACK_CSI_PUBLICATION;
+        return null;
+      }
+
+      return data as Publication;
+    } catch {
       if (slug === "csi") return FALLBACK_CSI_PUBLICATION;
       return null;
     }
+  },
+);
 
-    return data as Publication;
-  } catch {
-    if (slug === "csi") return FALLBACK_CSI_PUBLICATION;
-    return null;
-  }
-}
+export const listPublicationPosts = cache(
+  async (
+    publicationSlug: string,
+    limit = 20,
+    offset = 0,
+  ): Promise<{
+    publication: Publication | null;
+    posts: PostWithAuthor[];
+    submissions: PostWithAuthor[];
+    weeklyPick: PostWithAuthor | null;
+    tags: string[];
+    error: string | null;
+  }> => {
+    try {
+      const publication = await getPublicationBySlug(publicationSlug);
+      if (!publication) {
+        return {
+          publication: null,
+          posts: [],
+          submissions: [],
+          weeklyPick: null,
+          tags: [],
+          error: null,
+        };
+      }
 
-export async function listPublicationPosts(
-  publicationSlug: string,
-  limit = 20,
-  offset = 0,
-): Promise<{
-  publication: Publication | null;
-  posts: PostWithAuthor[];
-  tags: string[];
-  error: string | null;
-}> {
-  try {
-    const supabase = await createSupabaseServerClient();
-    const { data: pubData, error: pubError } = await supabase
-      .from("publications")
-      .select("*")
-      .eq("slug", publicationSlug)
-      .maybeSingle();
+      const supabase = createSupabasePublicServerClient();
+      const end = offset + limit - 1;
 
-    if (pubError || !pubData) {
+      const [publishedRes, submissionsRes] = await Promise.all([
+        supabase
+          .from("posts")
+          .select(POSTS_WITH_AUTHOR_SELECT)
+          .eq("publication_id", publication.id)
+          .eq("status", "published")
+          .order("published_at", { ascending: false })
+          .range(offset, end),
+        supabase
+          .from("posts")
+          .select(POSTS_WITH_AUTHOR_SELECT)
+          .eq("publication_id", publication.id)
+          .eq("status", "in_review")
+          .order("updated_at", { ascending: false })
+          .limit(30),
+      ]);
+
+      if (publishedRes.error) {
+        return {
+          publication,
+          posts: [],
+          submissions: [],
+          weeklyPick: null,
+          tags: [],
+          error: publishedRes.error.message,
+        };
+      }
+
+      const posts = (publishedRes.data || []) as PostWithAuthor[];
+      const submissions = (submissionsRes.data || []) as PostWithAuthor[];
+      const combined = [...posts, ...submissions];
+      const tags = normalizeTags(combined);
+
+      const currentWeek = getCurrentWeekKey();
+      const weeklyPick =
+        combined.find((p) => p.linkedin_pick_week === currentWeek) ||
+        combined.find((p) => Boolean(p.linkedin_pick_week)) ||
+        null;
+
+      return {
+        publication,
+        posts,
+        submissions,
+        weeklyPick,
+        tags,
+        error: null,
+      };
+    } catch (e) {
       return {
         publication:
           publicationSlug === "csi" ? FALLBACK_CSI_PUBLICATION : null,
         posts: [],
+        submissions: [],
+        weeklyPick: null,
         tags: [],
-        error: null,
+        error:
+          e instanceof Error ? e.message : "Failed to load publication posts",
       };
     }
+  },
+);
 
-    const publication = pubData as Publication;
-    const end = offset + limit - 1;
+export const fetchPublicationPostBySlug = cache(
+  async (
+    publicationSlug: string,
+    postSlug: string,
+  ): Promise<PostWithAuthor | null> => {
+    try {
+      const publication = await getPublicationBySlug(publicationSlug);
+      if (!publication) return null;
 
-    const [postsRes, tagRowsRes] = await Promise.all([
-      supabase
+      const publicSupabase = createSupabasePublicServerClient();
+      const { data } = await publicSupabase
         .from("posts")
         .select(POSTS_WITH_AUTHOR_SELECT)
         .eq("publication_id", publication.id)
-        .eq("status", "published")
-        .order("published_at", { ascending: false })
-        .range(offset, end),
-      supabase
+        .eq("slug", postSlug)
+        .maybeSingle();
+
+      if (data) {
+        return data as PostWithAuthor;
+      }
+
+      // Fallback to authenticated server client for private drafts
+      const authSupabase = await createSupabaseServerClient();
+      const { data: draftData } = await authSupabase
         .from("posts")
-        .select("tags")
+        .select(POSTS_WITH_AUTHOR_SELECT)
         .eq("publication_id", publication.id)
-        .eq("status", "published")
-        .not("tags", "is", null),
-    ]);
+        .eq("slug", postSlug)
+        .maybeSingle();
 
-    if (postsRes.error) {
-      return {
-        publication,
-        posts: [],
-        tags: [],
-        error: postsRes.error.message,
-      };
+      return (draftData as PostWithAuthor | null) ?? null;
+    } catch {
+      return null;
     }
+  },
+);
 
-    const posts = (postsRes.data || []) as PostWithAuthor[];
-    const tags = normalizeTags(
-      (tagRowsRes.data as { tags: string[] | null }[] | null) ?? null,
-    );
+export const getPublicationMembers = cache(
+  async (publicationSlug: string): Promise<PublicationMemberWithProfile[]> => {
+    try {
+      const publication = await getPublicationBySlug(publicationSlug);
+      if (!publication) return [];
 
-    return { publication, posts, tags, error: null };
-  } catch (e) {
-    return {
-      publication:
-        publicationSlug === "csi" ? FALLBACK_CSI_PUBLICATION : null,
-      posts: [],
-      tags: [],
-      error:
-        e instanceof Error ? e.message : "Failed to load publication posts",
-    };
-  }
-}
-
-export async function fetchPublicationPostBySlug(
-  publicationSlug: string,
-  postSlug: string,
-): Promise<PostWithAuthor | null> {
-  try {
-    const supabase = await createSupabaseServerClient();
-    const { data: pubData } = await supabase
-      .from("publications")
-      .select("id, slug, name")
-      .eq("slug", publicationSlug)
-      .maybeSingle();
-
-    if (!pubData) return null;
-
-    const { data, error } = await supabase
-      .from("posts")
-      .select(POSTS_WITH_AUTHOR_SELECT)
-      .eq("publication_id", pubData.id)
-      .eq("slug", postSlug)
-      .maybeSingle();
-
-    if (error || !data) return null;
-    return data as PostWithAuthor;
-  } catch {
-    return null;
-  }
-}
-
-export async function getPublicationMembers(
-  publicationSlug: string,
-): Promise<PublicationMemberWithProfile[]> {
-  try {
-    const supabase = await createSupabaseServerClient();
-    const { data: pubData } = await supabase
-      .from("publications")
-      .select("id")
-      .eq("slug", publicationSlug)
-      .maybeSingle();
-
-    if (!pubData) return [];
-
-    const { data, error } = await supabase
-      .from("publication_members")
-      .select(
-        `
-        publication_id,
-        user_id,
-        role,
-        created_at,
-        profile:profiles!publication_members_user_id_fkey (
-          id,
-          username,
-          full_name,
-          avatar_url,
-          bio
+      const supabase = createSupabasePublicServerClient();
+      const { data, error } = await supabase
+        .from("publication_members")
+        .select(
+          `
+          publication_id,
+          user_id,
+          role,
+          created_at,
+          profile:profiles!publication_members_user_id_fkey (
+            id,
+            username,
+            full_name,
+            avatar_url,
+            bio
+          )
+        `,
         )
-      `,
-      )
-      .eq("publication_id", pubData.id)
-      .order("role", { ascending: true })
-      .order("created_at", { ascending: true });
+        .eq("publication_id", publication.id)
+        .order("role", { ascending: true })
+        .order("created_at", { ascending: true });
 
-    if (error || !data) return [];
+      if (error || !data) return [];
 
-    return (data as unknown as PublicationMemberWithProfile[]).filter(
-      (m) => Boolean(m.profile),
-    );
-  } catch {
-    return [];
-  }
-}
+      return (data as unknown as PublicationMemberWithProfile[]).filter((m) =>
+        Boolean(m.profile),
+      );
+    } catch {
+      return [];
+    }
+  },
+);
 
 export async function getUserPublicationRole(
   publicationSlug: string,
   userId: string,
 ): Promise<{
   role: PublicationRole | null;
+  isSuperAdmin: boolean;
   publicationId: string | null;
   publicationName: string | null;
 }> {
   try {
-    const supabase = await createSupabaseServerClient();
-    const [pubRes, profileRes] = await Promise.all([
+    const pub = await getPublicationBySlug(publicationSlug);
+    if (!pub) {
+      return {
+        role: null,
+        isSuperAdmin: false,
+        publicationId: null,
+        publicationName: null,
+      };
+    }
+
+    const supabase = createSupabasePublicServerClient();
+    const [memberRes, profileRes] = await Promise.all([
       supabase
-        .from("publications")
-        .select("id, name")
-        .eq("slug", publicationSlug)
+        .from("publication_members")
+        .select("role")
+        .eq("publication_id", pub.id)
+        .eq("user_id", userId)
         .maybeSingle(),
       supabase
         .from("profiles")
@@ -249,29 +287,22 @@ export async function getUserPublicationRole(
         .maybeSingle(),
     ]);
 
-    const pub = pubRes.data;
-    if (!pub) {
-      return { role: null, publicationId: null, publicationName: null };
-    }
+    const isSuperAdmin = Boolean(profileRes.data?.is_admin);
+    const memberRole = memberRes.data?.role;
 
-    const { data: memberRow } = await supabase
-      .from("publication_members")
-      .select("role")
-      .eq("publication_id", pub.id)
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (memberRow?.role === "editor" || memberRow?.role === "writer") {
+    if (isSuperAdmin || memberRole === "editor") {
       return {
-        role: memberRow.role,
+        role: "editor",
+        isSuperAdmin,
         publicationId: pub.id,
         publicationName: pub.name,
       };
     }
 
-    if (profileRes.data?.is_admin) {
+    if (memberRole === "writer") {
       return {
-        role: "editor",
+        role: "writer",
+        isSuperAdmin: false,
         publicationId: pub.id,
         publicationName: pub.name,
       };
@@ -279,11 +310,17 @@ export async function getUserPublicationRole(
 
     return {
       role: null,
+      isSuperAdmin: false,
       publicationId: pub.id,
       publicationName: pub.name,
     };
   } catch {
-    return { role: null, publicationId: null, publicationName: null };
+    return {
+      role: null,
+      isSuperAdmin: false,
+      publicationId: null,
+      publicationName: null,
+    };
   }
 }
 
@@ -291,7 +328,9 @@ export async function listReviewQueue(
   publicationSlug: string,
 ): Promise<{
   authorized: boolean;
+  isSuperAdmin: boolean;
   posts: PostWithAuthor[];
+  publishedPosts: PostWithAuthor[];
   publication: Publication | null;
 }> {
   try {
@@ -301,148 +340,146 @@ export async function listReviewQueue(
     } = await supabase.auth.getUser();
 
     if (!user?.id) {
-      return { authorized: false, posts: [], publication: null };
-    }
-
-    const { data: pubData } = await supabase
-      .from("publications")
-      .select("*")
-      .eq("slug", publicationSlug)
-      .maybeSingle();
-
-    if (!pubData) {
       return {
         authorized: false,
+        isSuperAdmin: false,
         posts: [],
-        publication:
-          publicationSlug === "csi" ? FALLBACK_CSI_PUBLICATION : null,
+        publishedPosts: [],
+        publication: null,
       };
     }
 
-    const roleInfo = await getUserPublicationRole(publicationSlug, user.id);
-    if (roleInfo.role !== "editor") {
+    const [publication, roleInfo] = await Promise.all([
+      getPublicationBySlug(publicationSlug),
+      getUserPublicationRole(publicationSlug, user.id),
+    ]);
+
+    if (!publication || roleInfo.role !== "editor") {
       return {
         authorized: false,
+        isSuperAdmin: roleInfo.isSuperAdmin,
         posts: [],
-        publication: pubData as Publication,
+        publishedPosts: [],
+        publication,
       };
     }
 
-    const { data: postsData, error } = await supabase
-      .from("posts")
-      .select(POSTS_WITH_AUTHOR_SELECT)
-      .eq("publication_id", pubData.id)
-      .eq("status", "in_review")
-      .order("updated_at", { ascending: false });
-
-    if (error) {
-      return {
-        authorized: true,
-        posts: [],
-        publication: pubData as Publication,
-      };
-    }
+    const [inReviewRes, publishedRes] = await Promise.all([
+      supabase
+        .from("posts")
+        .select(POSTS_WITH_AUTHOR_SELECT)
+        .eq("publication_id", publication.id)
+        .eq("status", "in_review")
+        .order("updated_at", { ascending: false }),
+      supabase
+        .from("posts")
+        .select(POSTS_WITH_AUTHOR_SELECT)
+        .eq("publication_id", publication.id)
+        .eq("status", "published")
+        .order("published_at", { ascending: false })
+        .limit(20),
+    ]);
 
     return {
       authorized: true,
-      posts: (postsData || []) as PostWithAuthor[],
-      publication: pubData as Publication,
+      isSuperAdmin: roleInfo.isSuperAdmin,
+      posts: (inReviewRes.data || []) as PostWithAuthor[],
+      publishedPosts: (publishedRes.data || []) as PostWithAuthor[],
+      publication,
     };
   } catch {
-    return { authorized: false, posts: [], publication: null };
+    return {
+      authorized: false,
+      isSuperAdmin: false,
+      posts: [],
+      publishedPosts: [],
+      publication: null,
+    };
   }
 }
 
-export async function listRelatedPublicationPosts(
-  publicationSlug: string,
-  excludePostId: string,
-  limit = 3,
-): Promise<PostWithAuthor[]> {
-  try {
-    const supabase = await createSupabaseServerClient();
-    const { data: pubData } = await supabase
-      .from("publications")
-      .select("id")
-      .eq("slug", publicationSlug)
-      .maybeSingle();
+export const listRelatedPublicationPosts = cache(
+  async (
+    publicationSlug: string,
+    excludePostId: string,
+    limit = 3,
+  ): Promise<PostWithAuthor[]> => {
+    try {
+      const pubData = await getPublicationBySlug(publicationSlug);
+      if (!pubData) return [];
 
-    if (!pubData) return [];
+      const supabase = createSupabasePublicServerClient();
+      const { data } = await supabase
+        .from("posts")
+        .select(POSTS_WITH_AUTHOR_SELECT)
+        .eq("publication_id", pubData.id)
+        .eq("status", "published")
+        .neq("id", excludePostId)
+        .order("published_at", { ascending: false })
+        .limit(limit);
 
-    const { data } = await supabase
-      .from("posts")
-      .select(POSTS_WITH_AUTHOR_SELECT)
-      .eq("publication_id", pubData.id)
-      .eq("status", "published")
-      .neq("id", excludePostId)
-      .order("published_at", { ascending: false })
-      .limit(limit);
+      return (data || []) as PostWithAuthor[];
+    } catch {
+      return [];
+    }
+  },
+);
 
-    return (data || []) as PostWithAuthor[];
-  } catch {
-    return [];
-  }
-}
-
-export async function fetchExploreInitialData(
-  limit = 20,
-  offset = 0,
-): Promise<{
-  posts: PostWithAuthor[];
-  tags: string[];
-  error: string | null;
-}> {
-  try {
-    const supabase = await createSupabaseServerClient();
-    const end = offset + limit - 1;
-    const [postsRes, tagRowsRes] = await Promise.all([
-      supabase
+export const fetchExploreInitialData = cache(
+  async (
+    limit = 20,
+    offset = 0,
+  ): Promise<{
+    posts: PostWithAuthor[];
+    tags: string[];
+    error: string | null;
+  }> => {
+    try {
+      const supabase = createSupabasePublicServerClient();
+      const end = offset + limit - 1;
+      const { data, error } = await supabase
         .from("posts")
         .select(LEGACY_POSTS_WITH_AUTHOR_SELECT)
         .eq("status", "published")
         .order("published_at", { ascending: false })
-        .range(offset, end),
-      supabase
-        .from("posts")
-        .select("tags")
-        .eq("status", "published")
-        .not("tags", "is", null),
-    ]);
+        .range(offset, end);
 
-    if (postsRes.error) {
+      if (error) {
+        return {
+          posts: [],
+          tags: [],
+          error: error.message,
+        };
+      }
+
+      const posts = (data || []) as PostWithAuthor[];
+      const tags = normalizeTags(posts);
+
+      return { posts, tags, error: null };
+    } catch (e) {
       return {
         posts: [],
         tags: [],
-        error: postsRes.error.message,
+        error: e instanceof Error ? e.message : "Failed to load explore data",
       };
     }
+  },
+);
 
-    const posts = (postsRes.data || []) as PostWithAuthor[];
-    const tags = normalizeTags(tagRowsRes.data);
+export const fetchPostBySlugForPage = cache(
+  async (slug: string): Promise<PostWithAuthor | null> => {
+    const supabase = createSupabasePublicServerClient();
+    const { data, error } = await supabase
+      .from("posts")
+      .select(LEGACY_POSTS_WITH_AUTHOR_SELECT)
+      .eq("slug", slug)
+      .eq("status", "published")
+      .single();
 
-    return { posts, tags, error: null };
-  } catch (e) {
-    return {
-      posts: [],
-      tags: [],
-      error: e instanceof Error ? e.message : "Failed to load explore data",
-    };
-  }
-}
-
-export async function fetchPostBySlugForPage(
-  slug: string,
-): Promise<PostWithAuthor | null> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("posts")
-    .select(LEGACY_POSTS_WITH_AUTHOR_SELECT)
-    .eq("slug", slug)
-    .eq("status", "published")
-    .single();
-
-  if (error || !data) return null;
-  return data as PostWithAuthor;
-}
+    if (error || !data) return null;
+    return data as PostWithAuthor;
+  },
+);
 
 type PostWithCounts = Post & {
   likes: { count: number }[];
