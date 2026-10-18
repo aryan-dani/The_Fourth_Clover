@@ -116,9 +116,25 @@ export function ProfilePageClient({
               <h1 className="font-display text-3xl md:text-4xl font-semibold tracking-tight text-foreground mb-2">
                 {profile.full_name || profile.username}
               </h1>
-              <p className="font-sans text-muted-foreground text-base md:text-lg mb-5">
+              <p className="font-sans text-muted-foreground text-base md:text-lg mb-3">
                 @{profile.username}
               </p>
+
+              {(profile.csi_id ||
+                (profile.role && profile.role !== "unverified")) && (
+                <div className="flex flex-wrap items-center justify-center gap-2 mb-5">
+                  <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 px-3 py-1 text-xs font-medium">
+                    {profile.role === "super_admin" || profile.csi_id === 303
+                      ? "CSI Technical Secretary · Super Admin"
+                      : profile.role === "tech_head" ||
+                          profile.csi_id === 241 ||
+                          profile.csi_id === 246
+                        ? "CSI Technical Head"
+                        : `CSI ${profile.dept || "Tech"}${profile.year ? ` · ${profile.year}` : ""}`}
+                    {profile.csi_id ? ` · #${profile.csi_id}` : ""}
+                  </Badge>
+                </div>
+              )}
 
               {!isOwnProfile && (
                 <div className="flex justify-center mb-5">
