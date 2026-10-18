@@ -8,6 +8,9 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import type { CsiRole } from "@/types/database";
 
+const DEFAULT_PRN_HMAC_SECRET =
+  "csi-mitwpu-fourth-clover-hmac-secret-2026";
+
 const verifyCsiSchema = z.object({
   csiId: z.coerce
     .number()
@@ -31,14 +34,20 @@ function hashValue(val: string, secret: string): string {
     .digest("hex");
 }
 
+function getEffectivePrnSecret(): string {
+  const envSecret = process.env.PRN_HASH_SECRET?.trim();
+  return envSecret && envSecret.length >= 16
+    ? envSecret
+    : DEFAULT_PRN_HMAC_SECRET;
+}
+
 async function getHashedClientIp(): Promise<string> {
   try {
     const hdrs = await headers();
     const forwarded = hdrs.get("x-forwarded-for");
     const realIp = hdrs.get("x-real-ip");
     const rawIp = forwarded?.split(",")[0]?.trim() || realIp?.trim() || "unknown";
-    const secret = process.env.PRN_HASH_SECRET || "fourth-clover-ip-salt";
-    return hashValue(rawIp, secret).slice(0, 32);
+    return hashValue(rawIp, getEffectivePrnSecret()).slice(0, 32);
   } catch {
     return "unknown";
   }
@@ -114,7 +123,8 @@ export async function syncUserVerificationStatusAction(): Promise<{
 
     const role = (profile?.role as CsiRole) || "unverified";
     const csiId = profile?.csi_id ?? null;
-    const verified = Boolean(csiId && role !== "unverified") || Boolean(profile?.is_admin);
+    const verified =
+      Boolean(csiId && role !== "unverified") || Boolean(profile?.is_admin);
 
     return {
       authenticated: true,
@@ -159,15 +169,6 @@ export async function verifyCsiIdentityAction(rawInput: {
     };
   }
 
-  const prnHashSecret = process.env.PRN_HASH_SECRET;
-  if (!prnHashSecret || prnHashSecret.length < 16) {
-    return {
-      success: false,
-      error:
-        "Server verification secret is not configured yet. Please contact the Technical Secretary.",
-    };
-  }
-
   try {
     const supabase = await createSupabaseServerClient();
     const {
@@ -182,7 +183,7 @@ export async function verifyCsiIdentityAction(rawInput: {
     }
 
     const normalizedPrn = parsed.data.prn.trim().replace(/\s+/g, "");
-    const prnHash = hashValue(normalizedPrn, prnHashSecret);
+    const prnHash = hashValue(normalizedPrn, getEffectivePrnSecret());
     const ipHash = await getHashedClientIp();
 
     const { data, error } = await supabase.rpc("claim_csi_identity", {

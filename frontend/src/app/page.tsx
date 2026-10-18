@@ -3,6 +3,8 @@ import { Footer } from "@/components/layout/Footer";
 import { HomeHeroClient } from "@/components/home/HomeHeroClient";
 import { fetchFeaturedTechWeeklyPost } from "@/features/data/tech-weekly-actions";
 
+export const revalidate = 15;
+
 export default async function HomePage() {
   const featuredPick = await fetchFeaturedTechWeeklyPost();
 

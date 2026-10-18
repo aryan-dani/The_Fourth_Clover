@@ -2,19 +2,20 @@
 
 import Link from "next/link";
 import { Github, Linkedin } from "lucide-react";
-import { CloverMark } from "@/components/layout/CloverMark";
 
 export function Footer() {
   return (
     <footer className="mt-auto border-t border-border/80 bg-background">
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl px-4 pt-12 pb-24 md:pb-12 sm:px-6 lg:px-8">
         <div className="grid gap-10 md:grid-cols-12">
           <div className="md:col-span-5 space-y-3">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-foreground">
-                <CloverMark className="h-3.5 w-3.5" />
-              </span>
-              <span className="font-display text-base font-semibold tracking-tight text-foreground">
+              <div className="circle-logo h-8 w-8">
+                <span className="text-base leading-none" role="img" aria-label="Clover">
+                  🍀
+                </span>
+              </div>
+              <span className="font-display text-base font-bold tracking-tight text-foreground">
                 The Fourth Clover
               </span>
             </div>
@@ -97,7 +98,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="GitHub Repository"
-                  className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
                 >
                   <Github className="h-3.5 w-3.5" />
                 </a>
@@ -106,7 +107,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="LinkedIn"
-                  className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
                 >
                   <Linkedin className="h-3.5 w-3.5" />
                 </a>

@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
@@ -78,57 +79,70 @@ function slugifyTitle(title: string): string {
   return `${base || "tech-weekly"}-${suffix}`;
 }
 
+function computeIsWindowOpen(
+  week: TechWeek | null,
+  settings: PlatformSettings
+): boolean {
+  if (settings.submissions_override === "force_open") return true;
+  if (settings.submissions_override === "force_closed") return false;
+  if (!week || week.is_locked) return false;
+  const nowMs = Date.now();
+  const startsMs = new Date(week.starts_at).getTime();
+  const cutoffMs = new Date(week.cutoff_at).getTime();
+  return nowMs >= startsMs && nowMs <= cutoffMs;
+}
+
 export async function fetchTechWeeklyLandingData(): Promise<TechWeeklyLandingPayload> {
   const supabase = createSupabasePublicServerClient();
 
-  // Ensure current IST week exists
-  await supabase.rpc("get_or_create_current_tech_week");
-
-  const [weeksRes, settingsRes, submissionsRes, reactionsRes, commentsRes] =
-    await Promise.all([
-      supabase
-        .from("tech_weeks")
-        .select("*")
-        .order("starts_at", { ascending: false })
-        .limit(26),
-      supabase
-        .from("platform_settings")
-        .select("*")
-        .eq("id", 1)
-        .maybeSingle(),
-      supabase
-        .from("tech_submissions")
-        .select(
-          `
-          *,
+  const [
+    currentWeekRpcRes,
+    weeksRes,
+    settingsRes,
+    submissionsRes,
+    reactionsRes,
+    commentsRes,
+  ] = await Promise.all([
+    supabase.rpc("get_or_create_current_tech_week"),
+    supabase
+      .from("tech_weeks")
+      .select("*")
+      .order("starts_at", { ascending: false })
+      .limit(26),
+    supabase.from("platform_settings").select("*").eq("id", 1).maybeSingle(),
+    supabase
+      .from("tech_submissions")
+      .select(
+        `
+          id, week_id, author_id, title, slug, summary, cover_image, tags, word_count,
+          status, selected_by, selected_at, reviewed_by, reviewed_at, review_note,
+          is_deleted, created_at, updated_at,
           author:profiles!tech_submissions_author_id_fkey (${AUTHOR_BADGE_SELECT}),
           week:tech_weeks!tech_submissions_week_id_fkey (*)
         `
-        )
-        .eq("is_deleted", false)
-        .in("status", ["submitted", "approved", "selected", "archived"])
-        .order("created_at", { ascending: false })
-        .limit(120),
-      supabase
-        .from("tech_reactions")
-        .select("submission_id, reaction_type"),
-      supabase
-        .from("tech_comments")
-        .select("submission_id")
-        .eq("is_deleted", false),
-    ]);
+      )
+      .eq("is_deleted", false)
+      .in("status", ["submitted", "approved", "selected", "archived"])
+      .order("created_at", { ascending: false })
+      .limit(120),
+    supabase.from("tech_reactions").select("submission_id, reaction_type"),
+    supabase
+      .from("tech_comments")
+      .select("submission_id")
+      .eq("is_deleted", false),
+  ]);
 
-  const allWeeks = (weeksRes.data || []) as TechWeek[];
-  const currentWeek = allWeeks[0] || null;
-  const settings = (settingsRes.data as PlatformSettings | null) || DEFAULT_SETTINGS;
+  const rawWeeks = (weeksRes.data || []) as TechWeek[];
+  const rpcWeek = (currentWeekRpcRes.data as TechWeek | null) ?? null;
+  const allWeeks =
+    rpcWeek && !rawWeeks.some((w) => w.id === rpcWeek.id)
+      ? [rpcWeek, ...rawWeeks]
+      : rawWeeks;
+  const currentWeek = rpcWeek || allWeeks[0] || null;
+  const settings =
+    (settingsRes.data as PlatformSettings | null) || DEFAULT_SETTINGS;
 
-  let isWindowOpen = false;
-  if (currentWeek) {
-    const { data: openFlag } = await supabase.rpc("is_submission_window_open", {
-      p_week_id: currentWeek.id,
-    });
-    isWindowOpen = Boolean(openFlag);
-  }
+  const isWindowOpen = computeIsWindowOpen(currentWeek, settings);
 
   // Aggregate reaction counts per submission
   const reactionMap = new Map<
@@ -267,109 +281,122 @@ export async function fetchFeaturedTechWeeklyPost(): Promise<TechSubmissionWithA
   }
 }
 
-export async function fetchTechSubmissionDetailBySlug(slug: string): Promise<{
-  submission: TechSubmissionWithAuthor | null;
-  comments: TechCommentWithAuthor[];
-  viewerReactions: TechReactionType[];
-  allowMemberComments: boolean;
-}> {
-  const authSupabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await authSupabase.auth.getUser();
+const getTechSubmissionDetailCached = cache(
+  async (
+    slug: string
+  ): Promise<{
+    submission: TechSubmissionWithAuthor | null;
+    comments: TechCommentWithAuthor[];
+    viewerReactions: TechReactionType[];
+    allowMemberComments: boolean;
+  }> => {
+    const authSupabase = await createSupabaseServerClient();
 
-  const { data: settingsRow } = await authSupabase
-    .from("platform_settings")
-    .select("allow_member_comments")
-    .eq("id", 1)
-    .maybeSingle();
+    const [
+      {
+        data: { user },
+      },
+      { data: settingsRow },
+      { data: subData },
+    ] = await Promise.all([
+      authSupabase.auth.getUser(),
+      authSupabase
+        .from("platform_settings")
+        .select("allow_member_comments")
+        .eq("id", 1)
+        .maybeSingle(),
+      authSupabase
+        .from("tech_submissions")
+        .select(
+          `
+          *,
+          author:profiles!tech_submissions_author_id_fkey (${AUTHOR_BADGE_SELECT}),
+          week:tech_weeks!tech_submissions_week_id_fkey (*)
+        `
+        )
+        .eq("slug", slug)
+        .maybeSingle(),
+    ]);
 
-  const allowMemberComments = Boolean(settingsRow?.allow_member_comments);
+    const allowMemberComments = Boolean(settingsRow?.allow_member_comments);
 
-  const { data: subData } = await authSupabase
-    .from("tech_submissions")
-    .select(
-      `
-      *,
-      author:profiles!tech_submissions_author_id_fkey (${AUTHOR_BADGE_SELECT}),
-      week:tech_weeks!tech_submissions_week_id_fkey (*)
-    `
-    )
-    .eq("slug", slug)
-    .maybeSingle();
+    if (!subData) {
+      return {
+        submission: null,
+        comments: [],
+        viewerReactions: [],
+        allowMemberComments,
+      };
+    }
 
-  if (!subData) {
+    const submission = subData as unknown as TechSubmissionWithAuthor;
+
+    const [reactionsRes, commentsRes] = await Promise.all([
+      authSupabase
+        .from("tech_reactions")
+        .select("user_id, reaction_type")
+        .eq("submission_id", submission.id),
+      authSupabase
+        .from("tech_comments")
+        .select(
+          `
+          *,
+          author:profiles!tech_comments_user_id_fkey (${AUTHOR_BADGE_SELECT})
+        `
+        )
+        .eq("submission_id", submission.id)
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: true }),
+    ]);
+
+    const counts = { like: 0, insightful: 0, fire: 0, total: 0 };
+    const viewerReactions: TechReactionType[] = [];
+
+    for (const r of reactionsRes.data || []) {
+      if (r.reaction_type === "like") counts.like += 1;
+      if (r.reaction_type === "insightful") counts.insightful += 1;
+      if (r.reaction_type === "fire") counts.fire += 1;
+      counts.total += 1;
+      if (user?.id && r.user_id === user.id) {
+        viewerReactions.push(r.reaction_type as TechReactionType);
+      }
+    }
+
+    submission.reaction_counts = counts;
+
+    const flatComments = (
+      (commentsRes.data || []) as unknown as TechCommentWithAuthor[]
+    ).filter((c) => Boolean(c.author));
+
+    submission.comment_count = flatComments.length;
+
+    // Build 1-level threaded tree
+    const topLevel: TechCommentWithAuthor[] = [];
+    const byId = new Map<string, TechCommentWithAuthor>();
+
+    for (const c of flatComments) {
+      c.replies = [];
+      byId.set(c.id, c);
+    }
+    for (const c of flatComments) {
+      if (c.parent_id && byId.has(c.parent_id)) {
+        byId.get(c.parent_id)!.replies!.push(c);
+      } else {
+        topLevel.push(c);
+      }
+    }
+
     return {
-      submission: null,
-      comments: [],
-      viewerReactions: [],
+      submission,
+      comments: topLevel,
+      viewerReactions,
       allowMemberComments,
     };
   }
+);
 
-  const submission = subData as unknown as TechSubmissionWithAuthor;
-
-  const [reactionsRes, commentsRes] = await Promise.all([
-    authSupabase
-      .from("tech_reactions")
-      .select("user_id, reaction_type")
-      .eq("submission_id", submission.id),
-    authSupabase
-      .from("tech_comments")
-      .select(
-        `
-        *,
-        author:profiles!tech_comments_user_id_fkey (${AUTHOR_BADGE_SELECT})
-      `
-      )
-      .eq("submission_id", submission.id)
-      .eq("is_deleted", false)
-      .order("created_at", { ascending: true }),
-  ]);
-
-  const counts = { like: 0, insightful: 0, fire: 0, total: 0 };
-  const viewerReactions: TechReactionType[] = [];
-
-  for (const r of reactionsRes.data || []) {
-    if (r.reaction_type === "like") counts.like += 1;
-    if (r.reaction_type === "insightful") counts.insightful += 1;
-    if (r.reaction_type === "fire") counts.fire += 1;
-    counts.total += 1;
-    if (user?.id && r.user_id === user.id) {
-      viewerReactions.push(r.reaction_type as TechReactionType);
-    }
-  }
-
-  submission.reaction_counts = counts;
-
-  const flatComments = (
-    (commentsRes.data || []) as unknown as TechCommentWithAuthor[]
-  ).filter((c) => Boolean(c.author));
-
-  submission.comment_count = flatComments.length;
-
-  // Build 1-level threaded tree
-  const topLevel: TechCommentWithAuthor[] = [];
-  const byId = new Map<string, TechCommentWithAuthor>();
-
-  for (const c of flatComments) {
-    c.replies = [];
-    byId.set(c.id, c);
-  }
-  for (const c of flatComments) {
-    if (c.parent_id && byId.has(c.parent_id)) {
-      byId.get(c.parent_id)!.replies!.push(c);
-    } else {
-      topLevel.push(c);
-    }
-  }
-
-  return {
-    submission,
-    comments: topLevel,
-    viewerReactions,
-    allowMemberComments,
-  };
+export async function fetchTechSubmissionDetailBySlug(slug: string) {
+  return getTechSubmissionDetailCached(slug);
 }
 
 const saveSubmissionSchema = z.object({
@@ -830,11 +857,29 @@ export async function fetchTechWeeklyReviewQueueData(): Promise<{
     };
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, role, csi_id, is_admin, is_suspended")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data: profile }, { data: currentWeek }, { data: settingsRow }, { data: subs }] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, role, csi_id, is_admin, is_suspended")
+        .eq("id", user.id)
+        .maybeSingle(),
+      supabase.rpc("get_or_create_current_tech_week"),
+      supabase.from("platform_settings").select("*").eq("id", 1).maybeSingle(),
+      supabase
+        .from("tech_submissions")
+        .select(
+          `
+          *,
+          author:profiles!tech_submissions_author_id_fkey (${AUTHOR_BADGE_SELECT}),
+          week:tech_weeks!tech_submissions_week_id_fkey (*)
+        `
+        )
+        .eq("is_deleted", false)
+        .neq("status", "draft")
+        .order("created_at", { ascending: false })
+        .limit(80),
+    ]);
 
   const role = (profile?.role as CsiRole) || "unverified";
   const csiId = profile?.csi_id ?? null;
@@ -858,37 +903,16 @@ export async function fetchTechWeeklyReviewQueueData(): Promise<{
     };
   }
 
-  const { data: currentWeek } = await supabase.rpc(
-    "get_or_create_current_tech_week"
-  );
-
-  let isWindowOpen = false;
-  if (currentWeek?.id) {
-    const { data: openFlag } = await supabase.rpc("is_submission_window_open", {
-      p_week_id: currentWeek.id,
-    });
-    isWindowOpen = Boolean(openFlag);
-  }
-
-  const { data: subs } = await supabase
-    .from("tech_submissions")
-    .select(
-      `
-      *,
-      author:profiles!tech_submissions_author_id_fkey (${AUTHOR_BADGE_SELECT}),
-      week:tech_weeks!tech_submissions_week_id_fkey (*)
-    `
-    )
-    .eq("is_deleted", false)
-    .neq("status", "draft")
-    .order("created_at", { ascending: false })
-    .limit(80);
+  const resolvedWeek = (currentWeek as TechWeek | null) ?? null;
+  const settings =
+    (settingsRow as PlatformSettings | null) || DEFAULT_SETTINGS;
+  const isWindowOpen = computeIsWindowOpen(resolvedWeek, settings);
 
   return {
     authorized: true,
     role: profile?.is_admin && role === "unverified" ? "super_admin" : role,
     csiId,
-    currentWeek: (currentWeek as TechWeek | null) ?? null,
+    currentWeek: resolvedWeek,
     isWindowOpen,
     submissions: (subs || []) as unknown as TechSubmissionWithAuthor[],
   };
@@ -932,20 +956,48 @@ export async function fetchTechWeeklyWriteContext(
     };
   }
 
-  const [{ data: profile }, { data: settingsRow }, { data: currentWeek }] =
-    await Promise.all([
-      supabase
-        .from("profiles")
-        .select("id, role, csi_id, dept, year, is_admin, is_suspended")
-        .eq("id", user.id)
-        .maybeSingle(),
-      supabase
-        .from("platform_settings")
-        .select("*")
-        .eq("id", 1)
-        .maybeSingle(),
-      supabase.rpc("get_or_create_current_tech_week"),
-    ]);
+  const [
+    { data: profile },
+    { data: settingsRow },
+    { data: currentWeek },
+    { data: userSubs },
+    specificSubRes,
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, role, csi_id, dept, year, is_admin, is_suspended")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase.from("platform_settings").select("*").eq("id", 1).maybeSingle(),
+    supabase.rpc("get_or_create_current_tech_week"),
+    supabase
+      .from("tech_submissions")
+      .select(
+        `
+        *,
+        author:profiles!tech_submissions_author_id_fkey (${AUTHOR_BADGE_SELECT}),
+        week:tech_weeks!tech_submissions_week_id_fkey (*)
+      `
+      )
+      .eq("author_id", user.id)
+      .eq("is_deleted", false)
+      .order("updated_at", { ascending: false })
+      .limit(20),
+    submissionId
+      ? supabase
+          .from("tech_submissions")
+          .select(
+            `
+            *,
+            author:profiles!tech_submissions_author_id_fkey (${AUTHOR_BADGE_SELECT}),
+            week:tech_weeks!tech_submissions_week_id_fkey (*)
+          `
+          )
+          .eq("id", submissionId)
+          .eq("is_deleted", false)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
 
   const role =
     profile?.is_admin && (!profile?.role || profile.role === "unverified")
@@ -961,55 +1013,19 @@ export async function fetchTechWeeklyWriteContext(
 
   const settings = (settingsRow as PlatformSettings | null) || DEFAULT_SETTINGS;
   const resolvedWeek = (currentWeek as TechWeek | null) ?? null;
+  const isWindowOpen = computeIsWindowOpen(resolvedWeek, settings);
 
-  let isWindowOpen = false;
-  if (resolvedWeek?.id) {
-    const { data: openFlag } = await supabase.rpc("is_submission_window_open", {
-      p_week_id: resolvedWeek.id,
-    });
-    isWindowOpen = Boolean(openFlag);
-  }
+  const allMySubs = (userSubs || []) as unknown as TechSubmissionWithAuthor[];
+  const myWeekSubmissions = resolvedWeek
+    ? allMySubs.filter((s) => s.week_id === resolvedWeek.id)
+    : allMySubs;
 
   let editingSubmission: TechSubmissionWithAuthor | null = null;
-  if (submissionId) {
-    const { data: sub } = await supabase
-      .from("tech_submissions")
-      .select(
-        `
-        *,
-        author:profiles!tech_submissions_author_id_fkey (${AUTHOR_BADGE_SELECT}),
-        week:tech_weeks!tech_submissions_week_id_fkey (*)
-      `
-      )
-      .eq("id", submissionId)
-      .eq("is_deleted", false)
-      .maybeSingle();
-
-    if (sub && (sub.author_id === user.id || role === "super_admin")) {
-      editingSubmission = sub as unknown as TechSubmissionWithAuthor;
-    }
-  }
-
-  let myWeekSubmissions: TechSubmissionWithAuthor[] = [];
-  if (resolvedWeek?.id) {
-    const { data: mySubs } = await supabase
-      .from("tech_submissions")
-      .select(
-        `
-        *,
-        author:profiles!tech_submissions_author_id_fkey (${AUTHOR_BADGE_SELECT}),
-        week:tech_weeks!tech_submissions_week_id_fkey (*)
-      `
-      )
-      .eq("author_id", user.id)
-      .eq("week_id", resolvedWeek.id)
-      .eq("is_deleted", false)
-      .order("updated_at", { ascending: false });
-
-    myWeekSubmissions = (mySubs || []) as unknown as TechSubmissionWithAuthor[];
-    if (!editingSubmission && myWeekSubmissions.length > 0) {
-      editingSubmission = myWeekSubmissions[0];
-    }
+  const specificSub = specificSubRes?.data as unknown as TechSubmissionWithAuthor | null;
+  if (specificSub && (specificSub.author_id === user.id || role === "super_admin")) {
+    editingSubmission = specificSub;
+  } else if (myWeekSubmissions.length > 0) {
+    editingSubmission = myWeekSubmissions[0];
   }
 
   return {

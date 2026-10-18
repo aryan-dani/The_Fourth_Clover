@@ -1,5 +1,6 @@
 "use server";
 
+import crypto from "crypto";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type {
@@ -13,6 +14,19 @@ import type {
   TechReport,
   TechSubmissionWithAuthor,
 } from "@/types/database";
+
+const DEFAULT_PRN_HMAC_SECRET =
+  "csi-mitwpu-fourth-clover-hmac-secret-2026";
+
+function hashPrnServer(prn: string): string {
+  const envSecret = process.env.PRN_HASH_SECRET?.trim();
+  const secret =
+    envSecret && envSecret.length >= 16 ? envSecret : DEFAULT_PRN_HMAC_SECRET;
+  return crypto
+    .createHmac("sha256", secret)
+    .update(prn.trim().replace(/\s+/g, ""))
+    .digest("hex");
+}
 
 async function requireSuperAdmin() {
   const supabase = await createSupabaseServerClient();
@@ -58,7 +72,11 @@ export type SuperAdminDashboardPayload = {
   reports: TechReport[];
   settings: PlatformSettings;
   auditLogs: (AuditLogEntry & {
-    actor?: { username: string; full_name: string | null; csi_id: number | null } | null;
+    actor?: {
+      username: string;
+      full_name: string | null;
+      csi_id: number | null;
+    } | null;
   })[];
   legacyPosts: PostWithAuthor[];
 };
@@ -119,7 +137,9 @@ export async function fetchSuperAdminDashboardData(): Promise<SuperAdminDashboar
       .from("tech_submissions")
       .select(
         `
-        *,
+        id, week_id, author_id, title, slug, summary, cover_image, tags, word_count,
+        status, selected_by, selected_at, reviewed_by, reviewed_at, review_note,
+        is_deleted, deleted_by, deleted_at, created_at, updated_at,
         author:profiles!tech_submissions_author_id_fkey (
           id, username, full_name, avatar_url, bio, csi_id, role, dept, year
         ),
@@ -155,7 +175,7 @@ export async function fetchSuperAdminDashboardData(): Promise<SuperAdminDashboar
       .from("posts")
       .select(
         `
-        *,
+        id, title, slug, excerpt, cover_image, status, read_time, published_at, created_at, updated_at, author_id, tags,
         author:profiles!posts_author_id_fkey (
           id, username, full_name, avatar_url, bio
         )
@@ -219,6 +239,62 @@ export async function adminAssignCsiIdentityAction(input: {
 
   revalidatePath("/admin");
   revalidatePath("/tech-weekly");
+  return { success: true };
+}
+
+export async function adminUpsertRosterEntryAction(input: {
+  csiId: number;
+  name: string;
+  dept: string;
+  year?: string | null;
+  prn?: string | null;
+  role?: CsiRole | null;
+}): Promise<{ success: boolean; error?: string }> {
+  const { authorized, supabase } = await requireSuperAdmin();
+  if (!authorized) {
+    return { success: false, error: "Super Admin authorization required." };
+  }
+
+  const cleanPrn = input.prn?.trim().replace(/\s+/g, "") || "";
+  const prnHash = cleanPrn ? hashPrnServer(cleanPrn) : null;
+
+  const { error } = await supabase.rpc("admin_upsert_csi_roster_entry", {
+    p_csi_id: input.csiId,
+    p_name: input.name.trim(),
+    p_dept: input.dept.trim() || "Tech",
+    p_year: input.year?.trim() || null,
+    p_prn_hash: prnHash,
+    p_prn_missing: !cleanPrn,
+    p_prn_duplicate: false,
+    p_role: input.role || null,
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/verify-csi");
+  return { success: true };
+}
+
+export async function adminDeleteRosterEntryAction(input: {
+  csiId: number;
+}): Promise<{ success: boolean; error?: string }> {
+  const { authorized, supabase } = await requireSuperAdmin();
+  if (!authorized) {
+    return { success: false, error: "Super Admin authorization required." };
+  }
+
+  const { error } = await supabase.rpc("admin_delete_csi_roster_entry", {
+    p_csi_id: input.csiId,
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/admin");
   return { success: true };
 }
 
@@ -403,7 +479,10 @@ export async function adminUpdatePlatformSettingsAction(input: {
 
   const payload = {
     cutoff_day: Math.min(6, Math.max(0, Math.floor(input.cutoff_day))),
-    cutoff_hour_ist: Math.min(23, Math.max(0, Math.floor(input.cutoff_hour_ist))),
+    cutoff_hour_ist: Math.min(
+      23,
+      Math.max(0, Math.floor(input.cutoff_hour_ist))
+    ),
     cutoff_minute_ist: Math.min(
       59,
       Math.max(0, Math.floor(input.cutoff_minute_ist))
