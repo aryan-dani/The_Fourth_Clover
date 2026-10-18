@@ -34,7 +34,9 @@
     "analyze": "ANALYZE=true npm run build",
     "db:inspect": "node scripts/inspect-schema.js",
     "db:query": "node scripts/query-tool.js",
-    "db:verify": "node scripts/verify-supabase.js"
+    "db:verify": "node scripts/verify-supabase.js",
+    "seed:roster": "node scripts/seed-roster.js",
+    "test:security": "node scripts/test-rls-security.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

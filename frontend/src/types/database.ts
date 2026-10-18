@@ -3,6 +3,13 @@ import type { Database } from "@/lib/supabase/client";
 // Database schema types based on current Supabase structure
 // Generated from database inspection
 
+export type CsiRole =
+  | "unverified"
+  | "member"
+  | "tech_member"
+  | "tech_head"
+  | "super_admin";
+
 export interface Profile {
   id: string;
   username: string;
@@ -13,6 +20,11 @@ export interface Profile {
   twitter: string | null;
   github: string | null;
   is_admin: boolean;
+  csi_id?: number | null;
+  role?: CsiRole;
+  dept?: string | null;
+  year?: string | null;
+  is_suspended?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -27,16 +39,64 @@ export type Comment = Database["public"]["Tables"]["comments"]["Row"];
 export type Like = Database["public"]["Tables"]["likes"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 
+export type CsiRosterRow = Database["public"]["Tables"]["csi_roster"]["Row"];
+export type PlatformSettings =
+  Database["public"]["Tables"]["platform_settings"]["Row"];
+export type TechWeek = Database["public"]["Tables"]["tech_weeks"]["Row"];
+export type TechSubmission =
+  Database["public"]["Tables"]["tech_submissions"]["Row"];
+export type TechSubmissionStatus = TechSubmission["status"];
+export type TechComment = Database["public"]["Tables"]["tech_comments"]["Row"];
+export type TechReaction =
+  Database["public"]["Tables"]["tech_reactions"]["Row"];
+export type TechReactionType = TechReaction["reaction_type"];
+export type TechReport = Database["public"]["Tables"]["tech_reports"]["Row"];
+export type AuditLogEntry = Database["public"]["Tables"]["audit_log"]["Row"];
+
+export type TechAuthorBadge = Pick<
+  Profile,
+  | "id"
+  | "username"
+  | "full_name"
+  | "avatar_url"
+  | "bio"
+  | "csi_id"
+  | "role"
+  | "dept"
+  | "year"
+>;
+
+export type TechSubmissionWithAuthor = TechSubmission & {
+  author: TechAuthorBadge;
+  week?: TechWeek | null;
+  reaction_counts?: {
+    like: number;
+    insightful: number;
+    fire: number;
+    total: number;
+  };
+  comment_count?: number;
+};
+
+export type TechCommentWithAuthor = TechComment & {
+  author: TechAuthorBadge;
+  replies?: TechCommentWithAuthor[];
+};
+
 export type PublicationMemberWithProfile = PublicationMember & {
   profile: Pick<
     Profile,
-    "id" | "username" | "full_name" | "avatar_url" | "bio"
+    "id" | "username" | "full_name" | "avatar_url" | "bio" | "csi_id" | "role" | "dept" | "year"
   >;
 };
 
 export type PostWithAuthor = Post & {
   author: Pick<Profile, "id" | "username" | "full_name" | "avatar_url"> & {
     bio?: string | null;
+    csi_id?: number | null;
+    role?: CsiRole;
+    dept?: string | null;
+    year?: string | null;
   };
   likes: [{ count: number }];
   comments: [{ count: number }];
