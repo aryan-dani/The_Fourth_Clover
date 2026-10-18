@@ -5,21 +5,36 @@ import { supabase } from "@/lib/supabase";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { devLog } from "@/lib/dev/log";
+import { syncUserVerificationStatusAction } from "@/features/data/csi-verification-actions";
 
 export default function AuthCallback() {
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading"
   );
-  const [message, setMessage] = useState("Completing sign in...");
+  const [message, setMessage] = useState("Completing Google sign in...");
   const processedRef = useRef(false);
 
   useEffect(() => {
-    // Prevent double processing
     if (processedRef.current) return;
     processedRef.current = true;
 
+    const redirectVerifiedOrUnverified = async () => {
+      const check = await syncUserVerificationStatusAction();
+      setStatus("success");
+      if (check.verified) {
+        setMessage("Sign in successful! Redirecting to CSI Tech Weekly...");
+        setTimeout(() => {
+          window.location.replace("/tech-weekly");
+        }, 350);
+      } else {
+        setMessage("Signed in! Redirecting to CSI ID verification...");
+        setTimeout(() => {
+          window.location.replace("/verify-csi");
+        }, 350);
+      }
+    };
+
     const handleCallback = async () => {
-      // Check for error in URL params first
       const searchParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
 
@@ -36,47 +51,33 @@ export default function AuthCallback() {
         return;
       }
 
-      // First, check if we already have a valid session
       try {
         const {
           data: { session: existingSession },
         } = await supabase.auth.getSession();
 
         if (existingSession) {
-          devLog("Session already exists, redirecting...");
-          setStatus("success");
-          setMessage("Sign in successful! Redirecting...");
-          setTimeout(() => {
-            window.location.replace("/dashboard");
-          }, 500);
+          devLog("Session already exists, checking verification status...");
+          await redirectVerifiedOrUnverified();
           return;
         }
       } catch (err) {
         console.error("Error checking existing session:", err);
       }
 
-      // Check if we have auth code in the URL (PKCE flow)
       const code = searchParams.get("code");
 
       if (code) {
         try {
-          // Exchange the code for a session
           const { data, error: exchangeError } =
             await supabase.auth.exchangeCodeForSession(code);
 
           if (exchangeError) {
-            console.error("Code exchange error:", exchangeError);
-
-            // Check one more time if session exists (race condition with auth state listener)
             const {
               data: { session },
             } = await supabase.auth.getSession();
             if (session) {
-              setStatus("success");
-              setMessage("Sign in successful! Redirecting...");
-              setTimeout(() => {
-                window.location.replace("/dashboard");
-              }, 500);
+              await redirectVerifiedOrUnverified();
               return;
             }
 
@@ -87,11 +88,7 @@ export default function AuthCallback() {
           }
 
           if (data.session) {
-            setStatus("success");
-            setMessage("Sign in successful! Redirecting...");
-            setTimeout(() => {
-              window.location.replace("/dashboard");
-            }, 500);
+            await redirectVerifiedOrUnverified();
             return;
           }
         } catch (err) {
@@ -99,29 +96,23 @@ export default function AuthCallback() {
         }
       }
 
-      // If no code and no session, wait a bit and check again
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 900));
 
       const {
         data: { session: finalSession },
       } = await supabase.auth.getSession();
 
       if (finalSession) {
-        setStatus("success");
-        setMessage("Sign in successful! Redirecting...");
-        setTimeout(() => {
-          window.location.replace("/dashboard");
-        }, 500);
+        await redirectVerifiedOrUnverified();
         return;
       }
 
-      // If still no session, show error
       setStatus("error");
       setMessage("Sign in failed. Please try again.");
       setTimeout(() => (window.location.href = "/auth/signin"), 3000);
     };
 
-    handleCallback();
+    void handleCallback();
   }, []);
 
   return (

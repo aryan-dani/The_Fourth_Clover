@@ -170,35 +170,74 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const isVerifiedTech =
+    profile?.role === "tech_member" ||
+    profile?.role === "tech_head" ||
+    profile?.role === "super_admin" ||
+    Boolean(profile?.is_admin);
+
+  const isTechHeadOrAdmin =
+    profile?.role === "tech_head" ||
+    profile?.role === "super_admin" ||
+    Boolean(profile?.is_admin);
+
+  const isSuperAdmin =
+    profile?.role === "super_admin" ||
+    profile?.csi_id === 303 ||
+    Boolean(profile?.is_admin);
+
+  const isVerifiedRoster =
+    Boolean(profile?.csi_id && profile?.role && profile.role !== "unverified") ||
+    Boolean(profile?.is_admin);
+
+  const writeHref = !user
+    ? "/auth/signin"
+    : isVerifiedTech
+    ? "/tech-weekly/write"
+    : "/verify-csi";
+
   const primaryNav: {
     name: string;
     href: string;
     icon: typeof BookOpen;
   }[] = [
+    { name: "Tech Weekly", href: "/tech-weekly", icon: Terminal },
     { name: "Explore", href: "/explore", icon: BookOpen },
-    { name: "CSI", href: "/csi", icon: Terminal },
     ...(user
       ? [{ name: "Following", href: "/explore/following", icon: Users }]
       : []),
-    { name: "Write", href: "/write", icon: PenTool },
+    ...(isVerifiedTech || !user
+      ? [{ name: "Write", href: writeHref, icon: PenTool }]
+      : []),
   ];
 
   const isActive = (href: string) => {
-    if (href === "/csi") {
+    if (href === "/tech-weekly" || href === "/csi") {
       return (
+        pathname === "/tech-weekly" ||
+        (pathname.startsWith("/tech-weekly/") &&
+          pathname !== "/tech-weekly/write") ||
         pathname === "/csi" ||
         (pathname.startsWith("/csi/") && pathname !== "/csi/write")
       );
     }
-    if (href === "/write") {
-      return pathname === "/write" || pathname === "/csi/write";
+    if (
+      href === "/write" ||
+      href === "/tech-weekly/write" ||
+      href === "/verify-csi"
+    ) {
+      return (
+        pathname === "/write" ||
+        pathname === "/csi/write" ||
+        pathname === "/tech-weekly/write"
+      );
     }
     return pathname === href;
   };
   const isExploreActive = pathname === "/explore";
-  const isCsiActive = isActive("/csi");
+  const isCsiActive = isActive("/tech-weekly");
   const isFollowingActive = pathname === "/explore/following";
-  const isWriteActive = isActive("/write");
+  const isWriteActive = isActive("/tech-weekly/write");
 
   const pillSpring = {
     type: "spring" as const,
@@ -299,17 +338,17 @@ export function Header() {
             </TooltipContent>
           </Tooltip>
 
-          {/* CSI */}
+          {/* CSI Tech Weekly */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
-                href="/csi"
-                onClick={() => handleMainNavClick("/csi")}
-                aria-label="CSI"
+                href="/tech-weekly"
+                onClick={() => handleMainNavClick("/tech-weekly")}
+                aria-label="CSI Tech Weekly"
                 className={cn(
                   NAV_ICON_BOX,
                   "relative transition-all duration-150",
-                  navPendingHref === "/csi" && !isCsiActive ? "opacity-55" : "",
+                  navPendingHref === "/tech-weekly" && !isCsiActive ? "opacity-55" : "",
                   isCsiActive
                     ? "text-primary"
                     : "text-foreground/80 hover:text-foreground dark:text-foreground/85 dark:hover:text-foreground",
@@ -336,7 +375,7 @@ export function Header() {
               </Link>
             </TooltipTrigger>
             <TooltipContent side="bottom" sideOffset={10}>
-              <p className="text-xs font-medium">CSI</p>
+              <p className="text-xs font-medium">CSI Tech Weekly</p>
             </TooltipContent>
           </Tooltip>
 
@@ -390,13 +429,13 @@ export function Header() {
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
-                href="/write"
-                onClick={() => handleMainNavClick("/write")}
+                href={writeHref}
+                onClick={() => handleMainNavClick(writeHref)}
                 aria-label="Write"
                 className={cn(
                   NAV_ICON_BOX,
                   "relative transition-all duration-150",
-                  navPendingHref === "/write" && !isWriteActive
+                  navPendingHref === writeHref && !isWriteActive
                     ? "opacity-55"
                     : "",
                   isWriteActive
@@ -425,7 +464,9 @@ export function Header() {
               </Link>
             </TooltipTrigger>
             <TooltipContent side="bottom" sideOffset={10}>
-              <p className="text-xs font-medium">Write</p>
+              <p className="text-xs font-medium">
+                {isVerifiedTech ? "Write for Tech Weekly" : user ? "Verify CSI ID to Write" : "Sign in to Write"}
+              </p>
             </TooltipContent>
           </Tooltip>
 
@@ -781,12 +822,63 @@ export function Header() {
                       </p>
                       <p className="text-muted-foreground truncate text-xs">
                         @{profile?.username || "user"}
+                        {profile?.csi_id ? ` · CSI #${profile.csi_id}` : ""}
                       </p>
                     </div>
                   </div>
                 </div>
 
                 <div className="border-border border-b p-1.5">
+                  {!isVerifiedRoster && (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/verify-csi"
+                        className="flex cursor-pointer items-center gap-3 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-2 mb-1"
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span className="text-sm font-semibold">
+                          Verify your CSI ID
+                        </span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/tech-weekly"
+                      className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2"
+                    >
+                      <Terminal className="text-muted-foreground h-4 w-4" />
+                      <span className="text-sm font-medium">
+                        CSI Tech Weekly
+                      </span>
+                    </Link>
+                  </DropdownMenuItem>
+                  {isTechHeadOrAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/tech-weekly/review"
+                        className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2"
+                      >
+                        <FileCheck className="text-emerald-500 h-4 w-4" />
+                        <span className="text-sm font-medium">
+                          Tech Weekly Review Queue
+                        </span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {isSuperAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/admin"
+                        className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2"
+                      >
+                        <CheckCircle2 className="text-amber-500 h-4 w-4" />
+                        <span className="text-sm font-medium">
+                          Super Admin Panel
+                        </span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link
                       href="/dashboard"
@@ -850,9 +942,10 @@ export function Header() {
                 >
                   <Link
                     href="/auth/signin"
+                    aria-label="Sign in with Google"
                     className={cn(
                       NAV_ICON_BOX,
-                      "text-foreground/85 hover:bg-muted/90 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+                      "bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring focus-visible:ring-offset-background shadow-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                     )}
                   >
                     <LogIn className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
@@ -860,33 +953,7 @@ export function Header() {
                 </m.div>
               </TooltipTrigger>
               <TooltipContent side="bottom" sideOffset={8}>
-                <p className="text-xs font-medium">Sign in</p>
-              </TooltipContent>
-            </Tooltip>
-            <span className={NAV_PILL_DIVIDER} aria-hidden />
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <m.div
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  transition={quickSpring}
-                >
-                  <Link
-                    href="/auth/signup"
-                    className={cn(
-                      NAV_ICON_BOX,
-                      "bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring focus-visible:ring-offset-background shadow-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
-                    )}
-                  >
-                    <UserPlus
-                      className={NAV_ICON_CLASS}
-                      strokeWidth={NAV_STROKE}
-                    />
-                  </Link>
-                </m.div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={8}>
-                <p className="text-xs font-medium">Get started</p>
+                <p className="text-xs font-medium">Sign in with Google</p>
               </TooltipContent>
             </Tooltip>
           </m.div>
@@ -896,7 +963,11 @@ export function Header() {
       {/* Spacer: write pages use their own top toolbar aligned with fixed chrome */}
       <div
         className={
-          pathname === "/write" || pathname === "/csi/write" ? "h-0" : "h-20"
+          pathname === "/write" ||
+          pathname === "/csi/write" ||
+          pathname === "/tech-weekly/write"
+            ? "h-0"
+            : "h-20"
         }
         aria-hidden
       />
