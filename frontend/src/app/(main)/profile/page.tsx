@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { LazyMotion, domAnimation, m } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+
+const ALLOWED_AVATAR_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+];
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -78,9 +86,9 @@ export default function ProfilePage() {
           form.reset(data);
         } else {
           form.reset({
-            username: user.email?.split("@")[0] || "",
-            full_name: user.user_metadata?.full_name || "",
-            avatar_url: user.user_metadata?.avatar_url || "",
+            username: user?.email?.split("@")[0] || "",
+            full_name: user?.user_metadata?.full_name || "",
+            avatar_url: user?.user_metadata?.avatar_url || "",
           });
         }
       } catch (err) {
@@ -93,7 +101,14 @@ export default function ProfilePage() {
     };
 
     void fetchProfile();
-  }, [user?.id, router, form]);
+  }, [
+    user?.id,
+    user?.email,
+    user?.user_metadata?.full_name,
+    user?.user_metadata?.avatar_url,
+    router,
+    form,
+  ]);
 
   const handleImageUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -101,15 +116,26 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+      toast.error("Only JPEG, PNG, WebP, and GIF images are allowed.");
+      return;
+    }
+
+    if (file.size > MAX_AVATAR_BYTES) {
+      toast.error("Avatar image must be 5 MB or smaller.");
+      return;
+    }
+
     setIsUploading(true);
     try {
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}-${Math.random()}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const fileExt = (file.name.split(".").pop() || "png")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
+      const filePath = `${user.id}/avatar-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, file);
+        .upload(filePath, file, { upsert: true, contentType: file.type });
 
       if (uploadError) {
         throw uploadError;
@@ -120,12 +146,8 @@ export default function ProfilePage() {
       if (data) {
         form.setValue("avatar_url", data.publicUrl);
         toast.success("Avatar uploaded successfully!");
-        // Trigger a save to update the profile with the new avatar URL immediately
-        // or just let the user click save.
-        // But to see it in the header immediately, we might want to save it.
-        // For now, let's just let the user click save, but if they do, refreshProfile will be called.
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error uploading avatar:", error);
       toast.error(
         "Failed to upload avatar. Make sure 'avatars' bucket exists."
@@ -206,250 +228,252 @@ export default function ProfilePage() {
 
       <main className="flex-1 pt-20 pb-8">
         <WriterHubShell>
-          <div>
-            <h1 className="font-display text-2xl font-semibold tracking-tight md:text-3xl">
-              Profile &amp; links
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1 max-w-xl">
-              What readers see on your public profile and across the site.
-            </p>
-          </div>
+          <LazyMotion features={domAnimation}>
+            <div>
+              <h1 className="font-display text-2xl font-semibold tracking-tight md:text-3xl">
+                Profile &amp; links
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1 max-w-xl">
+                What readers see on your public profile and across the site.
+              </p>
+            </div>
 
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            </motion.div>
-          )}
-
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(handleSave)}
-              className="space-y-6"
-            >
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
+            {error && (
+              <m.div
+                initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 }}
               >
-                <Card className="rounded-3xl border border-border/70 bg-card/70 backdrop-blur-xl shadow-lg glass">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-lg font-display flex items-center gap-2">
-                      <User className="w-5 h-5" />
-                      Public identity
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      Name, handle, avatar, and bio shown on your profile.
-                    </p>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="flex flex-col sm:flex-row gap-6 sm:items-start">
-                      <div className="relative inline-block group shrink-0 mx-auto sm:mx-0">
-                        <Avatar className="w-28 h-28 ring-4 ring-primary/10 transition-all duration-300 group-hover:ring-primary/25 rounded-2xl">
-                          <AvatarImage src={form.watch("avatar_url") || ""} />
-                          <AvatarFallback className="text-xl rounded-2xl">
-                            {form.watch("full_name")?.[0] ||
-                              form.watch("username")?.[0] ||
-                              user.email?.[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        <button
-                          type="button"
-                          className="absolute inset-0 flex flex-col items-center justify-center bg-black/55 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer backdrop-blur-sm"
-                          onClick={() =>
-                            document.getElementById("avatar-upload")?.click()
-                          }
-                        >
-                          {isUploading ? (
-                            <Loader2 className="w-7 h-7 text-white animate-spin" />
-                          ) : (
-                            <>
-                              <Camera className="w-7 h-7 text-white mb-0.5" />
-                              <span className="text-[10px] text-white font-medium">
-                                Upload
-                              </span>
-                            </>
-                          )}
-                        </button>
-                        <input
-                          type="file"
-                          id="avatar-upload"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleImageUpload}
-                          disabled={isUploading}
-                        />
-                      </div>
-                      <div className="flex-1 space-y-4 w-full min-w-0">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              </m.div>
+            )}
+
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(handleSave)}
+                className="space-y-6"
+              >
+                <m.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05 }}
+                >
+                  <Card className="rounded-3xl border border-border/70 bg-card/70 backdrop-blur-xl shadow-lg glass">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-lg font-display flex items-center gap-2">
+                        <User className="w-5 h-5" />
+                        Public identity
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Name, handle, avatar, and bio shown on your profile.
+                      </p>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="flex flex-col sm:flex-row gap-6 sm:items-start">
+                        <div className="relative inline-block group shrink-0 mx-auto sm:mx-0">
+                          <Avatar className="w-28 h-28 ring-4 ring-primary/10 transition-all duration-300 group-hover:ring-primary/25 rounded-2xl">
+                            <AvatarImage src={form.watch("avatar_url") || ""} />
+                            <AvatarFallback className="text-xl rounded-2xl">
+                              {form.watch("full_name")?.[0] ||
+                                form.watch("username")?.[0] ||
+                                user.email?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <button
+                            type="button"
+                            className="absolute inset-0 flex flex-col items-center justify-center bg-black/55 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer backdrop-blur-sm"
+                            onClick={() =>
+                              document.getElementById("avatar-upload")?.click()
+                            }
+                          >
+                            {isUploading ? (
+                              <Loader2 className="w-7 h-7 text-white animate-spin" />
+                            ) : (
+                              <>
+                                <Camera className="w-7 h-7 text-white mb-0.5" />
+                                <span className="text-[10px] text-white font-medium">
+                                  Upload
+                                </span>
+                              </>
+                            )}
+                          </button>
+                          <input
+                            type="file"
+                            id="avatar-upload"
+                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            className="hidden"
+                            onChange={handleImageUpload}
+                            disabled={isUploading}
+                          />
+                        </div>
+                        <div className="flex-1 space-y-4 w-full min-w-0">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name="full_name"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Full name</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      placeholder="Your full name"
+                                      {...field}
+                                      value={field.value || ""}
+                                      className="rounded-xl"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="username"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Username</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      placeholder="handle"
+                                      {...field}
+                                      className="rounded-xl"
+                                      pattern="[a-zA-Z0-9_-]{3,30}"
+                                      title="3 to 30 chars: letters, numbers, _, -"
+                                    />
+                                  </FormControl>
+                                  <p className="text-xs text-muted-foreground">
+                                    3 to 30 characters. Letters, numbers, underscores,
+                                    hyphens.
+                                  </p>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
                           <FormField
                             control={form.control}
-                            name="full_name"
+                            name="bio"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Full name</FormLabel>
+                                <FormLabel>Bio</FormLabel>
                                 <FormControl>
-                                  <Input
-                                    placeholder="Your full name"
+                                  <Textarea
+                                    placeholder="Tell readers about you..."
                                     {...field}
                                     value={field.value || ""}
-                                    className="rounded-xl"
+                                    rows={4}
+                                    className="rounded-xl resize-y min-h-[100px]"
                                   />
                                 </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="username"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Username</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    placeholder="handle"
-                                    {...field}
-                                    className="rounded-xl"
-                                    pattern="[a-zA-Z0-9_-]{3,30}"
-                                    title="3–30 chars: letters, numbers, _, -"
-                                  />
-                                </FormControl>
-                                <p className="text-xs text-muted-foreground">
-                                  3–30 characters. Letters, numbers, underscores,
-                                  hyphens.
-                                </p>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
                         </div>
-                        <FormField
-                          control={form.control}
-                          name="bio"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Bio</FormLabel>
-                              <FormControl>
-                                <Textarea
-                                  placeholder="Tell readers about you..."
-                                  {...field}
-                                  value={field.value || ""}
-                                  rows={4}
-                                  className="rounded-xl resize-y min-h-[100px]"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
+                    </CardContent>
+                  </Card>
+                </m.div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <Card className="rounded-3xl border border-border/70 bg-card/70 backdrop-blur-xl shadow-lg glass">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-lg font-display">
-                      Social &amp; web
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      Optional links on your public profile.
-                    </p>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="website"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            <Globe className="w-4 h-4" />
-                            Website
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="https://…"
-                              {...field}
-                              value={field.value || ""}
-                              className="rounded-xl"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="twitter"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            <Twitter className="w-4 h-4" />
-                            Twitter
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="username"
-                              {...field}
-                              value={field.value || ""}
-                              className="rounded-xl"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="github"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            <Github className="w-4 h-4" />
-                            GitHub
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="username"
-                              {...field}
-                              value={field.value || ""}
-                              className="rounded-xl"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="flex justify-end pt-2">
-                      <Button
-                        type="submit"
-                        disabled={isSaving}
-                        size="lg"
-                        className="rounded-2xl"
-                      >
-                        {isSaving && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <m.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <Card className="rounded-3xl border border-border/70 bg-card/70 backdrop-blur-xl shadow-lg glass">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-lg font-display">
+                        Social &amp; web
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Optional links on your public profile.
+                      </p>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="website"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                              <Globe className="w-4 h-4" />
+                              Website
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="https://..."
+                                {...field}
+                                value={field.value || ""}
+                                className="rounded-xl"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                        <Save className="w-4 h-4 mr-2" />
-                        Save profile
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </form>
-          </Form>
+                      />
+                      <FormField
+                        control={form.control}
+                        name="twitter"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                              <Twitter className="w-4 h-4" />
+                              Twitter
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="username"
+                                {...field}
+                                value={field.value || ""}
+                                className="rounded-xl"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="github"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                              <Github className="w-4 h-4" />
+                              GitHub
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="username"
+                                {...field}
+                                value={field.value || ""}
+                                className="rounded-xl"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="flex justify-end pt-2">
+                        <Button
+                          type="submit"
+                          disabled={isSaving}
+                          size="lg"
+                          className="rounded-2xl"
+                        >
+                          {isSaving && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          <Save className="w-4 h-4 mr-2" />
+                          Save profile
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </m.div>
+              </form>
+            </Form>
+          </LazyMotion>
         </WriterHubShell>
       </main>
 

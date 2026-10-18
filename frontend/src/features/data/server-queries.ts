@@ -805,24 +805,23 @@ export async function getProfileFollowMeta(
 }> {
   const supabase = await createSupabaseServerClient();
 
-  const { count: followerCount } = await supabase
-    .from("follows")
-    .select("*", { count: "exact", head: true })
-    .eq("following_id", profileUserId);
-
-  let isFollowing = false;
-  if (viewerId && viewerId !== profileUserId) {
-    const { data } = await supabase
+  const [countRes, followRes] = await Promise.all([
+    supabase
       .from("follows")
-      .select("follower_id")
-      .eq("follower_id", viewerId)
-      .eq("following_id", profileUserId)
-      .maybeSingle();
-    isFollowing = !!data;
-  }
+      .select("*", { count: "exact", head: true })
+      .eq("following_id", profileUserId),
+    viewerId && viewerId !== profileUserId
+      ? supabase
+          .from("follows")
+          .select("follower_id")
+          .eq("follower_id", viewerId)
+          .eq("following_id", profileUserId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
 
   return {
-    isFollowing,
-    followerCount: followerCount ?? 0,
+    isFollowing: Boolean(followRes.data),
+    followerCount: countRes.count ?? 0,
   };
 }

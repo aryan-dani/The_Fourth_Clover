@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { LazyMotion, domAnimation, m } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -161,7 +161,8 @@ export default function SettingsPage() {
                     }
                 >
                 {/* Settings Tabs */}
-                <motion.div
+                <LazyMotion features={domAnimation}>
+                <m.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
@@ -368,7 +369,7 @@ export default function SettingsPage() {
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <Mail className="w-5 h-5" />
-                                        Email & Security
+                                        Email &amp; Security
                                     </CardTitle>
                                     <CardDescription>
                                         Manage your account security settings
@@ -383,20 +384,8 @@ export default function SettingsPage() {
                                             className="bg-muted"
                                         />
                                         <p className="text-xs text-muted-foreground">
-                                            Email is managed by your authentication provider
+                                            Authenticated via Google OAuth.
                                         </p>
-                                    </div>
-
-                                    <div className="space-y-4 pt-4 border-t">
-                                        <Label>Password</Label>
-                                        <p className="text-sm text-muted-foreground">
-                                            To change your password, use the password reset feature on the sign-in page.
-                                        </p>
-                                        <Button variant="outline" asChild>
-                                            <Link href="/auth/signin">
-                                                Reset Password
-                                            </Link>
-                                        </Button>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -456,7 +445,8 @@ export default function SettingsPage() {
                             </Card>
                         </TabsContent>
                     </Tabs>
-                </motion.div>
+                </m.div>
+                </LazyMotion>
                 </PageShell>
             </main>
 

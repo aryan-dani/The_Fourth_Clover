@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { LazyMotion, domAnimation, m } from "framer-motion";
 import { motionEase, fadeUp } from "@/lib/motion";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/features/auth/auth-context";
@@ -257,68 +257,78 @@ export function CommentSection({ postId }: { postId: string }) {
   }
 
   return (
-    <motion.div
-      initial={fadeUp.initial}
-      animate={fadeUp.animate}
-      transition={{ ...fadeUp.transition }}
-      className="mt-12"
-    >
+    <LazyMotion features={domAnimation}>
+      <m.div
+        initial={fadeUp.initial}
+        animate={fadeUp.animate}
+        transition={{ ...fadeUp.transition }}
+        className="mt-12"
+      >
         <div className="flex items-center justify-between mb-8">
-        <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-          Comments ({totalComments})
-        </h2>
-      </div>
-
-      {user && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, ease: motionEase, duration: 0.4 }}
-        >
-          <AddComment postId={postId} onCommentAdded={handleAddComment} />
-        </motion.div>
-      )}
-
-      {!user && (
-        <div className="mb-8 rounded-lg border border-border/70 bg-muted/15 px-4 py-5 text-center">
-          <p className="text-sm text-muted-foreground">
-            Please <Link href="/auth/signin" className="font-medium text-primary hover:underline">sign in</Link> to leave a comment
-          </p>
+          <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+            Comments ({totalComments})
+          </h2>
         </div>
-      )}
 
-      <div className="space-y-4 mt-8">
-        {comments.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-16 rounded-lg border border-dashed border-border/60 bg-muted/10"
+        {user && (
+          <m.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, ease: motionEase, duration: 0.4 }}
           >
-            <MessageCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-            <h3 className="text-xl font-semibold mb-2">No comments yet</h3>
-            <p className="text-muted-foreground">
-              Be the first to share your thoughts!
-            </p>
-          </motion.div>
-        ) : (
-          comments.map((comment, index) => (
-            <motion.div
-              key={comment.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05, ease: motionEase }}
-            >
-              <Comment
-                comment={comment}
-                postId={postId}
-                onReplyAdded={handleAddComment}
-                onCommentDeleted={handleDeleteComment}
-                currentUserId={user?.id}
-              />
-            </motion.div>
-          ))
+            <AddComment postId={postId} onCommentAdded={handleAddComment} />
+          </m.div>
         )}
-      </div>
-    </motion.div>
+
+        {!user && (
+          <div className="mb-8 rounded-lg border border-border/70 bg-muted/15 px-4 py-5 text-center">
+            <p className="text-sm text-muted-foreground">
+              Please{" "}
+              <Link
+                href="/auth/signin"
+                className="font-medium text-primary hover:underline"
+              >
+                sign in
+              </Link>{" "}
+              to leave a comment
+            </p>
+          </div>
+        )}
+
+        <div className="space-y-4 mt-8">
+          {comments.length === 0 ? (
+            <m.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-16 rounded-lg border border-dashed border-border/60 bg-muted/10"
+            >
+              <MessageCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+              <h3 className="text-xl font-semibold mb-2">No comments yet</h3>
+              <p className="text-muted-foreground">
+                Be the first to share your thoughts!
+              </p>
+            </m.div>
+          ) : (
+            comments.map((comment, index) => (
+              <m.div
+                key={comment.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05, ease: motionEase }}
+              >
+                <Comment
+                  comment={comment}
+                  postId={postId}
+                  onReplyAdded={handleAddComment}
+                  onCommentDeleted={handleDeleteComment}
+                  currentUserId={user?.id}
+                />
+              </m.div>
+            ))
+          )}
+        </div>
+      </m.div>
+    </LazyMotion>
   );
 }
+

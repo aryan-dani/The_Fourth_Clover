@@ -324,7 +324,9 @@ export class DatabaseOperations {
       .from("posts")
       .select("tags")
       .eq("status", "published")
-      .not("tags", "is", null);
+      .not("tags", "is", null)
+      .order("published_at", { ascending: false })
+      .limit(100);
 
     if (!data) return [];
 
