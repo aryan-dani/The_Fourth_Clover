@@ -122,3 +122,9 @@ storybook-static
 
 # Local Netlify folder
 .netlify
+
+# Private CSI Roster files (never commit)
+roster.csv
+*roster*.csv
+*.roster.json
+
