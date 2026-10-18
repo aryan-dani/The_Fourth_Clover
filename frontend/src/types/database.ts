@@ -18,15 +18,29 @@ export interface Profile {
 }
 
 export type Post = Database["public"]["Tables"]["posts"]["Row"];
+export type PostStatus = Post["status"];
+export type Publication = Database["public"]["Tables"]["publications"]["Row"];
+export type PublicationMember =
+  Database["public"]["Tables"]["publication_members"]["Row"];
+export type PublicationRole = PublicationMember["role"];
 export type Comment = Database["public"]["Tables"]["comments"]["Row"];
 export type Like = Database["public"]["Tables"]["likes"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 
+export type PublicationMemberWithProfile = PublicationMember & {
+  profile: Pick<
+    Profile,
+    "id" | "username" | "full_name" | "avatar_url" | "bio"
+  >;
+};
 
 export type PostWithAuthor = Post & {
-  author: Pick<Profile, "id" | "username" | "full_name" | "avatar_url">;
+  author: Pick<Profile, "id" | "username" | "full_name" | "avatar_url"> & {
+    bio?: string | null;
+  };
   likes: [{ count: number }];
   comments: [{ count: number }];
+  publication?: Pick<Publication, "id" | "slug" | "name"> | null;
 };
 
 export type PostWithCategories = Post & {
@@ -89,7 +103,8 @@ export interface DatabaseOperations {
 
 export interface PostFilters {
   author_id?: string;
-  status?: "draft" | "published";
+  status?: "draft" | "in_review" | "published";
+  publication_id?: string | null;
   tags?: string[];
   limit?: number;
   offset?: number;

@@ -6,7 +6,7 @@ export const postSchema = z.object({
     .min(3, "Title must be at least 3 characters")
     .max(100, "Title must be less than 100 characters"),
   content: z.string().min(10, "Content must be at least 10 characters"),
-  status: z.enum(["draft", "published"]),
+  status: z.enum(["draft", "in_review", "published"]),
   tags: z.string().optional(),
   cover_image: z.string().url().optional().or(z.literal("")),
   excerpt: z
@@ -16,6 +16,30 @@ export const postSchema = z.object({
   slug: z.string().min(3, "Slug must be at least 3 characters"),
   featured_image: z.string().url().optional().nullable(),
   scheduled_at: z.string().optional().nullable(),
+  publication_id: z.string().uuid().optional().nullable(),
+});
+
+export const inlineImageAltSchema = z.object({
+  alt: z
+    .string()
+    .trim()
+    .min(2, "Please provide descriptive alt text for accessibility")
+    .max(200, "Alt text must be under 200 characters"),
+});
+
+export const reviewDecisionSchema = z.object({
+  postId: z.string().uuid("Invalid post ID"),
+  note: z
+    .string()
+    .trim()
+    .max(500, "Review note must be 500 characters or fewer")
+    .optional(),
+});
+
+export const publicationMemberSchema = z.object({
+  publicationSlug: z.string().min(1, "Publication slug is required"),
+  userId: z.string().uuid("Select a valid user"),
+  role: z.enum(["writer", "editor"]),
 });
 
 

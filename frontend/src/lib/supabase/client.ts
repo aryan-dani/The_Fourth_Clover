@@ -94,8 +94,10 @@ export type Database = {
           excerpt: string | null;
           featured_image: string | null;
           cover_image: string | null;
-          status: "draft" | "published";
+          status: "draft" | "in_review" | "published";
           author_id: string;
+          publication_id: string | null;
+          review_note: string | null;
           tags: string[] | null;
           read_time: number;
           created_at: string;
@@ -111,8 +113,10 @@ export type Database = {
           excerpt?: string | null;
           featured_image?: string | null;
           cover_image?: string | null;
-          status?: "draft" | "published";
+          status?: "draft" | "in_review" | "published";
           author_id: string;
+          publication_id?: string | null;
+          review_note?: string | null;
           tags?: string[] | null;
           read_time?: number;
           created_at?: string;
@@ -128,14 +132,62 @@ export type Database = {
           excerpt?: string | null;
           featured_image?: string | null;
           cover_image?: string | null;
-          status?: "draft" | "published";
+          status?: "draft" | "in_review" | "published";
           author_id?: string;
+          publication_id?: string | null;
+          review_note?: string | null;
           tags?: string[] | null;
           read_time?: number;
           created_at?: string;
           updated_at?: string;
           published_at?: string | null;
           scheduled_at?: string | null;
+        };
+      };
+      publications: {
+        Row: {
+          id: string;
+          slug: string;
+          name: string;
+          description: string | null;
+          cover_image: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          name: string;
+          description?: string | null;
+          cover_image?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          name?: string;
+          description?: string | null;
+          cover_image?: string | null;
+          created_at?: string;
+        };
+      };
+      publication_members: {
+        Row: {
+          publication_id: string;
+          user_id: string;
+          role: "writer" | "editor";
+          created_at: string;
+        };
+        Insert: {
+          publication_id: string;
+          user_id: string;
+          role: "writer" | "editor";
+          created_at?: string;
+        };
+        Update: {
+          publication_id?: string;
+          user_id?: string;
+          role?: "writer" | "editor";
+          created_at?: string;
         };
       };
       categories: {
@@ -245,7 +297,14 @@ export type Database = {
         Row: {
           id: string;
           user_id: string;
-          type: "like" | "comment" | "reply" | "follow";
+          type:
+            | "like"
+            | "comment"
+            | "reply"
+            | "follow"
+            | "review_submitted"
+            | "review_approved"
+            | "changes_requested";
           message: string;
           post_id: string | null;
           from_user_id: string | null;
@@ -255,7 +314,14 @@ export type Database = {
         Insert: {
           id?: string;
           user_id: string;
-          type: "like" | "comment" | "reply" | "follow";
+          type:
+            | "like"
+            | "comment"
+            | "reply"
+            | "follow"
+            | "review_submitted"
+            | "review_approved"
+            | "changes_requested";
           message: string;
           post_id?: string | null;
           from_user_id?: string | null;
@@ -265,7 +331,14 @@ export type Database = {
         Update: {
           id?: string;
           user_id?: string;
-          type?: "like" | "comment" | "reply" | "follow";
+          type?:
+            | "like"
+            | "comment"
+            | "reply"
+            | "follow"
+            | "review_submitted"
+            | "review_approved"
+            | "changes_requested";
           message?: string;
           post_id?: string | null;
           from_user_id?: string | null;
