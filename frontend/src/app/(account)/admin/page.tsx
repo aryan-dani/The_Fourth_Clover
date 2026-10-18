@@ -41,6 +41,8 @@ import {
 import {
   upsertPublicationMemberAction,
   removePublicationMemberAction,
+  approvePublicationPostAction,
+  selectWeeklyLinkedinPickAction,
 } from "@/features/data/server-actions";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -60,9 +62,11 @@ import {
   UserPlus,
   UserMinus,
   Clock,
+  PenSquare,
+  Award,
 } from "lucide-react";
 import Link from "next/link";
-import { formatRelativeTime } from "@/lib/utils";
+import { formatRelativeTime, getCurrentWeekKey } from "@/lib/utils";
 import type {
   Profile,
   PostWithAuthor,
@@ -168,6 +172,52 @@ export default function AdminPage() {
       toast.error("Failed to delete post");
       console.error(error);
     }
+  };
+
+  const handleApprovePost = async (postId: string) => {
+    const result = await approvePublicationPostAction(postId);
+    if (!result.ok) {
+      toast.error(result.error || "Failed to approve post");
+      return;
+    }
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? {
+              ...p,
+              status: "published",
+              published_at: p.published_at || new Date().toISOString(),
+            }
+          : p,
+      ),
+    );
+    toast.success("Post approved and published!");
+  };
+
+  const handlePickLinkedin = async (postId: string) => {
+    const weekKey = getCurrentWeekKey();
+    const result = await selectWeeklyLinkedinPickAction(postId, weekKey);
+    if (!result.ok) {
+      toast.error(result.error || "Failed to select Wednesday LinkedIn post");
+      return;
+    }
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? {
+              ...p,
+              status: "published",
+              published_at: p.published_at || new Date().toISOString(),
+              linkedin_pick_week: result.weekKey || weekKey,
+            }
+          : p.linkedin_pick_week === (result.weekKey || weekKey)
+            ? { ...p, linkedin_pick_week: null }
+            : p,
+      ),
+    );
+    toast.success(
+      `Selected as Wednesday LinkedIn feature (${result.weekKey || weekKey})!`,
+    );
   };
 
   const handleUpsertMember = async (
@@ -826,6 +876,39 @@ export default function AdminPage() {
                                           View Post
                                         </Link>
                                       </DropdownMenuItem>
+                                      <DropdownMenuItem asChild>
+                                        <Link
+                                          href={
+                                            p.publication_id
+                                              ? `/csi/write?edit=${p.id}`
+                                              : `/write?edit=${p.id}`
+                                          }
+                                        >
+                                          <PenSquare className="mr-2 h-4 w-4" />
+                                          Edit Post (Super Admin)
+                                        </Link>
+                                      </DropdownMenuItem>
+                                      {p.status !== "published" && (
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            void handleApprovePost(p.id)
+                                          }
+                                        >
+                                          <CheckCircle className="mr-2 h-4 w-4 text-emerald-500" />
+                                          Approve & Publish
+                                        </DropdownMenuItem>
+                                      )}
+                                      {p.publication_id && (
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            void handlePickLinkedin(p.id)
+                                          }
+                                        >
+                                          <Award className="mr-2 h-4 w-4 text-primary" />
+                                          Pick for Wednesday LinkedIn
+                                        </DropdownMenuItem>
+                                      )}
+                                      <DropdownMenuSeparator />
                                       <DropdownMenuItem
                                         onClick={() => handleDeletePost(p.id)}
                                         className="text-destructive focus:text-destructive"

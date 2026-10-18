@@ -3,6 +3,8 @@ import { fetchExploreInitialData } from "@/features/data/server-queries";
 
 const EXPLORE_PAGE_SIZE = 20;
 
+export const revalidate = 15;
+
 export default async function ExplorePage() {
   const { posts, tags, error } = await fetchExploreInitialData(
     EXPLORE_PAGE_SIZE,

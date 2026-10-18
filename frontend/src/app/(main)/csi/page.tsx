@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   listPublicationPosts,
   getPublicationMembers,
-  getUserPublicationRole,
-  listReviewQueue,
 } from "@/features/data/server-queries";
 import { absoluteUrl } from "@/lib/site";
 import { CsiLandingClient } from "./csi-landing-client";
 
 const CSI_PAGE_SIZE = 20;
 
+export const revalidate = 15;
+
 export async function generateMetadata(): Promise<Metadata> {
-  const { publication } = await listPublicationPosts("csi", 1, 0);
+  const { publication } = await listPublicationPosts("csi", CSI_PAGE_SIZE, 0);
   const title = `${publication?.name || "CSI Tech Blog"} | The Fourth Clover`;
   const description =
     publication?.description ||
@@ -47,32 +46,16 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function CsiPage() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const [{ publication, posts, tags, error }, members, roleInfo] =
-    await Promise.all([
-      listPublicationPosts("csi", CSI_PAGE_SIZE, 0),
-      getPublicationMembers("csi"),
-      user?.id
-        ? getUserPublicationRole("csi", user.id)
-        : Promise.resolve({
-            role: null,
-            publicationId: null,
-            publicationName: null,
-          }),
-    ]);
-
-  let reviewQueueCount = 0;
-  if (roleInfo.role === "editor") {
-    const queue = await listReviewQueue("csi");
-    reviewQueueCount = queue.posts.length;
-  }
+  const [
+    { publication, posts, submissions, weeklyPick, tags, error },
+    members,
+  ] = await Promise.all([
+    listPublicationPosts("csi", CSI_PAGE_SIZE, 0),
+    getPublicationMembers("csi"),
+  ]);
 
   const resolvedPublication = publication ?? {
-    id: "00000000-0000-0000-0000-000000000c51",
+    id: "38a1f07f-4ed3-4465-b8fa-9899d69e6ea3",
     slug: "csi",
     name: "CSI Tech Blog",
     description:
@@ -85,10 +68,10 @@ export default async function CsiPage() {
     <CsiLandingClient
       publication={resolvedPublication}
       initialPosts={posts}
+      initialSubmissions={submissions}
+      initialWeeklyPick={weeklyPick}
       initialTags={tags}
       members={members}
-      viewerRole={roleInfo.role}
-      reviewQueueCount={reviewQueueCount}
       initialLoadError={error}
       pageSize={CSI_PAGE_SIZE}
       initialHasMore={posts.length === CSI_PAGE_SIZE}

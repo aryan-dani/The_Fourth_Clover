@@ -27,7 +27,8 @@ export default async function CsiReviewPage() {
     redirect("/auth/signin");
   }
 
-  const { authorized, posts, publication } = await listReviewQueue("csi");
+  const { authorized, isSuperAdmin, posts, publishedPosts, publication } =
+    await listReviewQueue("csi");
 
   if (!authorized) {
     return (
@@ -42,7 +43,7 @@ export default async function CsiReviewPage() {
                 Editor Access Required
               </h1>
               <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
-                Only CSI Technical Leads, Technical Secretaries, and platform administrators can review and approve submissions in the CSI editorial queue.
+                Only CSI Technical Heads (Darshan and Tanish), the Technical Secretary (Aryan Dani), and platform Super Admins can review submissions and pick the Wednesday LinkedIn feature.
               </p>
               <Button asChild variant="outline" className="gap-2 rounded-full">
                 <Link href="/csi">
@@ -60,6 +61,8 @@ export default async function CsiReviewPage() {
   return (
     <CsiReviewClient
       initialPosts={posts}
+      initialPublishedPosts={publishedPosts}
+      isSuperAdmin={isSuperAdmin}
       publicationName={publication?.name || "CSI MIT-WPU Tech Blog"}
     />
   );

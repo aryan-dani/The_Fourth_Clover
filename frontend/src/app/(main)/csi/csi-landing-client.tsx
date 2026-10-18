@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useTransition,
+} from "react";
 import { LazyMotion, domAnimation, m } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -12,9 +19,21 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PageShell } from "@/components/layout/PageShell";
+import { useAuth } from "@/features/auth/auth-context";
 import { motionEase } from "@/lib/motion";
-import { formatRelativeTime, toTitleCase } from "@/lib/utils";
-import { loadMorePublicationPostsAction } from "@/features/data/server-actions";
+import {
+  formatRelativeTime,
+  toTitleCase,
+  getCurrentWeekKey,
+  formatLinkedinRepostCopy,
+} from "@/lib/utils";
+import {
+  loadMorePublicationPostsAction,
+  joinPublicationAsWriterAction,
+  selectWeeklyLinkedinPickAction,
+  approvePublicationPostAction,
+} from "@/features/data/server-actions";
+import { toast } from "sonner";
 import type {
   PostWithAuthor,
   Publication,
@@ -36,15 +55,24 @@ import {
   Users,
   ArrowRight,
   Terminal,
+  Linkedin,
+  Copy,
+  CheckCircle2,
+  UserPlus,
+  Loader2,
+  Award,
+  Flame,
 } from "lucide-react";
 
 type CsiLandingClientProps = {
   publication: Publication;
   initialPosts: PostWithAuthor[];
+  initialSubmissions?: PostWithAuthor[];
+  initialWeeklyPick?: PostWithAuthor | null;
   initialTags: string[];
   members: PublicationMemberWithProfile[];
-  viewerRole: PublicationRole | null;
-  reviewQueueCount: number;
+  viewerRole?: PublicationRole | null;
+  reviewQueueCount?: number;
   initialLoadError: string | null;
   pageSize: number;
   initialHasMore: boolean;
@@ -53,30 +81,165 @@ type CsiLandingClientProps = {
 export function CsiLandingClient({
   publication,
   initialPosts,
+  initialSubmissions = [],
+  initialWeeklyPick = null,
   initialTags,
-  members,
-  viewerRole,
-  reviewQueueCount,
+  members: initialMembers,
+  viewerRole: serverViewerRole = null,
   initialLoadError,
   pageSize,
   initialHasMore,
 }: CsiLandingClientProps) {
+  const router = useRouter();
+  const { user, profile } = useAuth();
   const [posts, setPosts] = useState<PostWithAuthor[]>(initialPosts);
+  const [submissions, setSubmissions] =
+    useState<PostWithAuthor[]>(initialSubmissions);
+  const [weeklyPick, setWeeklyPick] = useState<PostWithAuthor | null>(
+    initialWeeklyPick,
+  );
+  const [members, setMembers] =
+    useState<PublicationMemberWithProfile[]>(initialMembers);
+  const [joinedRole, setJoinedRole] = useState<PublicationRole | null>(null);
   const [allTags, setAllTags] = useState<string[]>(initialTags);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [loadError, setLoadError] = useState<string | null>(initialLoadError);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTag, setSelectedTag] = useState("");
+  const [feedMode, setFeedMode] = useState<"all" | "submissions" | "published">(
+    "all",
+  );
   const [sortBy, setSortBy] = useState<"latest" | "trending" | "popular">(
     "latest",
   );
+  const [isPending, startTransition] = useTransition();
+  const [busyPostId, setBusyPostId] = useState<string | null>(null);
+
+  const currentWeekKey = useMemo(() => getCurrentWeekKey(), []);
 
   useEffect(() => {
     setPosts(initialPosts);
+    setSubmissions(initialSubmissions);
+    setWeeklyPick(initialWeeklyPick);
+    setMembers(initialMembers);
     setHasMore(initialHasMore);
     setAllTags(initialTags);
-  }, [initialPosts, initialHasMore, initialTags]);
+  }, [
+    initialPosts,
+    initialSubmissions,
+    initialWeeklyPick,
+    initialMembers,
+    initialHasMore,
+    initialTags,
+  ]);
+
+  const isSuperAdmin = Boolean(profile?.is_admin);
+
+  const viewerRole: PublicationRole | null = useMemo(() => {
+    if (isSuperAdmin) return "editor";
+    if (joinedRole) return joinedRole;
+    if (serverViewerRole) return serverViewerRole;
+    if (!user?.id) return null;
+    const found = members.find((m) => m.user_id === user.id);
+    return found?.role ?? null;
+  }, [isSuperAdmin, joinedRole, serverViewerRole, user?.id, members]);
+
+  const reviewQueueCount = submissions.length;
+
+  const handleJoinCsi = () => {
+    if (!user) {
+      router.push("/auth/signin");
+      return;
+    }
+    startTransition(async () => {
+      const res = await joinPublicationAsWriterAction(publication.slug);
+      if (!res.ok) {
+        toast.error(res.error || "Could not join CSI writers.");
+        return;
+      }
+      setJoinedRole("writer");
+      toast.success(
+        "Welcome to the CSI Technical Blog! You can now post your Sunday-to-Wednesday articles.",
+      );
+      router.refresh();
+    });
+  };
+
+  const handleSelectWeeklyPick = (post: PostWithAuthor) => {
+    setBusyPostId(post.id);
+    startTransition(async () => {
+      const res = await selectWeeklyLinkedinPickAction(post.id);
+      setBusyPostId(null);
+      if (!res.ok) {
+        toast.error(res.error || "Could not select Weekly LinkedIn Pick.");
+        return;
+      }
+      const updatedPost: PostWithAuthor = {
+        ...post,
+        status: "published",
+        published_at: post.published_at ?? new Date().toISOString(),
+        linkedin_pick_week: res.weekKey ?? currentWeekKey,
+      };
+      setWeeklyPick(updatedPost);
+      setSubmissions((prev) => prev.filter((p) => p.id !== post.id));
+      setPosts((prev) => {
+        const exists = prev.some((p) => p.id === post.id);
+        const cleared = isSuperAdmin
+          ? prev.map((p) =>
+              p.linkedin_pick_week === (res.weekKey ?? currentWeekKey)
+                ? { ...p, linkedin_pick_week: null }
+                : p,
+            )
+          : prev;
+        return exists
+          ? cleared.map((p) => (p.id === post.id ? updatedPost : p))
+          : [updatedPost, ...cleared];
+      });
+      toast.success(
+        `Selected "${post.title}" as the official CSI LinkedIn post for ${res.weekKey || currentWeekKey}!`,
+      );
+      router.refresh();
+    });
+  };
+
+  const handleQuickApprove = (post: PostWithAuthor) => {
+    setBusyPostId(post.id);
+    startTransition(async () => {
+      const res = await approvePublicationPostAction(post.id);
+      setBusyPostId(null);
+      if (!res.ok) {
+        toast.error(res.error || "Could not approve post.");
+        return;
+      }
+      const updatedPost: PostWithAuthor = {
+        ...post,
+        status: "published",
+        published_at: post.published_at ?? new Date().toISOString(),
+      };
+      setSubmissions((prev) => prev.filter((p) => p.id !== post.id));
+      setPosts((prev) => [updatedPost, ...prev]);
+      toast.success(`Published "${post.title}" to CSI Tech Blog!`);
+      router.refresh();
+    });
+  };
+
+  const handleCopyLinkedinText = (post: PostWithAuthor) => {
+    const url =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/csi/${post.slug}`
+        : `/csi/${post.slug}`;
+    const copy = formatLinkedinRepostCopy({
+      title: post.title,
+      authorName: post.author.full_name || post.author.username,
+      excerpt: post.excerpt,
+      tags: post.tags,
+      url,
+      weekKey: post.linkedin_pick_week || currentWeekKey,
+    });
+    navigator.clipboard.writeText(copy);
+    toast.success("Copied LinkedIn repost caption to clipboard!");
+  };
 
   const loadMorePosts = useCallback(async () => {
     if (!hasMore || loadingMore) return;
@@ -100,15 +263,32 @@ export function CsiLandingClient({
     }
   }, [hasMore, loadingMore, pageSize, posts.length, publication.slug]);
 
+  const activeSourcePosts = useMemo(() => {
+    if (feedMode === "submissions") return submissions;
+    if (feedMode === "published") return posts;
+    const seen = new Set<string>();
+    const merged: PostWithAuthor[] = [];
+    for (const item of [...submissions, ...posts]) {
+      if (!seen.has(item.id)) {
+        seen.add(item.id);
+        merged.push(item);
+      }
+    }
+    return merged;
+  }, [feedMode, submissions, posts]);
+
   const isFiltering = Boolean(searchTerm.trim() || selectedTag);
 
   const featuredPost = useMemo(() => {
+    if (weeklyPick && !isFiltering && feedMode !== "submissions") {
+      return weeklyPick;
+    }
     if (isFiltering || sortBy !== "latest" || posts.length === 0) return null;
     return posts[0];
-  }, [isFiltering, sortBy, posts]);
+  }, [weeklyPick, isFiltering, feedMode, sortBy, posts]);
 
   const filteredPosts = useMemo(() => {
-    let list: PostWithAuthor[] = [...posts];
+    let list: PostWithAuthor[] = [...activeSourcePosts];
 
     if (searchTerm.trim()) {
       const lower = searchTerm.toLowerCase();
@@ -143,20 +323,27 @@ export function CsiLandingClient({
       default:
         list.sort(
           (a, b) =>
-            new Date(b.published_at || b.created_at).getTime() -
-            new Date(a.published_at || a.created_at).getTime(),
+            new Date(b.published_at || b.updated_at || b.created_at).getTime() -
+            new Date(a.published_at || a.updated_at || a.created_at).getTime(),
         );
         break;
     }
 
-    if (featuredPost) {
+    if (featuredPost && feedMode !== "submissions") {
       return list.filter((p) => p.id !== featuredPost.id);
     }
 
     return list;
-  }, [posts, searchTerm, selectedTag, sortBy, featuredPost]);
+  }, [
+    activeSourcePosts,
+    searchTerm,
+    selectedTag,
+    sortBy,
+    featuredPost,
+    feedMode,
+  ]);
 
-  const canPaginateServer = !isFiltering;
+  const canPaginateServer = !isFiltering && feedMode !== "submissions";
 
   return (
     <PageShell variant="wide">
@@ -170,32 +357,73 @@ export function CsiLandingClient({
 
         {/* Hero Section */}
         <m.section
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: motionEase }}
-          className="relative mb-10 overflow-hidden rounded-3xl border-2 border-border/70 p-6 sm:p-10 md:p-12 glass"
+          transition={{ duration: 0.4, ease: motionEase }}
+          className="border-border/70 glass relative mb-8 overflow-hidden rounded-3xl border-2 p-6 sm:p-10 md:p-12"
         >
           <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3.5 py-1 font-sans text-xs font-semibold tracking-wide text-primary">
+            <div className="border-primary/25 bg-primary/10 text-primary mb-4 inline-flex items-center gap-2 rounded-full border px-3.5 py-1 font-sans text-xs font-semibold tracking-wide">
               <Terminal className="h-3.5 w-3.5" />
-              <span>Written by CSI technical members</span>
+              <span>Written by CSI MIT-WPU technical members</span>
             </div>
 
-            <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-6xl mb-4 leading-tight">
+            <h1 className="font-display text-foreground mb-4 text-4xl leading-tight font-semibold tracking-tight sm:text-5xl lg:text-6xl">
               CSI <span className="gradient-text">Tech Blog</span>
             </h1>
 
-            <p className="font-serif text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-muted-foreground mx-auto mb-6 max-w-2xl font-serif text-lg leading-relaxed md:text-xl">
               {publication.description ||
                 "Technical deep-dives, tutorials, and engineering explainers written by CSI MIT-WPU technical members."}
             </p>
 
+            {/* Weekly Cycle Pill */}
+            <div className="border-border/60 bg-background/60 mx-auto mb-8 flex max-w-2xl flex-wrap items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs sm:text-sm">
+              <Badge
+                variant="secondary"
+                className="bg-primary/15 text-primary rounded-full font-semibold"
+              >
+                Cycle {currentWeekKey}
+              </Badge>
+              <span className="text-muted-foreground">
+                <strong>Sun - Wed:</strong> Members post & review each
+                other&apos;s drafts
+              </span>
+              <span className="text-muted-foreground hidden sm:inline">·</span>
+              <span className="text-foreground font-medium">
+                <strong>Wednesday AM:</strong> 1 post chosen for official CSI
+                LinkedIn repost
+              </span>
+            </div>
+
             <div className="flex flex-wrap items-center justify-center gap-3">
-              {viewerRole && (
+              {viewerRole ? (
                 <Button asChild size="lg" className="rounded-full shadow-md">
                   <Link href="/csi/write">
                     <PenTool className="mr-2 h-4 w-4" />
-                    Write for CSI
+                    Post Weekly Article
+                  </Link>
+                </Button>
+              ) : user ? (
+                <Button
+                  type="button"
+                  size="lg"
+                  disabled={isPending}
+                  onClick={handleJoinCsi}
+                  className="rounded-full shadow-md"
+                >
+                  {isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <UserPlus className="mr-2 h-4 w-4" />
+                  )}
+                  Join as CSI Technical Member
+                </Button>
+              ) : (
+                <Button asChild size="lg" className="rounded-full shadow-md">
+                  <Link href="/auth/signup">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Create CSI Member ID
                   </Link>
                 </Button>
               )}
@@ -205,11 +433,11 @@ export function CsiLandingClient({
                   asChild
                   variant="outline"
                   size="lg"
-                  className="rounded-full border-primary/40"
+                  className="border-primary/40 rounded-full"
                 >
                   <Link href="/csi/review">
                     <ShieldCheck className="mr-2 h-4 w-4" />
-                    Review Queue
+                    Wednesday Review Queue
                     {reviewQueueCount > 0 && (
                       <Badge
                         variant="default"
@@ -226,14 +454,14 @@ export function CsiLandingClient({
                 asChild
                 variant="ghost"
                 size="sm"
-                className="rounded-full font-sans text-xs text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground rounded-full"
               >
                 <a
                   href="/csi/feed.xml"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Rss className="mr-1.5 h-3.5 w-3.5" />
+                  <Rss className="mr-1.5 h-4 w-4" />
                   RSS Feed
                 </a>
               </Button>
@@ -241,364 +469,482 @@ export function CsiLandingClient({
           </div>
         </m.section>
 
-        {/* Featured Post Spotlight */}
+        {/* Featured / Weekly LinkedIn Pick Post */}
         {featuredPost && (
           <m.section
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05, duration: 0.45, ease: motionEase }}
-            aria-label="Featured CSI article"
+            transition={{ duration: 0.4, delay: 0.05, ease: motionEase }}
             className="mb-10"
           >
-            <Link href={`/csi/${featuredPost.slug}`} className="block group">
-              <Card className="overflow-hidden border-2 transition-all duration-500 glass hover:border-primary/35 hover:shadow-2xl hover:shadow-primary/10">
-                <div className="grid grid-cols-1 lg:grid-cols-12">
-                  {featuredPost.cover_image ? (
-                    <div className="relative aspect-video lg:col-span-7 lg:aspect-auto lg:min-h-[22rem] overflow-hidden bg-muted/30">
-                      <Image
-                        src={featuredPost.cover_image}
-                        alt={featuredPost.title}
-                        fill
-                        sizes="(max-width: 1024px) 100vw, 58vw"
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        priority
-                      />
-                    </div>
-                  ) : (
-                    <div className="hidden lg:flex lg:col-span-5 items-center justify-center bg-gradient-to-br from-primary/15 via-muted/40 to-transparent p-10">
-                      <Terminal className="h-20 w-20 text-primary/35" />
+            <Card className="border-primary/35 glass group overflow-hidden rounded-3xl border-2 transition-all duration-300 hover:shadow-xl">
+              <div className="grid grid-cols-1 lg:grid-cols-12">
+                {featuredPost.cover_image && (
+                  <Link
+                    href={`/csi/${featuredPost.slug}`}
+                    className="bg-muted/30 relative aspect-[16/10] overflow-hidden lg:col-span-6 lg:aspect-auto lg:min-h-[320px]"
+                  >
+                    <Image
+                      src={featuredPost.cover_image}
+                      alt={featuredPost.title}
+                      fill
+                      priority
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                    />
+                  </Link>
+                )}
+
+                <CardContent
+                  className={`flex flex-col justify-center p-6 sm:p-8 lg:p-10 ${
+                    featuredPost.cover_image
+                      ? "lg:col-span-6"
+                      : "lg:col-span-12"
+                  }`}
+                >
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    {featuredPost.linkedin_pick_week ? (
+                      <Badge className="gap-1.5 rounded-full bg-blue-600 text-white hover:bg-blue-600">
+                        <Linkedin className="h-3 w-3" />
+                        Official CSI LinkedIn Pick (
+                        {featuredPost.linkedin_pick_week})
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="default"
+                        className="gap-1 rounded-full text-xs"
+                      >
+                        <Sparkles className="h-3 w-3" />
+                        Featured Technical Post
+                      </Badge>
+                    )}
+                    <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                      <Clock className="h-3 w-3" />
+                      {featuredPost.read_time} min read
+                    </span>
+                  </div>
+
+                  <Link href={`/csi/${featuredPost.slug}`}>
+                    <h2 className="font-display group-hover:text-primary mb-3 text-2xl leading-snug font-semibold tracking-tight transition-colors sm:text-3xl">
+                      {featuredPost.title}
+                    </h2>
+                  </Link>
+
+                  {featuredPost.excerpt && (
+                    <p className="text-muted-foreground mb-5 line-clamp-3 font-serif text-base leading-relaxed">
+                      {featuredPost.excerpt}
+                    </p>
+                  )}
+
+                  {featuredPost.tags && featuredPost.tags.length > 0 && (
+                    <div className="mb-6 flex flex-wrap gap-1.5">
+                      {featuredPost.tags.slice(0, 4).map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant="outline"
+                          className="cursor-pointer rounded-full text-xs"
+                          onClick={() => setSelectedTag(tag)}
+                        >
+                          {toTitleCase(tag)}
+                        </Badge>
+                      ))}
                     </div>
                   )}
 
-                  <CardContent
-                    className={`flex flex-col justify-between p-6 sm:p-8 lg:p-10 ${
-                      featuredPost.cover_image
-                        ? "lg:col-span-5"
-                        : "lg:col-span-7"
-                    }`}
-                  >
-                    <div>
-                      <div className="mb-4 flex items-center gap-2">
-                        <Badge className="gap-1 rounded-full px-3 py-0.5 font-sans text-xs">
-                          <Sparkles className="h-3 w-3" />
-                          Featured Post
-                        </Badge>
-                        {featuredPost.tags?.slice(0, 2).map((tag) => (
-                          <Badge
-                            key={tag}
-                            variant="secondary"
-                            className="font-sans text-xs"
-                          >
-                            {toTitleCase(tag)}
-                          </Badge>
-                        ))}
-                      </div>
-
-                      <h2 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight text-foreground group-hover:text-primary transition-colors mb-3 leading-snug">
-                        {featuredPost.title}
-                      </h2>
-
-                      {featuredPost.excerpt && (
-                        <p className="font-serif text-base text-muted-foreground line-clamp-3 mb-6">
-                          {featuredPost.excerpt}
+                  <div className="border-border/50 mt-auto flex flex-wrap items-center justify-between gap-4 border-t pt-4">
+                    <Link
+                      href={`/profile/${featuredPost.author.username}`}
+                      className="flex items-center gap-3"
+                    >
+                      <Avatar className="ring-border h-9 w-9 ring-1">
+                        <AvatarImage
+                          src={featuredPost.author.avatar_url || ""}
+                        />
+                        <AvatarFallback>
+                          {featuredPost.author.full_name?.[0] ||
+                            featuredPost.author.username?.[0] ||
+                            "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-medium">
+                          {featuredPost.author.full_name ||
+                            featuredPost.author.username}
                         </p>
+                        <p className="text-muted-foreground text-xs">
+                          {formatRelativeTime(
+                            featuredPost.published_at ||
+                              featuredPost.created_at,
+                          )}
+                        </p>
+                      </div>
+                    </Link>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {(viewerRole === "editor" ||
+                        Boolean(featuredPost.linkedin_pick_week)) && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCopyLinkedinText(featuredPost)}
+                          className="gap-1.5 rounded-full text-xs"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                          Copy LinkedIn Post
+                        </Button>
                       )}
-                    </div>
-
-                    <div className="space-y-4 pt-4 border-t border-border/50">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10 ring-2 ring-primary/15">
-                            <AvatarImage
-                              src={featuredPost.author.avatar_url || ""}
-                            />
-                            <AvatarFallback>
-                              {featuredPost.author.full_name?.[0] ||
-                                featuredPost.author.username[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-sans text-sm font-semibold text-foreground">
-                              {featuredPost.author.full_name ||
-                                featuredPost.author.username}
-                            </p>
-                            <p className="font-sans text-xs text-muted-foreground">
-                              @{featuredPost.author.username}
-                            </p>
-                          </div>
-                        </div>
-
-                        <span className="inline-flex items-center gap-1 font-sans text-xs font-medium text-primary group-hover:translate-x-1 transition-transform">
+                      <Button
+                        asChild
+                        variant="ghost"
+                        size="sm"
+                        className="group/btn gap-1.5 rounded-full"
+                      >
+                        <Link href={`/csi/${featuredPost.slug}`}>
                           Read article
-                          <ArrowRight className="h-3.5 w-3.5" />
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between font-sans text-xs text-muted-foreground">
-                        <div className="flex items-center gap-4">
-                          <span className="inline-flex items-center gap-1">
-                            <Clock className="h-3.5 w-3.5" />
-                            {featuredPost.read_time}m read
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <Heart className="h-3.5 w-3.5" />
-                            {featuredPost.likes?.[0]?.count || 0}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <MessageCircle className="h-3.5 w-3.5" />
-                            {featuredPost.comments?.[0]?.count || 0}
-                          </span>
-                        </div>
-                        <span>
-                          {featuredPost.published_at
-                            ? formatRelativeTime(featuredPost.published_at)
-                            : ""}
-                        </span>
-                      </div>
+                          <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
+                        </Link>
+                      </Button>
                     </div>
-                  </CardContent>
-                </div>
-              </Card>
-            </Link>
+                  </div>
+                </CardContent>
+              </div>
+            </Card>
           </m.section>
         )}
 
-        {/* Search, Sort & Tag Filter Chips */}
-        <m.section
-          initial={{ opacity: 0, y: 20 }}
+        {/* Feed Mode + Search + Filter Bar */}
+        <m.div
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.08, duration: 0.45, ease: motionEase }}
-          aria-label="Filter CSI posts"
-          className="mb-8"
+          transition={{ delay: 0.08, duration: 0.35, ease: motionEase }}
+          className="mb-8 space-y-5"
         >
-          <Card className="glass border-2 hover:border-primary/30 transition-all duration-300">
-            <CardContent className="p-5 sm:p-6">
-              <div className="flex flex-col lg:flex-row gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    placeholder="Search technical posts, authors, or topics..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-12 h-10 text-base border-2 focus:border-primary/50 transition-all"
-                  />
-                </div>
-
-                <Tabs
-                  value={sortBy}
-                  onValueChange={(value) => setSortBy(value as typeof sortBy)}
-                  className="w-full lg:w-auto"
+          <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+            <Tabs
+              value={feedMode}
+              onValueChange={(value) =>
+                setFeedMode(value as "all" | "submissions" | "published")
+              }
+              className="w-full lg:w-auto"
+            >
+              <TabsList className="bg-muted/60 grid h-11 w-full grid-cols-3 rounded-2xl p-1 lg:w-auto">
+                <TabsTrigger value="all" className="rounded-xl text-xs sm:text-sm">
+                  All CSI ({posts.length + submissions.length})
+                </TabsTrigger>
+                <TabsTrigger
+                  value="submissions"
+                  className="gap-1.5 rounded-xl text-xs sm:text-sm"
                 >
-                  <TabsList className="grid h-10 w-full grid-cols-3 lg:w-auto">
-                    <TabsTrigger
-                      value="latest"
-                      className="flex items-center space-x-2"
-                    >
-                      <Calendar className="w-4 h-4" />
-                      <span>Latest</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="trending"
-                      className="flex items-center space-x-2"
-                    >
-                      <TrendingUp className="w-4 h-4" />
-                      <span>Trending</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="popular"
-                      className="flex items-center space-x-2"
-                    >
-                      <Heart className="w-4 h-4" />
-                      <span>Popular</span>
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                  <Flame className="h-3.5 w-3.5 text-amber-500" />
+                  Sun-Wed Submissions ({submissions.length})
+                </TabsTrigger>
+                <TabsTrigger
+                  value="published"
+                  className="rounded-xl text-xs sm:text-sm"
+                >
+                  Published ({posts.length})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="relative min-w-[240px] flex-1">
+                <Search className="text-muted-foreground absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2" />
+                <Input
+                  placeholder="Search CSI articles, topics, or members..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="border-border/80 bg-card/85 h-11 rounded-2xl pl-10"
+                />
               </div>
 
-              {allTags.length > 0 && (
-                <div className="mt-5">
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      variant={selectedTag === "" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setSelectedTag("")}
-                      className="rounded-full transition-all"
-                    >
-                      All Topics
-                    </Button>
-                    {allTags.slice(0, 12).map((tag) => (
-                      <Button
-                        key={tag}
-                        type="button"
-                        variant={selectedTag === tag ? "default" : "outline"}
-                        size="sm"
-                        onClick={() =>
-                          setSelectedTag(selectedTag === tag ? "" : tag)
-                        }
-                        className="rounded-full transition-all"
-                      >
-                        {toTitleCase(tag)}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </m.section>
+              <Tabs
+                value={sortBy}
+                onValueChange={(value) =>
+                  setSortBy(value as "latest" | "trending" | "popular")
+                }
+                className="w-full sm:w-auto"
+              >
+                <TabsList className="grid h-11 w-full grid-cols-3 rounded-2xl sm:w-[270px]">
+                  <TabsTrigger value="latest" className="gap-1 text-xs">
+                    <Calendar className="h-3 w-3" />
+                    Latest
+                  </TabsTrigger>
+                  <TabsTrigger value="trending" className="gap-1 text-xs">
+                    <TrendingUp className="h-3 w-3" />
+                    Trending
+                  </TabsTrigger>
+                  <TabsTrigger value="popular" className="gap-1 text-xs">
+                    <Heart className="h-3 w-3" />
+                    Popular
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
 
-        {/* Latest Posts Feed */}
+          {allTags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-muted-foreground mr-1 text-xs font-medium tracking-wider uppercase">
+                Topics:
+              </span>
+              <Badge
+                variant={selectedTag === "" ? "default" : "outline"}
+                className="cursor-pointer rounded-full transition-colors"
+                onClick={() => setSelectedTag("")}
+              >
+                All
+              </Badge>
+              {allTags.slice(0, 14).map((tag) => (
+                <Badge
+                  key={tag}
+                  variant={selectedTag === tag ? "default" : "outline"}
+                  className="hover:bg-primary hover:text-primary-foreground cursor-pointer rounded-full transition-colors"
+                  onClick={() =>
+                    setSelectedTag(selectedTag === tag ? "" : tag)
+                  }
+                >
+                  {toTitleCase(tag)}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </m.div>
+
+        {/* Posts Grid */}
         <m.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.14, duration: 0.4, ease: motionEase }}
-          aria-label="CSI technical articles"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12, duration: 0.35, ease: motionEase }}
           className="mb-14"
         >
-          {posts.length === 0 ? (
-            <Card className="glass border-2 border-dashed py-16 text-center">
-              <CardContent className="mx-auto max-w-md space-y-4">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
-                  <Terminal className="h-7 w-7 text-muted-foreground" />
-                </div>
-                <h2 className="font-display text-2xl font-semibold">
-                  No CSI articles published yet
+          {filteredPosts.length === 0 ? (
+            <Card className="border-border/70 glass rounded-3xl border-2 text-center">
+              <CardContent className="p-10 sm:p-12">
+                <Search className="text-muted-foreground mx-auto mb-4 h-12 w-12 opacity-60" />
+                <h2 className="font-display mb-2 text-xl font-semibold">
+                  {isFiltering
+                    ? "No matching CSI articles"
+                    : feedMode === "submissions"
+                      ? "No Sunday-to-Wednesday submissions waiting right now"
+                      : "No CSI posts published yet"}
                 </h2>
-                <p className="font-sans text-sm text-muted-foreground">
-                  Technical articles from CSI MIT-WPU members will appear here
-                  as soon as editors approve the first submissions.
+                <p className="text-muted-foreground mx-auto mb-6 max-w-md text-sm">
+                  {isFiltering
+                    ? "Try clearing your search or topic filter to see more articles from CSI technical members."
+                    : "CSI technical members can submit their weekly articles between Sunday and Wednesday to interact with peers and compete for the Wednesday LinkedIn spotlight."}
                 </p>
-                {viewerRole && (
+                {isFiltering ? (
+                  <Button
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => {
+                      setSearchTerm("");
+                      setSelectedTag("");
+                    }}
+                  >
+                    Clear filters
+                  </Button>
+                ) : viewerRole ? (
                   <Button asChild className="rounded-full">
                     <Link href="/csi/write">
                       <PenTool className="mr-2 h-4 w-4" />
-                      Write the first CSI post
+                      Write the first article for {currentWeekKey}
                     </Link>
                   </Button>
-                )}
+                ) : null}
               </CardContent>
             </Card>
-          ) : filteredPosts.length === 0 && !featuredPost ? (
-            <div className="py-16 text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-                <Search className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">
-                No matching articles
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                Try adjusting your search query or clearing the topic filter.
-              </p>
-            </div>
           ) : (
-            filteredPosts.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredPosts.map((post, index) => (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filteredPosts.map((post, index) => {
+                const isBusy = isPending && busyPostId === post.id;
+                const isWeeklyWinner =
+                  post.linkedin_pick_week === currentWeekKey;
+
+                return (
                   <m.div
                     key={post.id}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(index * 0.06, 0.3) }}
+                    transition={{
+                      delay: Math.min(index * 0.03, 0.25),
+                      duration: 0.3,
+                      ease: motionEase,
+                    }}
                   >
-                    <Link href={`/csi/${post.slug}`} className="block h-full">
-                      <Card className="group flex h-full flex-col overflow-hidden hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 glass border-2 hover:border-primary/30 hover:-translate-y-1.5 cursor-pointer">
-                        {post.cover_image && (
-                          <div className="aspect-video overflow-hidden relative bg-muted/30">
-                            <Image
-                              src={post.cover_image}
-                              alt={post.title}
-                              width={640}
-                              height={360}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            />
+                    <Card className="border-border/70 glass group flex h-full flex-col overflow-hidden rounded-3xl border-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl">
+                      {post.cover_image && (
+                        <Link
+                          href={`/csi/${post.slug}`}
+                          className="bg-muted/30 relative aspect-video w-full overflow-hidden"
+                        >
+                          <Image
+                            src={post.cover_image}
+                            alt={post.title}
+                            fill
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                        </Link>
+                      )}
+
+                      <CardContent className="flex flex-1 flex-col p-6">
+                        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {post.linkedin_pick_week ? (
+                              <Badge className="gap-1 rounded-full bg-blue-600 text-[10px] text-white hover:bg-blue-600">
+                                <Linkedin className="h-2.5 w-2.5" />
+                                LinkedIn Pick ({post.linkedin_pick_week})
+                              </Badge>
+                            ) : post.status === "in_review" ? (
+                              <Badge
+                                variant="outline"
+                                className="rounded-full border-amber-500/40 bg-amber-500/10 text-[10px] font-semibold text-amber-600 dark:text-amber-300"
+                              >
+                                Sun-Wed Submission
+                              </Badge>
+                            ) : (
+                              <Badge
+                                variant="secondary"
+                                className="bg-primary/12 text-primary border-primary/20 rounded-full text-[11px]"
+                              >
+                                CSI
+                              </Badge>
+                            )}
+                          </div>
+                          <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                            <Clock className="h-3 w-3" />
+                            {post.read_time}m read
+                          </span>
+                        </div>
+
+                        <Link href={`/csi/${post.slug}`} className="group/link">
+                          <h3 className="font-display group-hover/link:text-primary mb-2 line-clamp-2 text-lg leading-snug font-semibold transition-colors">
+                            {post.title}
+                          </h3>
+                        </Link>
+
+                        {post.excerpt && (
+                          <p className="text-muted-foreground mb-4 line-clamp-3 flex-1 font-serif text-sm leading-relaxed">
+                            {post.excerpt}
+                          </p>
+                        )}
+
+                        {post.tags && post.tags.length > 0 && (
+                          <div className="mb-4 flex flex-wrap gap-1">
+                            {post.tags.slice(0, 3).map((tag) => (
+                              <Badge
+                                key={tag}
+                                variant="outline"
+                                className="cursor-pointer rounded-full text-xs"
+                                onClick={() => setSelectedTag(tag)}
+                              >
+                                {toTitleCase(tag)}
+                              </Badge>
+                            ))}
                           </div>
                         )}
-                        <CardContent className="p-6 flex flex-col flex-1">
-                          <div className="flex items-center space-x-3 mb-4">
-                            <Avatar className="h-9 w-9 ring-2 ring-primary/10 group-hover:ring-primary/30 transition-all">
+
+                        {/* Technical Head (Darshan/Tanish) & Super Admin (Aryan) Weekly Selection Controls */}
+                        {viewerRole === "editor" && (
+                          <div className="border-border/50 bg-muted/30 mb-4 flex flex-wrap items-center gap-1.5 rounded-2xl border p-2">
+                            {post.status === "in_review" && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                disabled={isBusy}
+                                onClick={() => handleQuickApprove(post)}
+                                className="h-7 gap-1 rounded-full px-2.5 text-[11px]"
+                              >
+                                <CheckCircle2 className="h-3 w-3" />
+                                Approve
+                              </Button>
+                            )}
+                            {!isWeeklyWinner && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={isBusy}
+                                onClick={() => handleSelectWeeklyPick(post)}
+                                className="h-7 gap-1 rounded-full border-blue-500/40 px-2.5 text-[11px] text-blue-600 hover:bg-blue-500/10 dark:text-blue-400"
+                              >
+                                {isBusy ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Award className="h-3 w-3" />
+                                )}
+                                Pick for Wed LinkedIn
+                              </Button>
+                            )}
+                            {post.linkedin_pick_week && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleCopyLinkedinText(post)}
+                                className="h-7 gap-1 rounded-full px-2.5 text-[11px]"
+                              >
+                                <Copy className="h-3 w-3" />
+                                Copy LinkedIn
+                              </Button>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="border-border/50 mt-auto flex items-center justify-between border-t pt-4">
+                          <Link
+                            href={`/profile/${post.author.username}`}
+                            className="flex min-w-0 items-center gap-2"
+                          >
+                            <Avatar className="h-6 w-6 shrink-0">
                               <AvatarImage
                                 src={post.author.avatar_url || ""}
                               />
-                              <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-xs">
+                              <AvatarFallback className="text-xs">
                                 {post.author.full_name?.[0] ||
-                                  post.author.username[0]}
+                                  post.author.username?.[0] ||
+                                  "U"}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="min-w-0">
-                              <p className="font-sans font-semibold text-sm truncate">
-                                {post.author.full_name || post.author.username}
-                              </p>
-                              <p className="font-sans text-xs text-muted-foreground truncate">
-                                @{post.author.username}
-                              </p>
-                            </div>
-                          </div>
+                            <span className="text-muted-foreground hover:text-foreground truncate text-xs transition-colors">
+                              {post.author.full_name || post.author.username}
+                            </span>
+                          </Link>
 
-                          <h3 className="font-display font-semibold text-xl mb-2 line-clamp-2 group-hover:text-primary transition-colors duration-300">
-                            {post.title}
-                          </h3>
-
-                          <p className="text-muted-foreground text-sm line-clamp-3 mb-4 flex-1">
-                            {post.excerpt}
-                          </p>
-
-                          {post.tags && post.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mb-4">
-                              {post.tags.slice(0, 3).map((tag) => (
-                                <Badge
-                                  key={tag}
-                                  variant="secondary"
-                                  className="font-sans text-xs"
-                                >
-                                  {toTitleCase(tag)}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-
-                          <div className="flex items-center justify-between font-sans text-xs text-muted-foreground mt-auto pt-4 border-t border-primary/10">
-                            <div className="flex items-center space-x-4">
-                              <div className="flex items-center space-x-1">
-                                <Clock className="w-3.5 h-3.5" />
-                                <span>{post.read_time}m read</span>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <Heart className="w-3.5 h-3.5" />
-                                <span>{post.likes?.[0]?.count || 0}</span>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <MessageCircle className="w-3.5 h-3.5" />
-                                <span>{post.comments?.[0]?.count || 0}</span>
-                              </div>
-                            </div>
-                            <span>
-                              {post.published_at
-                                ? formatRelativeTime(post.published_at)
-                                : ""}
+                          <div className="text-muted-foreground flex items-center gap-3 text-xs">
+                            <span className="flex items-center gap-1">
+                              <Heart className="h-3 w-3" />
+                              {post.likes?.[0]?.count || 0}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <MessageCircle className="h-3 w-3" />
+                              {post.comments?.[0]?.count || 0}
                             </span>
                           </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </m.div>
-                ))}
-              </div>
-            )
+                );
+              })}
+            </div>
           )}
 
-          {posts.length > 0 && canPaginateServer && hasMore && (
-            <div className="mt-8 text-center">
+          {canPaginateServer && hasMore && filteredPosts.length > 0 && (
+            <div className="mt-8 flex justify-center">
               <Button
                 type="button"
                 variant="outline"
                 size="lg"
-                className="rounded-full"
+                className="rounded-full px-8"
                 disabled={loadingMore}
                 onClick={() => void loadMorePosts()}
               >
-                {loadingMore ? "Loading..." : "Load More Posts"}
+                {loadingMore ? "Loading..." : "Load more articles"}
               </Button>
             </div>
           )}
@@ -606,84 +952,78 @@ export function CsiLandingClient({
 
         {/* Our Writers Strip */}
         <m.section
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.18, duration: 0.45, ease: motionEase }}
-          aria-labelledby="csi-writers-heading"
-          className="border-t border-border/60 pt-10 pb-4"
+          transition={{ delay: 0.16, duration: 0.35, ease: motionEase }}
+          className="mb-8"
         >
-          <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <div className="inline-flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-wider text-primary mb-1">
-                <Users className="h-4 w-4" />
-                <span>Contributors</span>
+          <Card className="border-border/70 glass rounded-3xl border-2">
+            <CardContent className="p-6 sm:p-8">
+              <div className="mb-6 flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+                <div className="flex items-center gap-2.5">
+                  <div className="bg-primary/12 text-primary flex h-9 w-9 items-center justify-center rounded-full">
+                    <Users className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h2 className="font-display text-xl font-semibold tracking-tight">
+                      Our Writers & Technical Heads
+                    </h2>
+                    <p className="text-muted-foreground text-xs">
+                      CSI MIT-WPU technical leads, secretaries, and contributors
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="w-fit rounded-full">
+                  {members.length}{" "}
+                  {members.length === 1 ? "Member" : "Members"}
+                </Badge>
               </div>
-              <h2
-                id="csi-writers-heading"
-                className="font-display text-2xl sm:text-3xl font-semibold tracking-tight text-foreground"
-              >
-                Our Writers &amp; Editors
-              </h2>
-            </div>
-            <p className="font-sans text-sm text-muted-foreground max-w-md">
-              Meet the CSI MIT-WPU technical leads, secretaries, and members
-              contributing tutorials and research notes.
-            </p>
-          </div>
 
-          {members.length === 0 ? (
-            <Card className="glass border border-border/60 p-6 text-center">
-              <p className="font-sans text-sm text-muted-foreground">
-                CSI technical members will be listed here once added by
-                administrators.
-              </p>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {members.map((member) => (
-                <Link
-                  key={member.user_id}
-                  href={`/profile/${member.profile.username}`}
-                  className="block group"
-                >
-                  <Card className="h-full glass border border-border/70 transition-all duration-200 hover:-translate-y-1 hover:border-primary/35">
-                    <CardContent className="p-4 flex items-start gap-3.5">
-                      <Avatar className="h-12 w-12 shrink-0 ring-2 ring-primary/15 group-hover:ring-primary/35 transition-all">
-                        <AvatarImage
-                          src={member.profile.avatar_url || ""}
-                        />
-                        <AvatarFallback className="font-semibold">
+              {members.length === 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  CSI contributor profiles will appear here once members join.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                  {members.map((member) => (
+                    <Link
+                      key={member.user_id}
+                      href={`/profile/${member.profile.username}`}
+                      className="border-border/60 bg-card/60 hover:border-primary/40 hover:bg-muted/50 flex items-center gap-3 rounded-2xl border p-3 transition-all"
+                    >
+                      <Avatar className="ring-border h-10 w-10 shrink-0 ring-1">
+                        <AvatarImage src={member.profile.avatar_url || ""} />
+                        <AvatarFallback>
                           {member.profile.full_name?.[0] ||
-                            member.profile.username[0]}
+                            member.profile.username?.[0] ||
+                            "U"}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-1.5">
-                          <p className="truncate font-sans text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                        <div className="flex items-center gap-1.5">
+                          <p className="truncate text-sm font-medium">
                             {member.profile.full_name ||
                               member.profile.username}
                           </p>
+                          <Badge
+                            variant={
+                              member.role === "editor" ? "default" : "secondary"
+                            }
+                            className="shrink-0 rounded-full px-2 py-0 text-[10px] capitalize"
+                          >
+                            {member.role === "editor" ? "Lead" : "Writer"}
+                          </Badge>
                         </div>
-                        <p className="truncate font-sans text-xs text-muted-foreground">
+                        <p className="text-muted-foreground truncate text-xs">
                           @{member.profile.username}
                         </p>
-                        <Badge
-                          variant={
-                            member.role === "editor" ? "default" : "secondary"
-                          }
-                          className="mt-2 font-sans text-[10px] px-2 py-0 h-5"
-                        >
-                          {member.role === "editor"
-                            ? "Editor"
-                            : "Technical Member"}
-                        </Badge>
                       </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          )}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </m.section>
       </LazyMotion>
     </PageShell>

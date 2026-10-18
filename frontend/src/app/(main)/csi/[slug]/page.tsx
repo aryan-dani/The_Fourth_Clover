@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   fetchPublicationPostBySlug,
   listRelatedPublicationPosts,
-  getUserPublicationRole,
+  getPublicationMembers,
 } from "@/features/data/server-queries";
 import { PostPageClient } from "../../post/[slug]/post-page-client";
 import { absoluteUrl } from "@/lib/site";
@@ -63,22 +62,15 @@ export default async function CsiPostPage({
   const post = await fetchPublicationPostBySlug("csi", slug);
   if (!post) notFound();
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const [relatedPosts, authorRoleInfo, viewerRoleInfo] = await Promise.all([
+  const [relatedPosts, members] = await Promise.all([
     listRelatedPublicationPosts("csi", post.id, 3),
-    getUserPublicationRole("csi", post.author_id),
-    user?.id
-      ? getUserPublicationRole("csi", user.id)
-      : Promise.resolve({
-          role: null,
-          publicationId: null,
-          publicationName: null,
-        }),
+    getPublicationMembers("csi"),
   ]);
+
+  const authorMember = members.find((m) => m.user_id === post.author_id);
+  const editorUserIds = members
+    .filter((m) => m.role === "editor")
+    .map((m) => m.user_id);
 
   return (
     <PostPageClient
@@ -86,8 +78,9 @@ export default async function CsiPostPage({
       publicationSlug="csi"
       publicationName="CSI Tech Blog"
       relatedPosts={relatedPosts}
-      authorRole={authorRoleInfo.role}
-      viewerRole={viewerRoleInfo.role}
+      authorRole={authorMember?.role ?? null}
+      editorUserIds={editorUserIds}
     />
   );
 }
+

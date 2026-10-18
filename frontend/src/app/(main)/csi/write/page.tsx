@@ -11,12 +11,14 @@ import { PageShell } from "@/components/layout/PageShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { WriteClient } from "@/app/(account)/write/write-client";
+import type { PublicationRole } from "@/types/database";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Write for CSI | The Fourth Clover",
-  description: "Draft and submit a technical article for the CSI MIT-WPU Tech Blog.",
+  description:
+    "Draft and submit a technical article for the CSI MIT-WPU Tech Blog.",
   robots: { index: false, follow: false },
 };
 
@@ -35,7 +37,23 @@ export default async function CsiWritePage() {
     getUserPublicationRole("csi", user.id),
   ]);
 
-  if (!publication || !roleInfo.role) {
+  let resolvedRole: PublicationRole | null = roleInfo.role;
+
+  // Auto-enroll newly registered technical members as 'writer' when they open /csi/write
+  if (publication && !resolvedRole) {
+    const { error: joinError } = await supabase
+      .from("publication_members")
+      .insert({
+        publication_id: publication.id,
+        user_id: user.id,
+        role: "writer",
+      });
+    if (!joinError) {
+      resolvedRole = "writer";
+    }
+  }
+
+  if (!publication || !resolvedRole) {
     return (
       <PageShell className="py-12">
         <div className="container mx-auto max-w-xl px-4">
@@ -48,10 +66,15 @@ export default async function CsiWritePage() {
                 CSI Membership Required
               </h1>
               <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
-                Only verified CSI MIT-WPU technical writers and editors can draft or submit articles for the CSI Tech Blog. You can still write personal posts on the main platform or contact a CSI Technical Lead to be added as a member.
+                Only verified CSI MIT-WPU technical writers and editors can
+                draft or submit articles for the CSI Tech Blog.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-3">
-                <Button asChild variant="outline" className="gap-2 rounded-full">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="gap-2 rounded-full"
+                >
                   <Link href="/csi">
                     <ArrowLeft className="h-4 w-4" aria-hidden />
                     Back to CSI Tech Blog
@@ -73,7 +96,7 @@ export default async function CsiWritePage() {
       publicationId={publication.id}
       publicationSlug={publication.slug}
       publicationName={publication.name}
-      memberRole={roleInfo.role}
+      memberRole={resolvedRole}
     />
   );
 }

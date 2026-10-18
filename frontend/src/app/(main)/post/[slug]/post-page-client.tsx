@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useTransition } from "react";
 import { LazyMotion, domAnimation, m } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,7 +20,14 @@ import {
   shareToWhatsApp,
   copyToClipboard,
   toTitleCase,
+  getCurrentWeekKey,
+  formatLinkedinRepostCopy,
 } from "@/lib/utils";
+import {
+  approvePublicationPostAction,
+  selectWeeklyLinkedinPickAction,
+  superAdminDeletePostAction,
+} from "@/features/data/server-actions";
 import { PageShell } from "@/components/layout/PageShell";
 import { motionEase } from "@/lib/motion";
 import { toast } from "sonner";
@@ -35,6 +43,11 @@ import {
   BookOpen,
   Edit3,
   ShieldCheck,
+  Award,
+  CheckCircle2,
+  Trash2,
+  Loader2,
+  Check,
 } from "lucide-react";
 import { CommentSection } from "@/features/comments/components/CommentSection";
 import { PostBodyRenderer } from "@/components/post/PostBodyRenderer";
@@ -48,6 +61,7 @@ type PostPageClientProps = {
   relatedPosts?: PostWithAuthor[];
   authorRole?: PublicationRole | null;
   viewerRole?: PublicationRole | null;
+  editorUserIds?: string[];
 };
 
 export function PostPageClient({
@@ -57,18 +71,31 @@ export function PostPageClient({
   relatedPosts = [],
   authorRole,
   viewerRole,
+  editorUserIds = [],
 }: PostPageClientProps) {
-  const { user } = useAuth();
-  const [post] = useState<PostWithAuthor>(initialPost);
+  const router = useRouter();
+  const { user, profile } = useAuth();
+  const [post, setPost] = useState<PostWithAuthor>(initialPost);
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(
     initialPost.likes?.[0]?.count ?? 0,
   );
+  const [copiedLinkedin, setCopiedLinkedin] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  const currentWeekKey = getCurrentWeekKey();
 
   const isCsiPost =
     publicationSlug === "csi" ||
     post.publication?.slug === "csi" ||
     Boolean(post.publication_id);
+
+  const isSuperAdmin = Boolean(profile?.is_admin);
+  const isCsiEditor =
+    isSuperAdmin ||
+    viewerRole === "editor" ||
+    Boolean(user?.id && editorUserIds.includes(user.id));
+  const isAuthor = Boolean(user?.id && user.id === post.author_id);
 
   const headings = useMemo(
     () => extractHeadings(post.content),
@@ -175,6 +202,93 @@ export function PostPageClient({
     }
   };
 
+  const handleApprovePost = () => {
+    startTransition(async () => {
+      const result = await approvePublicationPostAction(post.id);
+      if (!result.ok) {
+        toast.error(result.error || "Failed to approve post.");
+        return;
+      }
+      setPost((prev) => ({
+        ...prev,
+        status: "published",
+        published_at: prev.published_at || new Date().toISOString(),
+      }));
+      toast.success("Post approved and published to CSI Tech Blog!");
+      router.refresh();
+    });
+  };
+
+  const handleSelectWeeklyLinkedin = () => {
+    startTransition(async () => {
+      const result = await selectWeeklyLinkedinPickAction(
+        post.id,
+        currentWeekKey,
+      );
+      if (!result.ok) {
+        toast.error(result.error || "Could not select Wednesday LinkedIn pick.");
+        return;
+      }
+      setPost((prev) => ({
+        ...prev,
+        status: "published",
+        published_at: prev.published_at || new Date().toISOString(),
+        linkedin_pick_week: result.weekKey || currentWeekKey,
+      }));
+      toast.success(
+        `Selected as official CSI Wednesday LinkedIn post (${result.weekKey || currentWeekKey})!`,
+      );
+      router.refresh();
+    });
+  };
+
+  const handleCopyLinkedinCaption = async () => {
+    const origin =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : "https://thefourthclover.tech";
+    const postUrl = isCsiPost
+      ? `${origin}/csi/${post.slug}`
+      : `${origin}/post/${post.slug}`;
+    const text = formatLinkedinRepostCopy({
+      title: post.title,
+      authorName: post.author.full_name || post.author.username,
+      excerpt: post.excerpt,
+      url: postUrl,
+      tags: post.tags,
+    });
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedLinkedin(true);
+      toast.success("Copied CSI LinkedIn repost caption!");
+      setTimeout(() => setCopiedLinkedin(false), 2500);
+    } catch {
+      toast.error("Failed to copy caption.");
+    }
+  };
+
+  const handleDeletePost = () => {
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(
+        `Permanently delete "${post.title}"? This action cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await superAdminDeletePostAction(post.id);
+      if (!result.ok) {
+        toast.error(result.error || "Failed to delete post.");
+        return;
+      }
+      toast.success("Post deleted.");
+      router.push(isCsiPost ? "/csi" : "/explore");
+      router.refresh();
+    });
+  };
+
   const backHref = isCsiPost ? "/csi" : "/explore";
   const backText = isCsiPost
     ? `Back to ${publicationName || "CSI Tech Blog"}`
@@ -201,53 +315,150 @@ export function PostPageClient({
               </Link>
             </Button>
 
-            {isCsiPost && (
-              <Badge
-                variant="secondary"
-                className="rounded-full px-3 py-1 font-sans text-xs font-semibold"
-              >
-                {publicationName || "CSI Tech Blog"}
-              </Badge>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {post.linkedin_pick_week && (
+                <Badge className="bg-primary text-primary-foreground gap-1.5 rounded-full px-3 py-1 font-sans text-xs font-semibold">
+                  <Award className="h-3.5 w-3.5" aria-hidden />
+                  CSI Wednesday LinkedIn Pick ({post.linkedin_pick_week})
+                </Badge>
+              )}
+              {isCsiPost && (
+                <Badge
+                  variant="secondary"
+                  className="rounded-full px-3 py-1 font-sans text-xs font-semibold"
+                >
+                  {publicationName || "CSI Tech Blog"}
+                </Badge>
+              )}
+            </div>
           </m.div>
+
+          {/* Super Admin / CSI Editor / Author Quick Controls */}
+          {(isSuperAdmin || (isCsiPost && isCsiEditor) || isAuthor) && (
+            <div className="glass-card border-border/60 mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4">
+              <div className="flex items-center gap-2 text-xs font-semibold">
+                <ShieldCheck className="text-primary h-4 w-4" aria-hidden />
+                <span>
+                  {isSuperAdmin
+                    ? "Super Admin Controls"
+                    : isCsiEditor
+                      ? "CSI Technical Head Controls"
+                      : "Author Controls"}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {(isAuthor || isSuperAdmin) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    asChild
+                    className="gap-1.5 rounded-full"
+                  >
+                    <Link
+                      href={
+                        isCsiPost
+                          ? `/csi/write?edit=${post.id}`
+                          : `/write?edit=${post.id}`
+                      }
+                    >
+                      <Edit3 className="h-3.5 w-3.5" aria-hidden />
+                      Edit Post
+                    </Link>
+                  </Button>
+                )}
+
+                {isCsiPost && isCsiEditor && post.status === "in_review" && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    disabled={isPending}
+                    onClick={handleApprovePost}
+                    className="gap-1.5 rounded-full"
+                  >
+                    {isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                    ) : (
+                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                    )}
+                    Approve & Publish
+                  </Button>
+                )}
+
+                {isCsiPost && isCsiEditor && (
+                  <>
+                    {post.linkedin_pick_week !== currentWeekKey ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={isPending}
+                        onClick={handleSelectWeeklyLinkedin}
+                        className="gap-1.5 rounded-full"
+                      >
+                        <Award className="h-3.5 w-3.5" aria-hidden />
+                        Pick for Wednesday LinkedIn ({currentWeekKey})
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={handleCopyLinkedinCaption}
+                        className="gap-1.5 rounded-full"
+                      >
+                        {copiedLinkedin ? (
+                          <Check
+                            className="h-3.5 w-3.5 text-emerald-500"
+                            aria-hidden
+                          />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" aria-hidden />
+                        )}
+                        Copy LinkedIn Caption
+                      </Button>
+                    )}
+                  </>
+                )}
+
+                {isSuperAdmin && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={isPending}
+                    onClick={handleDeletePost}
+                    className="gap-1.5 rounded-full border-red-500/40 text-red-600 hover:bg-red-500/10 dark:text-red-400"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                    Delete Post
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
 
           {post.status !== "published" && (
             <Alert className="mb-6 rounded-2xl border-amber-500/40 bg-amber-500/10">
               <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               <AlertTitle className="font-sans text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">
                 {post.status === "in_review"
-                  ? "Preview: Awaiting CSI Editor Review"
+                  ? "Sunday-to-Wednesday CSI Submission (Open for Peer Interaction)"
                   : "Preview: Draft Post"}
               </AlertTitle>
               <AlertDescription className="mt-1 flex flex-wrap items-center justify-between gap-3 font-sans text-sm text-foreground/90">
                 <span>
-                  This post is not yet publicly listed. Only the author and CSI
-                  editors can view it.
+                  {post.status === "in_review"
+                    ? "CSI technical members can read, like, and leave comments on this submission before Wednesday editorial selection."
+                    : "This draft is currently private to the author and Super Admin."}
                 </span>
-                <div className="flex items-center gap-2">
-                  {user?.id === post.author_id && (
-                    <Button size="sm" variant="outline" asChild>
-                      <Link
-                        href={
-                          isCsiPost
-                            ? `/csi/write?edit=${post.id}`
-                            : `/write?edit=${post.id}`
-                        }
-                      >
-                        <Edit3 className="mr-1.5 h-3.5 w-3.5" />
-                        Edit Post
-                      </Link>
-                    </Button>
-                  )}
-                  {viewerRole === "editor" && post.status === "in_review" && (
-                    <Button size="sm" asChild>
-                      <Link href="/csi/review">
-                        <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />
-                        Open Review Queue
-                      </Link>
-                    </Button>
-                  )}
-                </div>
+                {isCsiEditor && post.status === "in_review" && (
+                  <Button size="sm" asChild className="rounded-full">
+                    <Link href="/csi/review">
+                      <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />
+                      Open Review Desk
+                    </Link>
+                  </Button>
+                )}
               </AlertDescription>
             </Alert>
           )}
