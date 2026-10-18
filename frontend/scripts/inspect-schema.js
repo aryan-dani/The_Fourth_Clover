@@ -35,7 +35,12 @@ async function inspectSchema() {
       );
 
       // Try to get basic table info by querying each known table
-      const knownTables = ["profiles", "posts"];
+      const knownTables = [
+        "profiles",
+        "posts",
+        "publications",
+        "publication_members",
+      ];
 
       for (const tableName of knownTables) {
         console.log(`🔸 Table: ${tableName}`);

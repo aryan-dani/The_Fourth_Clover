@@ -49,12 +49,25 @@ const SCHEMA = {
       "status",
       "tags",
       "read_time",
+      "scheduled_at",
+      "publication_id",
+      "review_note",
       "created_at",
       "updated_at",
       "published_at",
     ],
     sample_query:
-      "supabase.from('posts').select('id, title, status, author_id').limit(5)",
+      "supabase.from('posts').select('id, title, status, publication_id, author_id').limit(5)",
+  },
+  publications: {
+    columns: ["id", "slug", "name", "description", "cover_image", "created_at"],
+    sample_query:
+      "supabase.from('publications').select('id, slug, name').limit(5)",
+  },
+  publication_members: {
+    columns: ["publication_id", "user_id", "role", "created_at"],
+    sample_query:
+      "supabase.from('publication_members').select('publication_id, user_id, role').limit(5)",
   },
 };
 
