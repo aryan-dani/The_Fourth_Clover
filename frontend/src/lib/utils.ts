@@ -16,11 +16,23 @@ export function generateSlug(title: string): string {
     .substring(0, 100); // Limit slug length to 100 characters
 }
 
-export function calculateReadTime(content: string): number {
+export function countContentWords(content: string): number {
   if (!content || content.trim().length === 0) return 0;
+  const cleaned = content
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, " $1 ")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, " $1 ")
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/[#*`~>|_-]+/g, " ")
+    .trim();
+  if (!cleaned) return 0;
+  return cleaned.split(/\s+/).filter((word) => word.length > 0).length;
+}
+
+export function calculateReadTime(content: string): number {
+  const wordCount = countContentWords(content);
+  if (wordCount === 0) return 0;
   const wordsPerMinute = 200;
-  const wordCount = content.trim().split(/\s+/).length;
-  return Math.ceil(wordCount / wordsPerMinute);
+  return Math.max(1, Math.ceil(wordCount / wordsPerMinute));
 }
 
 export function formatDate(date: string): string {
@@ -59,7 +71,13 @@ export function formatRelativeTime(date: string): string {
 }
 
 export function extractExcerpt(content: string, length: number = 150): string {
-  const textContent = content.replace(/<[^>]*>/g, "");
+  const textContent = content
+    .replace(/<[^>]*>/g, "")
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/[#*`~>]+/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
   return textContent.length > length
     ? textContent.substring(0, length) + "..."
     : textContent;

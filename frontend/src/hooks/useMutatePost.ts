@@ -16,16 +16,17 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { calculateReadTime } from "@/lib/utils";
 import { postSchema } from "@/lib/validations";
+import type { PublicationRole } from "@/types/database";
 
-const MAX_COVER_BYTES = 5 * 1024 * 1024;
-const ALLOWED_COVER_TYPES = new Set([
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set([
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/gif",
 ]);
 
-function coverExt(mime: string): string {
+function imageExt(mime: string): string {
   if (mime === "image/jpeg") return "jpg";
   if (mime === "image/png") return "png";
   if (mime === "image/webp") return "webp";
@@ -36,22 +37,47 @@ function coverExt(mime: string): string {
 type PostFormValues = z.infer<typeof postSchema>;
 
 function buildTags(tags: string | undefined) {
-  return tags ? tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [];
+  return tags
+    ? tags
+        .split(",")
+        .map((t: string) => t.trim())
+        .filter(Boolean)
+    : [];
 }
 
-export function useMutatePost(postId?: string) {
+export type UseMutatePostOptions = {
+  publicationId?: string | null;
+  publicationSlug?: string | null;
+  memberRole?: PublicationRole | null;
+  onSubmittedForReview?: (postId: string, title: string) => Promise<void>;
+};
+
+export function useMutatePost(
+  postId?: string,
+  options?: UseMutatePostOptions,
+) {
   const router = useRouter();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isInlineUploading, setIsInlineUploading] = useState(false);
   const [submissionMessage, setSubmissionMessage] = useState("");
   const [editingPostId, setEditingPostId] = useState<string | undefined>(postId);
+  const [reviewNote, setReviewNote] = useState<string | null>(null);
+  const [loadedPublicationId, setLoadedPublicationId] = useState<string | null>(
+    options?.publicationId ?? null,
+  );
 
   const createdPostIdRef = useRef<string | null>(null);
   const saveInFlightRef = useRef(false);
   const publishedAtRef = useRef<string | null>(null);
   const userIdRef = useRef<string | undefined>(undefined);
   userIdRef.current = user?.id;
+
+  const effectivePublicationId =
+    options?.publicationId ?? loadedPublicationId ?? null;
+  const effectivePublicationSlug =
+    options?.publicationSlug ?? (effectivePublicationId ? "csi" : null);
 
   const form = useForm<PostFormValues>({
     resolver: zodResolver(postSchema),
@@ -65,8 +91,16 @@ export function useMutatePost(postId?: string) {
       slug: "",
       featured_image: null,
       scheduled_at: null,
+      publication_id: options?.publicationId ?? null,
     },
   });
+
+  useEffect(() => {
+    if (options?.publicationId) {
+      setLoadedPublicationId(options.publicationId);
+      form.setValue("publication_id", options.publicationId);
+    }
+  }, [options?.publicationId, form]);
 
   useEffect(() => {
     if (postId) {
@@ -79,7 +113,7 @@ export function useMutatePost(postId?: string) {
 
   const loadPostForEdit = useCallback(async () => {
     if (!postId) return;
-    // First autosave just set ?edit= — do not wipe in-progress form state.
+    // First autosave just set ?edit= - do not wipe in-progress form state.
     if (postId === createdPostIdRef.current) return;
 
     try {
@@ -88,13 +122,19 @@ export function useMutatePost(postId?: string) {
       if (!data) return;
 
       const authorId = userIdRef.current;
-      if (authorId && data.author_id !== authorId) {
+      const isEditor = options?.memberRole === "editor";
+      if (authorId && data.author_id !== authorId && !isEditor) {
         toast.error("You don't have access to this post.");
         router.push("/dashboard");
         return;
       }
 
       publishedAtRef.current = data.published_at || null;
+      setReviewNote(data.review_note || null);
+      if (data.publication_id) {
+        setLoadedPublicationId(data.publication_id);
+      }
+
       form.reset({
         title: data.title,
         content: data.content || "",
@@ -105,12 +145,13 @@ export function useMutatePost(postId?: string) {
         slug: data.slug,
         featured_image: data.featured_image || null,
         scheduled_at: data.scheduled_at || null,
+        publication_id: data.publication_id ?? options?.publicationId ?? null,
       });
     } catch (error) {
       console.error("Error loading post:", error);
       toast.error("Failed to load post data.");
     }
-  }, [postId, form, router]);
+  }, [postId, form, router, options?.memberRole, options?.publicationId]);
 
   useEffect(() => {
     if (postId) {
@@ -118,14 +159,24 @@ export function useMutatePost(postId?: string) {
     }
   }, [postId, loadPostForEdit]);
 
-  const syncEditUrl = (id: string) => {
-    const newUrl = `/write?edit=${id}`;
-    window.history.replaceState(
-      { ...window.history.state, as: newUrl, url: newUrl },
-      "",
-      newUrl,
-    );
-  };
+  const syncEditUrl = useCallback(
+    (id: string) => {
+      if (typeof window === "undefined") return;
+      const pathname = window.location.pathname;
+      const basePath = pathname.startsWith("/csi/write")
+        ? "/csi/write"
+        : "/write";
+      const params = new URLSearchParams(window.location.search);
+      params.set("edit", id);
+      const newUrl = `${basePath}?${params.toString()}`;
+      window.history.replaceState(
+        { ...window.history.state, as: newUrl, url: newUrl },
+        "",
+        newUrl,
+      );
+    },
+    [],
+  );
 
   const handleFormSubmit = async (values: PostFormValues) => {
     const authorId = userIdRef.current;
@@ -143,11 +194,23 @@ export function useMutatePost(postId?: string) {
       const read_time = calculateReadTime(values.content);
       const tagsArray = buildTags(values.tags);
       const currentPostId = postId || createdPostIdRef.current || editingPostId;
+      const pubId =
+        values.publication_id ?? effectivePublicationId ?? null;
+
+      // Enforce writer role guard on client before sending to Supabase RLS
+      let targetStatus = values.status;
+      if (
+        pubId &&
+        targetStatus === "published" &&
+        options?.memberRole === "writer"
+      ) {
+        targetStatus = "in_review";
+      }
 
       const basePayload = {
         title: values.title,
         content: values.content,
-        status: values.status,
+        status: targetStatus,
         cover_image: values.cover_image || null,
         excerpt: values.excerpt || null,
         tags: tagsArray,
@@ -155,8 +218,10 @@ export function useMutatePost(postId?: string) {
         slug: values.slug,
         featured_image: values.featured_image || null,
         scheduled_at: values.scheduled_at || null,
+        publication_id: pubId,
+        review_note: targetStatus === "in_review" ? null : reviewNote,
         published_at:
-          values.status === "published"
+          targetStatus === "published"
             ? (publishedAtRef.current ?? new Date().toISOString())
             : null,
       };
@@ -164,28 +229,18 @@ export function useMutatePost(postId?: string) {
       let result;
       if (currentPostId) {
         result = await updatePost(currentPostId, basePayload);
-        toast.success(
-          values.status === "published"
-            ? "Post updated successfully!"
-            : "Draft saved.",
-        );
       } else {
         result = await createPost({
           ...basePayload,
           author_id: authorId,
         });
-        toast.success(
-          values.status === "published"
-            ? "Post published successfully!"
-            : "Draft saved.",
-        );
       }
 
       if (result.error) throw result.error;
 
       if (result.data?.published_at) {
         publishedAtRef.current = result.data.published_at;
-      } else if (values.status === "draft") {
+      } else if (targetStatus !== "published") {
         publishedAtRef.current = null;
       }
 
@@ -193,16 +248,43 @@ export function useMutatePost(postId?: string) {
         createdPostIdRef.current = result.data.id;
         setEditingPostId(result.data.id);
 
-        if (result.data.status === "published") {
-          router.push(`/post/${result.data.slug}`);
+        if (targetStatus === "in_review") {
+          setReviewNote(null);
+          if (options?.onSubmittedForReview) {
+            await options.onSubmittedForReview(
+              result.data.id,
+              result.data.title,
+            );
+          }
+          toast.success("Submitted for editor review!");
+          syncEditUrl(result.data.id);
+        } else if (result.data.status === "published") {
+          toast.success(
+            currentPostId
+              ? "Post updated successfully!"
+              : "Post published successfully!",
+          );
+          const targetRoute = pubId
+            ? `/${effectivePublicationSlug || "csi"}/${result.data.slug}`
+            : `/post/${result.data.slug}`;
+          router.push(targetRoute);
         } else {
+          toast.success("Draft saved.");
           syncEditUrl(result.data.id);
         }
       }
     } catch (error: unknown) {
       console.error("Error submitting post:", error);
       const message =
-        error instanceof Error ? error.message : "Something went wrong";
+        error instanceof Error
+          ? error.message
+          : typeof error === "object" &&
+              error !== null &&
+              "message" in error &&
+              typeof (error as { message: unknown }).message === "string"
+            ? (error as { message: string }).message
+            : "Something went wrong";
+      setSubmissionMessage(message);
       toast.error(`Error: ${message}`);
     } finally {
       setIsLoading(false);
@@ -222,11 +304,22 @@ export function useMutatePost(postId?: string) {
         const tagsArray = buildTags(values.tags);
         const currentPostId =
           postId || createdPostIdRef.current || editingPostId;
+        const pubId =
+          values.publication_id ?? effectivePublicationId ?? null;
+
+        let safeStatus = values.status;
+        if (
+          pubId &&
+          safeStatus === "published" &&
+          options?.memberRole === "writer"
+        ) {
+          safeStatus = "draft";
+        }
 
         const basePayload = {
           title: values.title,
           content: values.content,
-          status: values.status,
+          status: safeStatus,
           cover_image: values.cover_image || null,
           excerpt: values.excerpt || null,
           tags: tagsArray,
@@ -234,10 +327,11 @@ export function useMutatePost(postId?: string) {
           slug: values.slug,
           featured_image: values.featured_image || null,
           scheduled_at: values.scheduled_at || null,
+          publication_id: pubId,
           published_at:
-            values.status === "draft"
-              ? null
-              : (publishedAtRef.current ?? new Date().toISOString()),
+            safeStatus === "published"
+              ? (publishedAtRef.current ?? new Date().toISOString())
+              : null,
         };
 
         let result;
@@ -258,7 +352,7 @@ export function useMutatePost(postId?: string) {
 
         if (result.data?.published_at) {
           publishedAtRef.current = result.data.published_at;
-        } else if (values.status === "draft") {
+        } else if (safeStatus !== "published") {
           publishedAtRef.current = null;
         }
 
@@ -274,7 +368,13 @@ export function useMutatePost(postId?: string) {
         saveInFlightRef.current = false;
       }
     },
-    [postId, editingPostId],
+    [
+      postId,
+      editingPostId,
+      effectivePublicationId,
+      options?.memberRole,
+      syncEditUrl,
+    ],
   );
 
   const handleDelete = async (id: string) => {
@@ -293,25 +393,29 @@ export function useMutatePost(postId?: string) {
     }
   };
 
+  const validateImageFile = (file: File): boolean => {
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+      toast.error("Use a JPEG, PNG, WebP, or GIF image.");
+      return false;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      toast.error("Image must be 5 MB or smaller.");
+      return false;
+    }
+    return true;
+  };
+
   const handleImageUpload = async (file: File) => {
     const authorId = userIdRef.current;
     if (!authorId) {
       toast.error("You must be logged in to upload images.");
       return;
     }
-
-    if (!ALLOWED_COVER_TYPES.has(file.type)) {
-      toast.error("Use a JPEG, PNG, WebP, or GIF image.");
-      return;
-    }
-    if (file.size > MAX_COVER_BYTES) {
-      toast.error("Image must be 5 MB or smaller.");
-      return;
-    }
+    if (!validateImageFile(file)) return;
 
     setIsUploading(true);
     try {
-      const fileName = `${authorId}/${Date.now()}.${coverExt(file.type)}`;
+      const fileName = `${authorId}/${Date.now()}.${imageExt(file.type)}`;
       const { data, error } = await supabase.storage
         .from("post-images")
         .upload(fileName, file, {
@@ -328,26 +432,69 @@ export function useMutatePost(postId?: string) {
       form.setValue("cover_image", publicUrlData.publicUrl, {
         shouldDirty: true,
       });
-      toast.success("Image uploaded successfully!");
+      toast.success("Cover image uploaded!");
     } catch (error: unknown) {
       console.error("Error uploading image:", error);
-      const message =
-        error instanceof Error ? error.message : "Upload failed";
+      const message = error instanceof Error ? error.message : "Upload failed";
       toast.error(`Image upload failed: ${message}`);
     } finally {
       setIsUploading(false);
     }
   };
 
+  const uploadInlineImage = useCallback(
+    async (file: File): Promise<string | null> => {
+      const authorId = userIdRef.current;
+      if (!authorId) {
+        toast.error("You must be logged in to upload images.");
+        return null;
+      }
+      if (!validateImageFile(file)) return null;
+
+      setIsInlineUploading(true);
+      try {
+        const rand = Math.random().toString(36).slice(2, 8);
+        const fileName = `${authorId}/inline/${Date.now()}-${rand}.${imageExt(file.type)}`;
+        const { data, error } = await supabase.storage
+          .from("post-images")
+          .upload(fileName, file, {
+            contentType: file.type,
+            upsert: false,
+          });
+
+        if (error) throw error;
+
+        const { data: publicUrlData } = supabase.storage
+          .from("post-images")
+          .getPublicUrl(data.path);
+
+        return publicUrlData.publicUrl;
+      } catch (error: unknown) {
+        console.error("Error uploading inline image:", error);
+        const message =
+          error instanceof Error ? error.message : "Upload failed";
+        toast.error(`Inline image upload failed: ${message}`);
+        return null;
+      } finally {
+        setIsInlineUploading(false);
+      }
+    },
+    [],
+  );
+
   return {
     form,
     isLoading,
     isUploading,
+    isInlineUploading,
     submissionMessage,
     editingPostId,
+    reviewNote,
+    effectivePublicationId,
     handleFormSubmit,
     handleDelete,
     handleImageUpload,
+    uploadInlineImage,
     saveDraft,
   };
 }

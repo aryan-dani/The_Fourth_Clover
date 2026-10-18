@@ -46,7 +46,7 @@ export function stripInvisibleAndControls(text: string): string {
       .replace(/\t/g, " ")
       // C1 controls (NEL is normalized earlier; stray bytes still appear in the wild)
       .replace(/[\u007F-\u009F]/g, " ")
-      // Object / replacement glyph — space avoids tofu and avoids joining words
+      // Object / replacement glyph - space avoids tofu and avoids joining words
       .replace(/\uFFFC|\uFFFD/g, " ")
       // Bidirectional marks
       .replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, " ")
@@ -81,3 +81,79 @@ export function postContentToBlocks(raw: string | null | undefined): PostContent
 
   return blocks;
 }
+
+const MARKDOWN_SYNTAX_PATTERNS = [
+  /^#{1,6}\s+\S/m,
+  /!\[[^\]]*\]\([^)]+\)/,
+  /\[[^\]]+\]\([^)]+\)/,
+  /```[\s\S]*?```/,
+  /`[^`\n]+`/,
+  /\*\*[^*\n]+\*\*/,
+  /^>\s+\S/m,
+  /^[-*+]\s+\S/m,
+  /^\d+\.\s+\S/m,
+  /^\|.+\|$/m,
+];
+
+export function hasMarkdownSyntax(raw: string | null | undefined): boolean {
+  if (!raw) return false;
+  return MARKDOWN_SYNTAX_PATTERNS.some((pattern) => pattern.test(raw));
+}
+
+export function slugifyHeading(text: string): string {
+  const base = text
+    .toLowerCase()
+    .trim()
+    .replace(/[`*_~[\]()]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  return base || "section";
+}
+
+export type TocHeading = {
+  id: string;
+  text: string;
+  level: 2 | 3;
+};
+
+export function extractHeadings(raw: string | null | undefined): TocHeading[] {
+  if (!raw) return [];
+  const normalized = normalizePostContent(raw);
+  const lines = normalized.split("\n");
+  const headings: TocHeading[] = [];
+  const seenCounts = new Map<string, number>();
+  let inCodeFence = false;
+
+  for (const rawLine of lines) {
+    const trimmed = rawLine.trim();
+    if (/^(```|~~~)/.test(trimmed)) {
+      inCodeFence = !inCodeFence;
+      continue;
+    }
+    if (inCodeFence) continue;
+
+    const match = /^(#{2,3})\s+(.+?)\s*#*$/.exec(trimmed);
+    if (!match) continue;
+
+    const level = match[1].length as 2 | 3;
+    const cleanText = match[2]
+      .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+      .replace(/[`*_~]/g, "")
+      .trim();
+
+    if (!cleanText) continue;
+
+    const baseSlug = slugifyHeading(cleanText);
+    const count = (seenCounts.get(baseSlug) ?? 0) + 1;
+    seenCounts.set(baseSlug, count);
+    const id = count === 1 ? baseSlug : `${baseSlug}-${count}`;
+
+    headings.push({ id, text: cleanText, level });
+  }
+
+  return headings;
+}
+

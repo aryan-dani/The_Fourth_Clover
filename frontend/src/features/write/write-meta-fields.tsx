@@ -227,7 +227,7 @@ export function WriteMetaFields({
             <span className="text-xs font-medium text-foreground/90">
               More options
               <span className="ml-1.5 font-normal text-muted-foreground/70">
-                — excerpt
+                · excerpt
               </span>
             </span>
             <ChevronDown
