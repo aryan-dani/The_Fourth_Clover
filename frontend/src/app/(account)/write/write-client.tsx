@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,10 +14,29 @@ import {
   WRITE_SIDEBAR_STICKY_TOP_CLASS,
 } from "@/features/write/layout-classes";
 import { useMutatePost } from "@/hooks/useMutatePost";
-import { calculateReadTime, generateSlug, cn } from "@/lib/utils";
+import { notifyEditorsOfReviewSubmissionAction } from "@/features/data/server-actions";
+import {
+  calculateReadTime,
+  countContentWords,
+  generateSlug,
+  cn,
+} from "@/lib/utils";
 import { toast } from "sonner";
+import type { PublicationRole } from "@/types/database";
 
-function WritePageContent() {
+export type WriteClientProps = {
+  publicationId?: string | null;
+  publicationSlug?: string | null;
+  publicationName?: string | null;
+  memberRole?: PublicationRole | null;
+};
+
+function WritePageContent({
+  publicationId,
+  publicationSlug,
+  publicationName,
+  memberRole,
+}: WriteClientProps) {
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
 
@@ -26,16 +45,40 @@ function WritePageContent() {
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  const handleSubmittedForReview = useCallback(
+    async (postId: string, postTitle: string) => {
+      await notifyEditorsOfReviewSubmissionAction(postId, postTitle);
+    },
+    [],
+  );
+
   const {
     form,
     isLoading,
     isUploading,
+    isInlineUploading,
     submissionMessage,
     editingPostId,
+    reviewNote,
+    effectivePublicationId,
     handleFormSubmit,
     handleImageUpload,
+    uploadInlineImage,
     saveDraft,
-  } = useMutatePost(editId || undefined);
+  } = useMutatePost(editId || undefined, {
+    publicationId,
+    publicationSlug,
+    memberRole,
+    onSubmittedForReview: handleSubmittedForReview,
+  });
+
+  const isPublicationMode = Boolean(
+    effectivePublicationId || publicationId || publicationSlug,
+  );
+  const resolvedPubSlug =
+    publicationSlug || (isPublicationMode ? "csi" : null);
+  const resolvedPubName =
+    publicationName || (isPublicationMode ? "CSI Tech Blog" : null);
 
   const {
     title,
@@ -48,7 +91,10 @@ function WritePageContent() {
   } = form.watch();
 
   const tags = tagsString
-    ? tagsString.split(",").map((t: string) => t.trim()).filter(Boolean)
+    ? tagsString
+        .split(",")
+        .map((t: string) => t.trim())
+        .filter(Boolean)
     : [];
 
   useEffect(() => {
@@ -75,8 +121,8 @@ function WritePageContent() {
       autoSaveTimerRef.current = null;
     }
 
-    // Pause autosave while an explicit Save/Publish is in flight.
-    if (isLoading || isUploading) return;
+    // Pause autosave while an explicit Save/Publish or image upload is in flight.
+    if (isLoading || isUploading || isInlineUploading) return;
 
     const hasContent = Boolean(title?.trim() || content?.trim());
     if (!hasContent) return;
@@ -116,6 +162,7 @@ function WritePageContent() {
     status,
     isLoading,
     isUploading,
+    isInlineUploading,
     saveDraft,
   ]);
 
@@ -143,14 +190,16 @@ function WritePageContent() {
     );
   };
 
-  const wordCount = (content || "")
-    .trim()
-    .split(/\s+/)
-    .filter((word: string) => word.length > 0).length;
+  const wordCount = countContentWords(content || "");
   const readTime = calculateReadTime(content || "");
 
   const submitDraft = () => {
     form.setValue("status", "draft");
+    void form.handleSubmit(handleFormSubmit)();
+  };
+
+  const submitForReview = () => {
+    form.setValue("status", "in_review");
     void form.handleSubmit(handleFormSubmit)();
   };
 
@@ -187,9 +236,15 @@ function WritePageContent() {
           isLoading={isLoading}
           onSaveDraftClick={() => void submitDraft()}
           onPublishClick={() => void submitPublished()}
+          onSubmitForReviewClick={() => void submitForReview()}
+          publicationName={resolvedPubName}
+          publicationSlug={resolvedPubSlug}
+          memberRole={memberRole}
         />
 
-        <div className={cn(WRITE_EDITOR_AREA_PT_CLASS, WRITE_CHROME_INSET_CLASS)}>
+        <div
+          className={cn(WRITE_EDITOR_AREA_PT_CLASS, WRITE_CHROME_INSET_CLASS)}
+        >
           <div
             className={cn(
               "grid w-full max-w-[90rem] gap-10 lg:grid-cols-[minmax(0,1fr)_min(20rem,30vw)] lg:gap-12",
@@ -201,6 +256,9 @@ function WritePageContent() {
               submissionMessage={submissionMessage}
               wordCount={wordCount}
               readTime={readTime}
+              onUploadInlineImage={uploadInlineImage}
+              isInlineUploading={isInlineUploading}
+              reviewNote={reviewNote}
             />
 
             <aside className="hidden lg:block">
@@ -235,7 +293,7 @@ function WritePageContent() {
   );
 }
 
-export function WriteClient() {
+export function WriteClient(props: WriteClientProps = {}) {
   return (
     <Suspense
       fallback={
@@ -244,7 +302,7 @@ export function WriteClient() {
         </div>
       }
     >
-      <WritePageContent />
+      <WritePageContent {...props} />
     </Suspense>
   );
 }
