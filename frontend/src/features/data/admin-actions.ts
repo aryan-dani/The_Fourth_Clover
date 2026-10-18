@@ -110,7 +110,9 @@ export async function fetchSuperAdminDashboardData(): Promise<SuperAdminDashboar
       .limit(250),
     supabase
       .from("csi_roster")
-      .select("*")
+      .select(
+        "csi_id, name, dept, year, prn_missing, prn_duplicate, role, claimed_by, claimed_at, created_at, updated_at"
+      )
       .order("csi_id", { ascending: true })
       .limit(500),
     supabase
@@ -154,7 +156,7 @@ export async function fetchSuperAdminDashboardData(): Promise<SuperAdminDashboar
       .select(
         `
         *,
-        profiles:profiles!posts_author_id_fkey (
+        author:profiles!posts_author_id_fkey (
           id, username, full_name, avatar_url, bio
         )
       `
@@ -174,7 +176,7 @@ export async function fetchSuperAdminDashboardData(): Promise<SuperAdminDashboar
         ? {
             username: actor.username,
             full_name: actor.full_name,
-            csi_id: actor.csi_id,
+            csi_id: actor.csi_id ?? null,
           }
         : null,
     };

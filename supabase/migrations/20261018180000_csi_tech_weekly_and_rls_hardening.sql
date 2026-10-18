@@ -304,7 +304,7 @@ REVOKE ALL ON public.csi_verification_attempts FROM anon, authenticated;
 GRANT SELECT ON public.csi_verification_attempts TO authenticated;
 
 REVOKE ALL ON public.audit_log FROM anon, authenticated;
-GRANT SELECT ON public.audit_log TO authenticated;
+GRANT SELECT, INSERT ON public.audit_log TO authenticated;
 
 -- RLS policies for csi_roster: only super_admin can inspect the full roster;
 -- verified users can read only their own claimed row (without prn_hash).
@@ -326,13 +326,20 @@ CREATE POLICY "Super admin can view verification attempts"
   TO authenticated
   USING (public.is_super_admin(auth.uid()));
 
--- RLS policies for audit_log: only super_admin can view
+-- RLS policies for audit_log: only super_admin can view or insert admin audit entries
 DROP POLICY IF EXISTS "Super admin can view audit log" ON public.audit_log;
 CREATE POLICY "Super admin can view audit log"
   ON public.audit_log
   FOR SELECT
   TO authenticated
   USING (public.is_super_admin(auth.uid()));
+
+DROP POLICY IF EXISTS "Super admin can insert audit log" ON public.audit_log;
+CREATE POLICY "Super admin can insert audit log"
+  ON public.audit_log
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (public.is_super_admin(auth.uid()) AND actor_id = auth.uid());
 
 -- ============================================================================
 -- 5. TRANSACTIONAL CSI CLAIM & SUPER ADMIN MANAGEMENT RPCs

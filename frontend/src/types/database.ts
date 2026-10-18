@@ -40,6 +40,7 @@ export type Like = Database["public"]["Tables"]["likes"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 
 export type CsiRosterRow = Database["public"]["Tables"]["csi_roster"]["Row"];
+export type CsiRosterEntry = Omit<CsiRosterRow, "prn_hash">;
 export type PlatformSettings =
   Database["public"]["Tables"]["platform_settings"]["Row"];
 export type TechWeek = Database["public"]["Tables"]["tech_weeks"]["Row"];

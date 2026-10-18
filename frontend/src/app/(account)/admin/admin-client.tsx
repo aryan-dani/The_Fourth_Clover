@@ -111,7 +111,10 @@ export default function AdminClient({
   }, [initialData.users, searchTerm]);
 
   const flaggedRoster = useMemo(
-    () => initialData.roster.filter((r) => Boolean(r.flag_reason)),
+    () =>
+      initialData.roster.filter((r) =>
+        Boolean(r.prn_missing || r.prn_duplicate)
+      ),
     [initialData.roster]
   );
 
@@ -509,7 +512,9 @@ export default function AdminClient({
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-amber-400">
-                          {r.flag_reason}
+                          {r.prn_duplicate
+                            ? "Duplicate PRN (Manual Link Only)"
+                            : "Missing PRN (Manual Link Only)"}
                         </Badge>
                         {r.claimed_by ? (
                           <Badge className="bg-emerald-500/20 text-emerald-400">
@@ -1063,7 +1068,7 @@ export default function AdminClient({
                     <ExternalLink className="h-3.5 w-3.5" />
                   </Link>
                   <p className="text-xs text-muted-foreground">
-                    By {post.profiles?.full_name || post.profiles?.username} ·
+                    By {post.author?.full_name || post.author?.username} ·
                     Status: {post.status}
                   </p>
                 </div>

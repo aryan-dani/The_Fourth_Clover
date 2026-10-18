@@ -83,16 +83,29 @@ If you like what you see, please consider giving this repository a ⭐ to help o
    cp .env.example .env.local
    ```
 
-   Provide your Supabase keys:
+   Provide your Supabase keys and CSI Tech Weekly server secrets:
 
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    NEXT_PUBLIC_SITE_URL=http://localhost:3000
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+   PRN_HASH_SECRET=your_random_32_byte_hex_secret
+   SUPER_ADMIN_EMAIL=your_super_admin_google_email
    ```
 
-4. **Initialize Database**
-   Push the required SQL files or use the terminal in the Supabase Dashboard to align your instance schema using the provided database types located at `frontend/src/types/database.ts`.
+4. **Initialize Database & Seed CSI Roster**
+   Push the SQL migrations from the repository root (`npx supabase db push`), then seed the private CSI MIT-WPU roster CSV (gitignored so no member PII is ever committed):
+
+   ```bash
+   npm run seed:roster -- ./roster.csv
+   ```
+
+   Run the automated RLS, trigger, and concurrency security verification suite:
+
+   ```bash
+   npm run test:security
+   ```
 
 5. **Spin up the environment**
    We optimize local speeds directly using Turbopack:
