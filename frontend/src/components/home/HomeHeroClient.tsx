@@ -1,21 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { LazyMotion, domAnimation, m } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import Link from "next/link";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
-import {
-  ArrowRight,
-  Feather,
-  Terminal,
-  Sparkles,
-  Award,
-  BookOpen,
-  ShieldCheck,
-} from "lucide-react";
-import { motionEase } from "@/lib/motion";
 import { FeaturedTechWeeklyBanner } from "@/components/tech-weekly/FeaturedTechWeeklyBanner";
 import type { TechSubmissionWithAuthor } from "@/types/database";
 
@@ -25,191 +14,229 @@ export function HomeHeroClient({
   featuredPick: TechSubmissionWithAuthor | null;
 }) {
   const { user, profile } = useAuth();
-  const isVerifiedTech =
+
+  const isTechMember =
     profile?.role === "tech_member" ||
     profile?.role === "tech_head" ||
     profile?.role === "super_admin" ||
     Boolean(profile?.is_admin);
 
+  const canCopyLinkedIn =
+    profile?.role === "tech_head" ||
+    profile?.role === "super_admin" ||
+    profile?.csi_id === 241 ||
+    profile?.csi_id === 246 ||
+    profile?.csi_id === 303 ||
+    Boolean(profile?.is_admin);
+
   const primaryWriteHref = !user
     ? "/auth/signin"
-    : isVerifiedTech
-    ? "/tech-weekly/write"
-    : "/verify-csi";
+    : isTechMember
+      ? "/tech-weekly/write"
+      : "/verify-csi";
 
   return (
     <LazyMotion features={domAnimation}>
-      <section className="w-full px-4 py-12 sm:py-16">
-        <div className="mx-auto max-w-4xl space-y-12">
-          <m.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.35, ease: motionEase }}
-            className="text-center"
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        {/* Top Dateline Strip */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border py-3.5 font-mono text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
+          <span>VOL. IV · CSI MIT-WPU ENGINEERING PRESS</span>
+          <span className="hidden sm:inline">
+            WEEKLY CYCLE: SUNDAY 00:00 TO WEDNESDAY 09:00 IST
+          </span>
+          <Link
+            href="/tech-weekly"
+            className="inline-flex items-center gap-1 text-foreground hover:underline"
           >
-            <m.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.4, ease: motionEase }}
-              className="mb-5 flex flex-col items-center justify-center gap-3 sm:mb-7"
-            >
-              <div className="border-border/80 bg-muted/40 ring-background rounded-full border p-4 shadow-md ring-4 transition-transform duration-300 hover:scale-105 sm:p-5">
-                <span
-                  className="text-5xl leading-none md:text-6xl"
-                  aria-hidden
-                >
-                  🍀
-                </span>
-              </div>
-              <Badge
-                variant="secondary"
-                className="border-primary/25 bg-primary/10 text-primary gap-1.5 rounded-full border px-3.5 py-1 text-xs font-medium"
-              >
-                <Sparkles className="h-3.5 w-3.5" aria-hidden />
-                Home of CSI MIT-WPU Tech Weekly
-              </Badge>
-            </m.div>
+            CURRENT ISSUE
+            <ArrowUpRight className="h-3 w-3" />
+          </Link>
+        </div>
 
-            <m.h1
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.05, ease: motionEase }}
-              className="font-display text-foreground text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl"
-            >
-              <span className="gradient-text">The Fourth Clover</span>
-            </m.h1>
+        {/* Main Editorial Broadsheet Grid */}
+        <div className="grid border-b border-border lg:grid-cols-12">
+          {/* Left Column: Manifesto & Primary Actions */}
+          <m.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="py-12 sm:py-16 lg:col-span-7 lg:border-r lg:border-border lg:pr-12 space-y-8"
+          >
+            <div className="space-y-4">
+              <p className="font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                Technical Monograph & Weekly Chronicle
+              </p>
+              <h1 className="font-display text-4xl sm:text-5xl lg:text-[3.5rem] font-semibold tracking-tight text-foreground leading-[1.08]">
+                Where engineering thought meets permanent ink.
+              </h1>
+            </div>
 
-            <m.p
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.1, ease: motionEase }}
-              className="text-muted-foreground mx-auto mt-5 max-w-2xl font-serif text-lg leading-relaxed sm:mt-6 sm:text-xl"
-            >
-              A focused editorial space for engineers and writers who care about
-              craft. Verified CSI MIT-WPU technical members publish weekly
-              deep-dives from Sunday to Wednesday, with one standout article
-              featured on LinkedIn every week.
-            </m.p>
+            <p className="max-w-xl font-serif text-lg sm:text-xl leading-relaxed text-muted-foreground">
+              Each week, verified engineers of the CSI MIT-WPU Technical Wing
+              publish architectural deep-dives, systems postmortems, and
+              implementation guides. Every Wednesday morning, one dispatch is
+              selected as the chapter&apos;s official LinkedIn feature.
+            </p>
 
-            <m.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.15, ease: motionEase }}
-              className="mt-8 flex flex-col justify-center gap-3 sm:mt-10 sm:flex-row sm:flex-wrap sm:gap-4"
-            >
+            <div className="flex flex-wrap items-center gap-3 pt-2">
               <Button
-                size="lg"
                 asChild
-                className="group rounded-full px-8 shadow-md bg-emerald-600 hover:bg-emerald-500 text-white"
+                size="lg"
+                className="h-11 rounded-md px-6 text-sm font-medium"
               >
                 <Link href="/tech-weekly">
-                  <Terminal className="mr-2 h-4 w-4" />
-                  CSI Tech Weekly
-                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  Read CSI Tech Weekly
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
+
               <Button
-                size="lg"
-                variant="secondary"
                 asChild
-                className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 group rounded-full border px-8"
-              >
-                <Link href={primaryWriteHref}>
-                  {isVerifiedTech ? (
-                    <>
-                      <Feather className="mr-2 h-4 w-4" />
-                      Submit This Week&apos;s Article
-                    </>
-                  ) : user ? (
-                    <>
-                      <ShieldCheck className="mr-2 h-4 w-4" />
-                      Verify Your CSI ID
-                    </>
-                  ) : (
-                    <>
-                      <Feather className="mr-2 h-4 w-4" />
-                      Sign in with Google
-                    </>
-                  )}
-                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              </Button>
-              <Button
                 size="lg"
                 variant="outline"
-                asChild
-                className="rounded-full px-8"
+                className="h-11 rounded-md px-6 text-sm font-medium bg-card"
               >
-                <Link href="/explore">Explore Archive</Link>
+                <Link href={primaryWriteHref}>
+                  {user
+                    ? isTechMember
+                      ? "Write Weekly Dispatch"
+                      : "Verify CSI Identity"
+                    : "Sign in to Contribute"}
+                </Link>
               </Button>
-            </m.div>
+
+              <Button
+                asChild
+                size="lg"
+                variant="ghost"
+                className="h-11 rounded-md px-4 text-sm text-muted-foreground hover:text-foreground"
+              >
+                <Link href="/explore">Browse Open Archive</Link>
+              </Button>
+            </div>
           </m.div>
 
-          {/* This week's featured post */}
-          {featuredPick && (
-            <FeaturedTechWeeklyBanner submission={featuredPick} />
-          )}
-
-          {/* Editorial & CSI Highlights */}
+          {/* Right Column: Editorial Specifications Ledger */}
           <m.div
-            initial={{ opacity: 0, y: 18 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: 0.22, ease: motionEase }}
-            className="grid grid-cols-1 gap-4 sm:grid-cols-3"
+            transition={{ duration: 0.4, delay: 0.08 }}
+            className="flex flex-col justify-between border-t border-border py-10 lg:col-span-5 lg:border-t-0 lg:pl-10 lg:py-16 space-y-8"
           >
-            <Link href="/tech-weekly" className="group block">
-              <Card className="glass-card border-border/60 hover:border-primary/40 h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-                <CardContent className="p-5">
-                  <div className="bg-primary/12 text-primary mb-3 flex h-10 w-10 items-center justify-center rounded-xl">
-                    <Terminal className="h-5 w-5" aria-hidden />
-                  </div>
-                  <h2 className="font-display group-hover:text-primary mb-1.5 text-base font-bold tracking-tight transition-colors">
-                    Sunday to Wednesday Window
-                  </h2>
-                  <p className="text-muted-foreground text-xs leading-relaxed">
-                    Verified CSI Technical members submit engineering tutorials
-                    and architecture breakdowns until Wednesday 09:00 IST.
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-foreground">
+                  Publication Protocol
+                </span>
+                <span className="font-mono text-[11px] text-muted-foreground">
+                  IST (UTC+05:30)
+                </span>
+              </div>
 
-            <Link href="/tech-weekly" className="group block">
-              <Card className="glass-card border-border/60 hover:border-primary/40 h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-                <CardContent className="p-5">
-                  <div className="bg-primary/12 text-primary mb-3 flex h-10 w-10 items-center justify-center rounded-xl">
-                    <Award className="h-5 w-5" aria-hidden />
-                  </div>
-                  <h2 className="font-display group-hover:text-primary mb-1.5 text-base font-bold tracking-tight transition-colors">
-                    Wednesday LinkedIn Pick
-                  </h2>
-                  <p className="text-muted-foreground text-xs leading-relaxed">
-                    Every Wednesday, CSI Technical Heads select one standout
-                    article for official CSI MIT-WPU LinkedIn publication.
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
+              <dl className="divide-y divide-border/80 text-xs">
+                <div className="py-3.5 flex items-baseline justify-between gap-4">
+                  <dt className="font-mono uppercase tracking-wider text-muted-foreground">
+                    Submission Window
+                  </dt>
+                  <dd className="font-mono text-right text-foreground">
+                    Sun 00:00 to Wed 09:00 IST
+                  </dd>
+                </div>
+                <div className="py-3.5 flex items-baseline justify-between gap-4">
+                  <dt className="font-mono uppercase tracking-wider text-muted-foreground">
+                    Editorial Curation
+                  </dt>
+                  <dd className="font-mono text-right text-foreground">
+                    Wed Morning · 1 Pick / Week
+                  </dd>
+                </div>
+                <div className="py-3.5 flex items-baseline justify-between gap-4">
+                  <dt className="font-mono uppercase tracking-wider text-muted-foreground">
+                    Author Eligibility
+                  </dt>
+                  <dd className="font-mono text-right text-foreground">
+                    Verified CSI Technical Wing
+                  </dd>
+                </div>
+                <div className="py-3.5 flex items-baseline justify-between gap-4">
+                  <dt className="font-mono uppercase tracking-wider text-muted-foreground">
+                    Target Length
+                  </dt>
+                  <dd className="font-mono text-right text-foreground">
+                    150–300 Words (2,000 Cap)
+                  </dd>
+                </div>
+              </dl>
+            </div>
 
-            <Link href="/explore" className="group block">
-              <Card className="glass-card border-border/60 hover:border-primary/40 h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-                <CardContent className="p-5">
-                  <div className="bg-primary/12 text-primary mb-3 flex h-10 w-10 items-center justify-center rounded-xl">
-                    <BookOpen className="h-5 w-5" aria-hidden />
-                  </div>
-                  <h2 className="font-display group-hover:text-primary mb-1.5 text-base font-bold tracking-tight transition-colors">
-                    Peer Review &amp; Leaderboard
-                  </h2>
-                  <p className="text-muted-foreground text-xs leading-relaxed">
-                    React with Like, Insightful, or Fire, join threaded
-                    discussions, and climb the CSI Tech Weekly leaderboard.
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
+            <div className="rounded-md border border-border bg-card p-5 space-y-2">
+              <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-foreground">
+                Editorial Board
+              </p>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Curated by Technical Heads Darshan Nayak (CSI #241) and Tanish
+                Bhavsar (CSI #246), overseen by Technical Secretary Aryan Dani
+                (CSI #303).
+              </p>
+            </div>
           </m.div>
         </div>
-      </section>
+
+        {/* Featured Weekly Pick Spread (if available) */}
+        {featuredPick && (
+          <div className="py-12 border-b border-border">
+            <FeaturedTechWeeklyBanner
+              submission={featuredPick}
+              canCopyLinkedIn={canCopyLinkedIn}
+            />
+          </div>
+        )}
+
+        {/* Three-Column Architectural Cadence */}
+        <section className="grid divide-y divide-border border-b border-border md:grid-cols-3 md:divide-x md:divide-y-0">
+          <div className="py-10 md:pr-8 space-y-3">
+            <span className="font-mono text-xs text-muted-foreground">
+              01 / DISPATCH
+            </span>
+            <h2 className="font-display text-xl font-semibold text-foreground">
+              Sunday to Wednesday Window
+            </h2>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Verified Technical Wing members draft and submit concise technical
+              articles, complete with syntax-highlighted code and architectural
+              diagrams, before Wednesday at 09:00 IST.
+            </p>
+          </div>
+
+          <div className="py-10 md:px-8 space-y-3">
+            <span className="font-mono text-xs text-muted-foreground">
+              02 / DISCOURSE
+            </span>
+            <h2 className="font-display text-xl font-semibold text-foreground">
+              Peer Review & Discussion
+            </h2>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Throughout the week, fellow engineers endorse, critique, and
+              discuss submissions in threaded technical commentary while
+              building their chapter contribution record.
+            </p>
+          </div>
+
+          <div className="py-10 md:pl-8 space-y-3">
+            <span className="font-mono text-xs text-muted-foreground">
+              03 / SYNDICATION
+            </span>
+            <h2 className="font-display text-xl font-semibold text-foreground">
+              Wednesday LinkedIn Selection
+            </h2>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Every Wednesday morning, the Technical Heads select one standout
+              dispatch to be published on the official CSI MIT-WPU LinkedIn page
+              with full author attribution.
+            </p>
+          </div>
+        </section>
+      </div>
     </LazyMotion>
   );
 }

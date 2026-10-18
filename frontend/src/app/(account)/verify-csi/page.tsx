@@ -7,16 +7,7 @@ import { LazyMotion, domAnimation, m } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { PageShell } from "@/components/layout/PageShell";
 import { useAuth } from "@/features/auth/auth-context";
 import {
   verifyCsiIdentityAction,
@@ -24,14 +15,11 @@ import {
 } from "@/features/data/csi-verification-actions";
 import {
   ShieldCheck,
-  KeyRound,
-  Hash,
   Loader2,
   CheckCircle2,
   ArrowRight,
   Lock,
-  Sparkles,
-  BookOpen,
+  PenTool,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -109,7 +97,7 @@ export default function VerifyCsiPage() {
       }
 
       await refreshProfile();
-      toast.success(`Verified CSI ID #${result.csiId}!`);
+      toast.success(`Verified CSI ID #${result.csiId}.`);
       router.refresh();
     } finally {
       setSubmitting(false);
@@ -118,236 +106,223 @@ export default function VerifyCsiPage() {
 
   if (loading || syncing) {
     return (
-      <PageShell className="max-w-xl py-16">
+      <div className="mx-auto max-w-lg px-4 py-20">
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
-          <Loader2 className="h-7 w-7 animate-spin text-emerald-500" />
-          <p className="text-sm">Checking CSI verification status...</p>
+          <Loader2 className="h-6 w-6 animate-spin text-foreground" />
+          <p className="font-mono text-xs uppercase tracking-wider">
+            Verifying CSI Roster Credentials...
+          </p>
         </div>
-      </PageShell>
+      </div>
     );
   }
 
   if (!user) {
     return (
-      <PageShell className="max-w-xl py-12">
-        <Card className="rounded-3xl border-border/80 bg-card/85 backdrop-blur-xl shadow-xl">
-          <CardHeader className="text-center space-y-3">
-            <div className="mx-auto w-fit rounded-2xl bg-emerald-500/10 p-3 border border-emerald-500/25">
-              <ShieldCheck className="h-7 w-7 text-emerald-500" />
-            </div>
-            <CardTitle className="font-display text-2xl">
-              Sign in to verify your CSI ID
-            </CardTitle>
-            <CardDescription>
-              Use Google sign-in first, then link your CSI ID and university PRN.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center pb-8">
-            <Button asChild size="lg" className="rounded-xl">
+      <div className="mx-auto max-w-lg px-4 py-20">
+        <div className="rounded-lg border border-border bg-card p-8 text-center space-y-4">
+          <ShieldCheck className="mx-auto h-8 w-8 text-foreground" />
+          <h1 className="font-display text-2xl font-semibold text-foreground">
+            Sign in to Verify Your CSI ID
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Authenticate with Google first, then link your CSI Roster ID and
+            University PRN.
+          </p>
+          <div className="pt-2">
+            <Button asChild className="rounded-md">
               <Link href="/auth/signin">Continue to Google Sign In</Link>
             </Button>
-          </CardContent>
-        </Card>
-      </PageShell>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <PageShell className="max-w-xl py-8 sm:py-12">
+    <div className="mx-auto max-w-lg px-4 py-12 sm:py-16">
       <LazyMotion features={domAnimation}>
         <m.div
-          initial={{ opacity: 0, y: 14 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
+          transition={{ duration: 0.3 }}
         >
           {isVerified ? (
-            <Card className="rounded-3xl border-emerald-500/35 bg-card/90 backdrop-blur-xl shadow-xl overflow-hidden">
-              <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500" />
-              <CardHeader className="space-y-3 pb-4">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <Badge className="bg-emerald-600 text-white hover:bg-emerald-600 px-3 py-1 rounded-full">
-                    <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-                    Verified CSI Identity
-                  </Badge>
-                  {profile?.csi_id && (
-                    <Badge variant="outline" className="font-mono text-xs">
-                      CSI ID #{profile.csi_id}
-                    </Badge>
-                  )}
-                </div>
-                <CardTitle className="font-display text-2xl sm:text-3xl">
-                  {profile?.full_name || profile?.username}
-                </CardTitle>
-                <CardDescription className="text-sm">
-                  Your account is permanently linked to the official CSI MIT-WPU roster.
-                </CardDescription>
-              </CardHeader>
+            <div className="rounded-lg border border-border bg-card overflow-hidden">
+              <div className="flex items-center justify-between border-b border-border bg-muted/40 px-6 py-3.5">
+                <span className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] text-foreground">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Verified CSI Identity
+                </span>
+                {profile?.csi_id && (
+                  <span className="font-mono text-xs text-foreground">
+                    CSI #{profile.csi_id}
+                  </span>
+                )}
+              </div>
 
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-2xl border border-border/70 bg-muted/35 p-4 text-sm">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Assigned Role</p>
-                    <p className="font-semibold text-foreground mt-0.5">
+              <div className="p-6 sm:p-8 space-y-6">
+                <div className="space-y-1">
+                  <h1 className="font-display text-2xl sm:text-3xl font-semibold text-foreground">
+                    {profile?.full_name || profile?.username}
+                  </h1>
+                  <p className="text-xs text-muted-foreground">
+                    Permanently linked to the official CSI MIT-WPU roster.
+                  </p>
+                </div>
+
+                <dl className="divide-y divide-border border-y border-border text-xs font-mono">
+                  <div className="py-3 flex justify-between">
+                    <dt className="text-muted-foreground uppercase">
+                      ASSIGNED ROLE
+                    </dt>
+                    <dd className="text-foreground font-medium">
                       {formatRoleLabel(profile?.role)}
-                    </p>
+                    </dd>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Department</p>
-                    <p className="font-semibold text-foreground mt-0.5">
+                  <div className="py-3 flex justify-between">
+                    <dt className="text-muted-foreground uppercase">
+                      DEPARTMENT
+                    </dt>
+                    <dd className="text-foreground">
                       {profile?.dept || "Tech"}
-                    </p>
+                    </dd>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Academic Year</p>
-                    <p className="font-semibold text-foreground mt-0.5">
+                  <div className="py-3 flex justify-between">
+                    <dt className="text-muted-foreground uppercase">
+                      ACADEMIC YEAR
+                    </dt>
+                    <dd className="text-foreground">
                       {profile?.year || "CSI MIT-WPU"}
-                    </p>
+                    </dd>
                   </div>
-                </div>
+                </dl>
 
-                <div className="flex flex-wrap items-center gap-3 pt-2">
-                  <Button
-                    asChild
-                    className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white"
-                  >
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button asChild className="rounded-md text-xs">
                     <Link href="/tech-weekly">
-                      Explore CSI Tech Weekly
-                      <ArrowRight className="h-4 w-4 ml-1.5" />
+                      Open CSI Tech Weekly
+                      <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
                     </Link>
                   </Button>
                   {canWriteTechWeekly && (
-                    <Button asChild variant="outline" className="rounded-xl">
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="rounded-md text-xs bg-card"
+                    >
                       <Link href="/tech-weekly/write">
-                        <Sparkles className="h-4 w-4 mr-1.5 text-emerald-500" />
-                        Write This Week&apos;s Post
+                        <PenTool className="h-3.5 w-3.5 mr-1.5" />
+                        Write Weekly Dispatch
                       </Link>
                     </Button>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ) : (
-            <Card className="rounded-3xl border-border/80 bg-card/90 backdrop-blur-xl shadow-xl overflow-hidden">
-              <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
-              <CardHeader className="space-y-3 pb-4">
-                <div className="flex items-center justify-between">
-                  <Badge
-                    variant="secondary"
-                    className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25"
-                  >
-                    <ShieldCheck className="h-3.5 w-3.5 mr-1.5" />
-                    Two-Factor Roster Check
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    One-time claim
-                  </Badge>
-                </div>
-                <CardTitle className="font-display text-2xl sm:text-3xl tracking-tight">
-                  Verify your CSI ID
-                </CardTitle>
-                <CardDescription className="text-sm leading-relaxed">
-                  Enter your official CSI MIT-WPU Member ID and University PRN to unlock your role. Public reading remains open to everyone.
-                </CardDescription>
-              </CardHeader>
+            <div className="rounded-lg border border-border bg-card overflow-hidden">
+              <div className="flex items-center justify-between border-b border-border bg-muted/40 px-6 py-3.5">
+                <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-foreground">
+                  Two-Factor Roster Verification
+                </span>
+                <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                  One-Time Claim
+                </span>
+              </div>
 
-              <CardContent className="space-y-6">
-                {errorMessage && (
-                  <Alert variant="destructive" className="rounded-2xl">
-                    <AlertDescription>{errorMessage}</AlertDescription>
-                  </Alert>
-                )}
+              <div className="p-6 sm:p-8 space-y-6">
+                <div className="space-y-2">
+                  <h1 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+                    Verify Your CSI ID
+                  </h1>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Enter your official CSI MIT-WPU Member ID and 10-digit
+                    University PRN to unlock your chapter role. Public reading
+                    remains open to all visitors.
+                  </p>
+                </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="csi-id">CSI Member ID</Label>
-                    <div className="relative">
-                      <Hash className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="csi-id"
-                        type="number"
-                        inputMode="numeric"
-                        min={1}
-                        max={999999}
-                        placeholder="e.g. 241"
-                        value={csiIdInput}
-                        onChange={(e) => setCsiIdInput(e.target.value)}
-                        required
-                        className="pl-10 rounded-xl h-11"
-                      />
-                    </div>
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="csi-id"
+                      className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground"
+                    >
+                      CSI Member ID
+                    </Label>
+                    <Input
+                      id="csi-id"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="e.g. 241"
+                      value={csiIdInput}
+                      onChange={(e) => setCsiIdInput(e.target.value)}
+                      required
+                      className="h-10 rounded-md font-mono text-sm"
+                    />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="prn">University PRN (Second Factor)</Label>
-                    <div className="relative">
-                      <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="prn"
-                        type="password"
-                        autoComplete="off"
-                        placeholder="Enter your university PRN"
-                        value={prnInput}
-                        onChange={(e) => setPrnInput(e.target.value)}
-                        required
-                        className="pl-10 rounded-xl h-11 font-mono"
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                      <Lock className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                      Your PRN is verified via HMAC-SHA256 on the server and is never stored or returned in plaintext.
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="prn"
+                      className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground"
+                    >
+                      University PRN (10 Digits)
+                    </Label>
+                    <Input
+                      id="prn"
+                      type="password"
+                      inputMode="numeric"
+                      placeholder="10-digit MIT-WPU PRN"
+                      value={prnInput}
+                      onChange={(e) => setPrnInput(e.target.value)}
+                      required
+                      className="h-10 rounded-md font-mono text-sm"
+                    />
+                    <p className="font-mono text-[10px] text-muted-foreground">
+                      Verified via server-side HMAC-SHA256 hash. Never stored or
+                      transmitted in plaintext.
                     </p>
                   </div>
+
+                  {errorMessage && (
+                    <Alert variant="destructive" className="rounded-md py-3">
+                      <AlertDescription className="text-xs">
+                        {errorMessage}
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
                   <Button
                     type="submit"
                     disabled={submitting}
-                    className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium"
+                    className="w-full h-10 rounded-md text-xs font-medium"
                   >
                     {submitting ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Verifying against CSI roster...
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Verifying Roster Identity...
                       </>
                     ) : (
-                      <>
-                        <ShieldCheck className="h-4 w-4 mr-2" />
-                        Verify &amp; Claim CSI Identity
-                      </>
+                      "Claim & Verify CSI Identity"
                     )}
                   </Button>
                 </form>
 
-                <div className="rounded-2xl border border-border/60 bg-muted/30 p-4 space-y-2 text-xs text-muted-foreground">
-                  <p className="font-medium text-foreground">
-                    Important security notes:
-                  </p>
-                  <ul className="list-disc pl-4 space-y-1">
-                    <li>
-                      Each CSI ID can only be claimed by one account. Once claimed, it cannot be changed without Super Admin approval.
-                    </li>
-                    <li>
-                      Verification is rate-limited to 5 attempts per hour per user and IP.
-                    </li>
-                    <li>
-                      If your PRN was blank or duplicated on the roster, ask Aryan Dani (Technical Secretary) to link your account from the Admin panel.
-                    </li>
-                  </ul>
+                <div className="border-t border-border pt-4 flex items-start gap-2.5 text-xs text-muted-foreground">
+                  <Lock className="h-3.5 w-3.5 shrink-0 mt-0.5 text-foreground" />
+                  <span>
+                    Once claimed, a CSI ID is permanently bound to your Google
+                    account and can only be reassigned by the Technical
+                    Secretary (CSI #303).
+                  </span>
                 </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs text-muted-foreground">
-                  <span>Not a CSI member? You still have full public reading access.</span>
-                  <Button asChild variant="ghost" size="sm" className="h-8 text-xs">
-                    <Link href="/tech-weekly">
-                      <BookOpen className="h-3.5 w-3.5 mr-1.5" />
-                      Read Tech Weekly
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
         </m.div>
       </LazyMotion>
-    </PageShell>
+    </div>
   );
 }

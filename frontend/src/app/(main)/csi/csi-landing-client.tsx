@@ -51,7 +51,6 @@ import {
   PenTool,
   ShieldCheck,
   Rss,
-  Sparkles,
   Users,
   ArrowRight,
   Terminal,
@@ -61,7 +60,6 @@ import {
   UserPlus,
   Loader2,
   Award,
-  Flame,
 } from "lucide-react";
 
 type CsiLandingClientProps = {
@@ -514,7 +512,7 @@ export function CsiLandingClient({
                         variant="default"
                         className="gap-1 rounded-full text-xs"
                       >
-                        <Sparkles className="h-3 w-3" />
+                        <Award className="h-3 w-3" />
                         Featured Technical Post
                       </Badge>
                     )}
@@ -636,7 +634,7 @@ export function CsiLandingClient({
                   value="submissions"
                   className="gap-1.5 rounded-xl text-xs sm:text-sm"
                 >
-                  <Flame className="h-3.5 w-3.5 text-amber-500" />
+                  <Clock className="h-3.5 w-3.5 text-primary" />
                   Sun-Wed Submissions ({submissions.length})
                 </TabsTrigger>
                 <TabsTrigger

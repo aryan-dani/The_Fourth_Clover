@@ -7,21 +7,11 @@ import { LazyMotion, domAnimation, m } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/auth-context";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   Menu,
-  BookOpen,
-  Terminal,
   PenTool,
-  Users,
   User,
   LogOut,
   Settings,
-  LogIn,
-  UserPlus,
   LayoutDashboard,
   Bell,
   Check,
@@ -31,11 +21,14 @@ import {
   CheckCircle2,
   AlertCircle,
   FileCheck,
+  Shield,
+  Award,
 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -53,6 +46,7 @@ import {
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { CloverMark } from "@/components/layout/CloverMark";
 import {
   getNotifications,
   markAsRead,
@@ -62,14 +56,6 @@ import {
   NotificationWithSender,
 } from "@/features/notifications/notifications";
 import { formatRelativeTime, cn } from "@/lib/utils";
-import { motionEase, springSnappy } from "@/lib/motion";
-import {
-  NAV_PILL_SHELL,
-  NAV_ICON_BOX,
-  NAV_ICON_CLASS,
-  NAV_PILL_DIVIDER,
-  NAV_STROKE,
-} from "@/components/layout/nav-metrics";
 
 function notificationIconForType(type: string) {
   switch (type) {
@@ -95,32 +81,15 @@ function notificationIconForType(type: string) {
 export function Header() {
   const { user, profile, loading, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [notifPopoverOpen, setNotifPopoverOpen] = useState(false);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationWithSender[]>(
-    [],
+    []
   );
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifLoading, setNotifLoading] = useState(false);
-  const [navPendingHref, setNavPendingHref] = useState<string | null>(null);
   const pathname = usePathname();
 
   const userId = user?.id;
-
-  const handleMainNavClick = useCallback(
-    (href: string) => {
-      if (pathname !== href) setNavPendingHref(href);
-    },
-    [pathname],
-  );
-
-  useEffect(() => {
-    if (navPendingHref && pathname === navPendingHref) {
-      setNavPendingHref(null);
-    }
-  }, [pathname, navPendingHref]);
 
   const fetchNotifications = useCallback(async () => {
     if (!userId) return;
@@ -142,33 +111,17 @@ export function Header() {
   }, [userId]);
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
     if (!userId) return;
     const t = window.setTimeout(() => {
       void fetchNotifications();
-    }, 1200);
+    }, 800);
     return () => window.clearTimeout(t);
   }, [userId, fetchNotifications]);
 
   useEffect(() => {
     if (!userId || !notifPopoverOpen) return;
     void fetchNotifications();
-    const interval = setInterval(() => {
-      void fetchNotifications();
-    }, 30000);
-    return () => clearInterval(interval);
   }, [userId, notifPopoverOpen, fetchNotifications]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const isVerifiedTech =
     profile?.role === "tech_member" ||
@@ -179,6 +132,9 @@ export function Header() {
   const isTechHeadOrAdmin =
     profile?.role === "tech_head" ||
     profile?.role === "super_admin" ||
+    profile?.csi_id === 241 ||
+    profile?.csi_id === 246 ||
+    profile?.csi_id === 303 ||
     Boolean(profile?.is_admin);
 
   const isSuperAdmin =
@@ -193,784 +149,419 @@ export function Header() {
   const writeHref = !user
     ? "/auth/signin"
     : isVerifiedTech
-    ? "/tech-weekly/write"
-    : "/verify-csi";
+      ? "/tech-weekly/write"
+      : "/verify-csi";
 
-  const primaryNav: {
-    name: string;
-    href: string;
-    icon: typeof BookOpen;
-  }[] = [
-    { name: "Tech Weekly", href: "/tech-weekly", icon: Terminal },
-    { name: "Explore", href: "/explore", icon: BookOpen },
+  const navItems = [
+    {
+      label: "Tech Weekly",
+      href: "/tech-weekly",
+      active:
+        pathname === "/tech-weekly" ||
+        (pathname.startsWith("/tech-weekly/") &&
+          pathname !== "/tech-weekly/write" &&
+          pathname !== "/tech-weekly/review") ||
+        pathname === "/csi" ||
+        pathname.startsWith("/csi/"),
+    },
+    {
+      label: "Journal",
+      href: "/explore",
+      active: pathname === "/explore" || pathname.startsWith("/post/"),
+    },
     ...(user
-      ? [{ name: "Following", href: "/explore/following", icon: Users }]
+      ? [
+          {
+            label: "Following",
+            href: "/explore/following",
+            active: pathname === "/explore/following",
+          },
+        ]
       : []),
-    ...(isVerifiedTech || !user
-      ? [{ name: "Write", href: writeHref, icon: PenTool }]
+    ...(isTechHeadOrAdmin
+      ? [
+          {
+            label: "Curation",
+            href: "/tech-weekly/review",
+            active:
+              pathname === "/tech-weekly/review" || pathname === "/csi/review",
+          },
+        ]
+      : []),
+    ...(isSuperAdmin
+      ? [
+          {
+            label: "Admin",
+            href: "/admin",
+            active: pathname === "/admin",
+          },
+        ]
       : []),
   ];
 
-  const isActive = (href: string) => {
-    if (href === "/tech-weekly" || href === "/csi") {
-      return (
-        pathname === "/tech-weekly" ||
-        (pathname.startsWith("/tech-weekly/") &&
-          pathname !== "/tech-weekly/write") ||
-        pathname === "/csi" ||
-        (pathname.startsWith("/csi/") && pathname !== "/csi/write")
-      );
-    }
-    if (
-      href === "/write" ||
-      href === "/tech-weekly/write" ||
-      href === "/verify-csi"
-    ) {
-      return (
-        pathname === "/write" ||
-        pathname === "/csi/write" ||
-        pathname === "/tech-weekly/write"
-      );
-    }
-    return pathname === href;
-  };
-  const isExploreActive = pathname === "/explore";
-  const isCsiActive = isActive("/tech-weekly");
-  const isFollowingActive = pathname === "/explore/following";
-  const isWriteActive = isActive("/tech-weekly/write");
-
-  const pillSpring = {
-    type: "spring" as const,
-    stiffness: 700,
-    damping: 30,
+  const handleMarkAsRead = async (notificationId: string) => {
+    await markAsRead(notificationId);
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
+    );
+    setUnreadCount((prev) => Math.max(0, prev - 1));
   };
 
-  const quickSpring = springSnappy;
+  const handleMarkAllAsRead = async () => {
+    if (!userId) return;
+    await markAllAsRead(userId);
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setUnreadCount(0);
+  };
 
   return (
     <LazyMotion features={domAnimation}>
-      {/* Left - Logo */}
-      <m.header
-        initial={false}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.35, ease: motionEase }}
-        className="fixed top-4 left-4 z-50"
-      >
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Link href="/" className="group" aria-label="Home">
-              <m.div
-                whileHover={{ scale: 1.08, rotate: -4 }}
-                whileTap={{ scale: 0.94 }}
-                transition={quickSpring}
-                className="border-border/60 bg-card ring-border flex h-[52px] w-[52px] items-center justify-center rounded-full border shadow-lg ring-1"
-              >
-                <span className="text-lg leading-none" aria-hidden>
-                  🍀
-                </span>
-              </m.div>
-            </Link>
-          </TooltipTrigger>
-          <TooltipContent side="bottom" sideOffset={10}>
-            <p className="text-xs font-medium">Home</p>
-          </TooltipContent>
-        </Tooltip>
-      </m.header>
-
-      {/* Center - Navigation Pill */}
-      <m.header
-        initial={false}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.35, ease: motionEase }}
-        className="pointer-events-none fixed inset-x-0 top-4 z-50 flex justify-center"
-      >
-        <m.nav
-          layout
-          transition={quickSpring}
-          className={cn(
-            NAV_PILL_SHELL,
-            "pointer-events-auto gap-1 px-1 shadow-lg transition-shadow duration-200",
-            scrolled
-              ? "border-border/70 bg-card/90 shadow-xl"
-              : "border-border/50 bg-card/85",
-          )}
-        >
-          {/* Explore */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href="/explore"
-                onClick={() => handleMainNavClick("/explore")}
-                aria-label="Explore"
-                className={cn(
-                  NAV_ICON_BOX,
-                  "relative transition-all duration-150",
-                  navPendingHref === "/explore" && pathname !== "/explore"
-                    ? "opacity-55"
-                    : "",
-                  isExploreActive
-                    ? "text-primary"
-                    : "text-foreground/80 hover:text-foreground dark:text-foreground/85 dark:hover:text-foreground",
-                )}
-              >
-                {isExploreActive && (
-                  <m.div
-                    layoutId="activeNavBg"
-                    className="bg-primary/15 ring-primary/25 absolute inset-0 rounded-full ring-1 ring-inset"
-                    transition={pillSpring}
-                  />
-                )}
-                <m.div
-                  whileHover={{ scale: 1.06 }}
-                  whileTap={{ scale: 0.94 }}
-                  transition={quickSpring}
-                  className="relative z-10"
-                >
-                  <BookOpen
-                    className={NAV_ICON_CLASS}
-                    strokeWidth={NAV_STROKE}
-                  />
-                </m.div>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" sideOffset={10}>
-              <p className="text-xs font-medium">Explore</p>
-            </TooltipContent>
-          </Tooltip>
-
-          {/* CSI Tech Weekly */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href="/tech-weekly"
-                onClick={() => handleMainNavClick("/tech-weekly")}
-                aria-label="CSI Tech Weekly"
-                className={cn(
-                  NAV_ICON_BOX,
-                  "relative transition-all duration-150",
-                  navPendingHref === "/tech-weekly" && !isCsiActive ? "opacity-55" : "",
-                  isCsiActive
-                    ? "text-primary"
-                    : "text-foreground/80 hover:text-foreground dark:text-foreground/85 dark:hover:text-foreground",
-                )}
-              >
-                {isCsiActive && (
-                  <m.div
-                    layoutId="activeNavBg"
-                    className="bg-primary/15 ring-primary/25 absolute inset-0 rounded-full ring-1 ring-inset"
-                    transition={pillSpring}
-                  />
-                )}
-                <m.div
-                  whileHover={{ scale: 1.06 }}
-                  whileTap={{ scale: 0.94 }}
-                  transition={quickSpring}
-                  className="relative z-10"
-                >
-                  <Terminal
-                    className={NAV_ICON_CLASS}
-                    strokeWidth={NAV_STROKE}
-                  />
-                </m.div>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" sideOffset={10}>
-              <p className="text-xs font-medium">CSI Tech Weekly</p>
-            </TooltipContent>
-          </Tooltip>
-
-          {/* Following (signed in) */}
-          {user && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/explore/following"
-                  onClick={() => handleMainNavClick("/explore/following")}
-                  aria-label="Following"
-                  className={cn(
-                    NAV_ICON_BOX,
-                    "relative transition-all duration-150",
-                    navPendingHref === "/explore/following" &&
-                      pathname !== "/explore/following"
-                      ? "opacity-55"
-                      : "",
-                    isFollowingActive
-                      ? "text-primary"
-                      : "text-foreground/80 hover:text-foreground dark:text-foreground/85 dark:hover:text-foreground",
-                  )}
-                >
-                  {isFollowingActive && (
-                    <m.div
-                      layoutId="activeNavBg"
-                      className="bg-primary/15 ring-primary/25 absolute inset-0 rounded-full ring-1 ring-inset"
-                      transition={pillSpring}
-                    />
-                  )}
-                  <m.div
-                    whileHover={{ scale: 1.06 }}
-                    whileTap={{ scale: 0.94 }}
-                    transition={quickSpring}
-                    className="relative z-10"
-                  >
-                    <Users
-                      className={NAV_ICON_CLASS}
-                      strokeWidth={NAV_STROKE}
-                    />
-                  </m.div>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={10}>
-                <p className="text-xs font-medium">Following</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-
-          {/* Write */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href={writeHref}
-                onClick={() => handleMainNavClick(writeHref)}
-                aria-label="Write"
-                className={cn(
-                  NAV_ICON_BOX,
-                  "relative transition-all duration-150",
-                  navPendingHref === writeHref && !isWriteActive
-                    ? "opacity-55"
-                    : "",
-                  isWriteActive
-                    ? "text-primary"
-                    : "text-foreground/80 hover:text-foreground dark:text-foreground/85 dark:hover:text-foreground",
-                )}
-              >
-                {isWriteActive && (
-                  <m.div
-                    layoutId="activeNavBg"
-                    className="bg-primary/15 ring-primary/25 absolute inset-0 rounded-full ring-1 ring-inset"
-                    transition={pillSpring}
-                  />
-                )}
-                <m.div
-                  whileHover={{ scale: 1.06 }}
-                  whileTap={{ scale: 0.94 }}
-                  transition={quickSpring}
-                  className="relative z-10"
-                >
-                  <PenTool
-                    className={NAV_ICON_CLASS}
-                    strokeWidth={NAV_STROKE}
-                  />
-                </m.div>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" sideOffset={10}>
-              <p className="text-xs font-medium">
-                {isVerifiedTech ? "Write for Tech Weekly" : user ? "Verify CSI ID to Write" : "Sign in to Write"}
-              </p>
-            </TooltipContent>
-          </Tooltip>
-
-          {/* Mobile menu */}
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild className="ml-1 md:hidden">
-              <m.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                transition={quickSpring}
-                aria-label="Open navigation menu"
-                className={cn(
-                  NAV_ICON_BOX,
-                  "text-foreground/80 hover:bg-muted/90 hover:text-foreground transition-colors duration-150 dark:text-foreground/85",
-                )}
-              >
-                <Menu className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
-              </m.button>
-            </SheetTrigger>
-            <SheetContent
-              side="right"
-              className="bg-card/97 border-border/60 w-80 rounded-l-3xl border-l p-0 shadow-2xl backdrop-blur-xl"
+      <header className="sticky top-0 z-50 w-full border-b border-border/80 bg-background/90 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          {/* Left: Brand Colophon */}
+          <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="group flex items-center gap-2.5 text-foreground transition-opacity hover:opacity-85"
             >
-              <SheetTitle className="sr-only">Navigation menu</SheetTitle>
-              <SheetDescription className="sr-only">
-                Site sections, theme, notifications, and sign-in links.
-              </SheetDescription>
-              <div className="flex h-full flex-col">
-                <div className="border-border/60 bg-muted/40 flex items-center gap-3 border-b p-5">
-                  <div className="bg-muted ring-border flex h-[52px] w-[52px] items-center justify-center rounded-full ring-2">
-                    <span className="text-2xl leading-none" aria-hidden>
-                      🍀
-                    </span>
-                  </div>
-                  <div>
-                    <span className="font-display text-foreground font-semibold">
-                      The Fourth Clover
-                    </span>
-                    <p className="text-muted-foreground font-sans text-xs">
-                      Navigation
-                    </p>
-                  </div>
-                </div>
+              <span className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-card text-foreground shadow-2xs transition-colors group-hover:border-foreground/40">
+                <CloverMark className="h-4 w-4" />
+              </span>
+              <span className="font-display text-lg font-semibold tracking-tight">
+                The Fourth Clover
+              </span>
+            </Link>
+            <span
+              className="hidden h-4 w-px bg-border sm:inline-block"
+              aria-hidden="true"
+            />
+            <Link
+              href="/tech-weekly"
+              className="hidden font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground sm:inline-block"
+            >
+              CSI MIT-WPU
+            </Link>
+          </div>
 
-                <nav className="flex flex-col gap-1 p-3">
-                  <Link
-                    href="/"
-                    onClick={() => setIsOpen(false)}
-                    className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-sans transition-all ${
-                      pathname === "/"
-                        ? "bg-primary/12 text-primary ring-primary/20 ring-1"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
-                    }`}
-                  >
-                    <span className="mr-1 text-2xl leading-none" aria-hidden>
-                      🍀
-                    </span>
-                    <span className="font-medium">Home</span>
-                  </Link>
-                  {primaryNav.map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      onClick={() => setIsOpen(false)}
-                      className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-sans transition-all ${
-                        isActive(item.href)
-                          ? "bg-primary/12 text-primary ring-primary/15 ring-1"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
-                      }`}
-                    >
-                      <item.icon className="h-5 w-5" strokeWidth={1.8} />
-                      <span className="font-medium">{item.name}</span>
-                    </Link>
-                  ))}
-                </nav>
-
-                {user && (
-                  <div className="border-border/50 space-y-2 border-b px-3 pb-3">
-                    <p className="text-muted-foreground px-2 text-[11px] font-medium tracking-wide uppercase">
-                      Appearance & Alerts
-                    </p>
-                    <div className="flex items-center gap-2 px-2">
-                      <ThemeToggle />
-                      <span className="text-muted-foreground text-sm">
-                        Theme
-                      </span>
-                    </div>
-                    <Link
-                      href="/notifications"
-                      onClick={() => setIsOpen(false)}
-                      className="text-muted-foreground hover:text-foreground hover:bg-muted/80 flex items-center gap-3 rounded-2xl px-4 py-3"
-                    >
-                      <Bell className="h-5 w-5" strokeWidth={1.8} />
-                      <span className="font-medium">Notifications</span>
-                      {unreadCount > 0 && (
-                        <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
-                          {unreadCount > 9 ? "9+" : unreadCount}
-                        </span>
-                      )}
-                    </Link>
-                  </div>
-                )}
-
-                {!user && (
-                  <div className="border-border/50 mt-auto space-y-2 border-t p-4">
-                    <Button
-                      asChild
-                      variant="outline"
-                      className="h-12 w-full rounded-2xl"
-                    >
-                      <Link
-                        href="/auth/signin"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        <LogIn className="mr-2 h-4 w-4" />
-                        Sign In
-                      </Link>
-                    </Button>
-                    <Button asChild className="h-12 w-full rounded-2xl">
-                      <Link
-                        href="/auth/signup"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        Get Started
-                      </Link>
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </SheetContent>
-          </Sheet>
-        </m.nav>
-      </m.header>
-
-      {/* Right - theme | notifications | account (aligned segmented bar) */}
-      <m.div
-        initial={false}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.35, ease: motionEase, delay: 0.05 }}
-        className="fixed top-4 right-4 z-50 hidden h-[52px] items-center md:flex"
-      >
-        {!isClient || loading ? (
-          <div
-            className={cn(
-              NAV_PILL_SHELL,
-              "border-border/50 bg-muted w-44 animate-pulse px-1 shadow-none",
-            )}
-          />
-        ) : user ? (
-          <div
-            className={cn(
-              NAV_PILL_SHELL,
-              "border-border/70 bg-card/95 dark:bg-card/90 gap-0 px-1 shadow-md dark:shadow-black/20",
-            )}
-            role="toolbar"
-            aria-label="Account and settings"
+          {/* Center: Labeled Editorial Nav */}
+          <nav
+            aria-label="Main navigation"
+            className="hidden md:flex items-center gap-1"
           >
-            <ThemeToggle />
-            <span className={NAV_PILL_DIVIDER} aria-hidden />
-            <Popover open={notifPopoverOpen} onOpenChange={setNotifPopoverOpen}>
-              <PopoverTrigger asChild>
-                <m.button
-                  type="button"
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  transition={quickSpring}
-                  className={cn(
-                    NAV_ICON_BOX,
-                    "text-foreground/85 hover:bg-muted/90 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background relative transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-                  )}
-                  aria-label="Notifications"
-                >
-                  <Bell className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
-                  {unreadCount > 0 && (
-                    <span className="ring-card absolute -top-0.5 -right-0.5 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm ring-2">
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
-                  )}
-                </m.button>
-              </PopoverTrigger>
-              <PopoverContent
-                align="end"
-                sideOffset={10}
-                className="border-border/80 w-[min(24rem,calc(100vw-2rem))] rounded-2xl p-0 shadow-xl"
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "relative px-3.5 py-1.5 text-sm font-medium transition-colors",
+                  item.active
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
               >
-                <div className="border-border flex items-center justify-between gap-2 border-b px-4 py-3">
-                  <p className="text-sm font-semibold">Notifications</p>
-                  {unreadCount > 0 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 rounded-lg text-xs"
-                      onClick={async () => {
-                        if (!userId) return;
-                        await markAllAsRead(userId);
-                        setNotifications((prev) =>
-                          prev.map((n) => ({ ...n, read: true })),
-                        );
-                        setUnreadCount(0);
-                      }}
-                    >
-                      <Check className="mr-1 h-3.5 w-3.5" />
-                      Mark All Read
-                    </Button>
-                  )}
-                </div>
-                <ScrollArea className="h-[min(22rem,50vh)]">
-                  {notifLoading && notifications.length === 0 ? (
-                    <p className="text-muted-foreground p-4 text-sm">
-                      Loading...
-                    </p>
-                  ) : notifications.length === 0 ? (
-                    <p className="text-muted-foreground p-4 text-sm">
-                      You&apos;re all caught up.
-                    </p>
-                  ) : (
-                    <ul className="p-1">
-                      {notifications.map((n) => {
-                        const IconCmp = n.from_user
-                          ? null
-                          : notificationIconForType(n.type);
-                        const href = getNotificationHref(n);
-                        return (
-                          <li key={n.id}>
+                {item.label}
+                {item.active && (
+                  <m.span
+                    layoutId="header-active-underline"
+                    className="absolute inset-x-2 -bottom-[17px] h-[2px] bg-foreground"
+                    transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                  />
+                )}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Right: Actions */}
+          <div className="flex items-center gap-2">
+            {(isVerifiedTech || !user) && (
+              <Button
+                asChild
+                size="sm"
+                variant={
+                  pathname === "/tech-weekly/write" || pathname === "/write"
+                    ? "secondary"
+                    : "default"
+                }
+                className="hidden sm:inline-flex h-8 rounded-md px-3.5 text-xs font-medium"
+              >
+                <Link href={writeHref}>
+                  <PenTool className="mr-1.5 h-3.5 w-3.5" />
+                  Write
+                </Link>
+              </Button>
+            )}
+
+            {user && !isVerifiedRoster && (
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="hidden sm:inline-flex h-8 rounded-md px-3 text-xs font-mono uppercase tracking-wider"
+              >
+                <Link href="/verify-csi">Verify CSI ID</Link>
+              </Button>
+            )}
+
+            <ThemeToggle />
+
+            {user && (
+              <Popover
+                open={notifPopoverOpen}
+                onOpenChange={setNotifPopoverOpen}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative h-8 w-8 rounded-md"
+                    aria-label="Notifications"
+                  >
+                    <Bell className="h-4 w-4" />
+                    {unreadCount > 0 && (
+                      <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-foreground" />
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="end"
+                  className="w-80 p-0 rounded-lg border border-border bg-card shadow-lg"
+                >
+                  <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                    <span className="font-mono text-xs uppercase tracking-wider text-foreground">
+                      Notifications
+                    </span>
+                    {unreadCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => void handleMarkAllAsRead()}
+                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        <Check className="h-3 w-3" />
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+                  <ScrollArea className="h-72">
+                    {notifLoading && notifications.length === 0 ? (
+                      <div className="p-6 text-center text-xs text-muted-foreground">
+                        Loading notifications...
+                      </div>
+                    ) : notifications.length === 0 ? (
+                      <div className="p-8 text-center text-xs text-muted-foreground">
+                        No notifications yet.
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-border">
+                        {notifications.map((n) => {
+                          const Icon = notificationIconForType(n.type);
+                          const href = getNotificationHref(n);
+                          return (
                             <Link
+                              key={n.id}
                               href={href}
-                              className={`hover:bg-muted/80 flex gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
-                                !n.read ? "bg-primary/5" : ""
-                              }`}
-                              onClick={async () => {
-                                if (!n.read) {
-                                  await markAsRead(n.id);
-                                  setNotifications((prev) =>
-                                    prev.map((x) =>
-                                      x.id === n.id ? { ...x, read: true } : x,
-                                    ),
-                                  );
-                                  setUnreadCount((c) => Math.max(0, c - 1));
-                                }
+                              onClick={() => {
+                                if (!n.read) void handleMarkAsRead(n.id);
                                 setNotifPopoverOpen(false);
                               }}
+                              className={cn(
+                                "flex items-start gap-3 px-4 py-3 text-xs transition-colors hover:bg-muted/50",
+                                !n.read && "bg-muted/30"
+                              )}
                             >
-                              <div className="mt-0.5 shrink-0">
-                                {n.from_user ? (
-                                  <Avatar className="h-9 w-9">
-                                    <AvatarImage
-                                      src={n.from_user.avatar_url || ""}
-                                    />
-                                    <AvatarFallback className="text-xs">
-                                      {n.from_user.full_name?.[0] || "U"}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                ) : IconCmp ? (
-                                  <div className="bg-muted flex h-9 w-9 items-center justify-center rounded-full">
-                                    <IconCmp className="text-primary h-4 w-4" />
-                                  </div>
-                                ) : null}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="line-clamp-3 text-sm leading-snug">
+                              <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                              <div className="flex-1 space-y-1">
+                                <p className="text-foreground leading-snug">
                                   {n.message}
                                 </p>
-                                <p className="text-muted-foreground mt-1 text-[11px]">
+                                <p className="font-mono text-[10px] text-muted-foreground">
                                   {formatRelativeTime(n.created_at)}
                                 </p>
                               </div>
-                              {!n.read && (
-                                <span className="bg-primary mt-2 h-2 w-2 shrink-0 rounded-full" />
-                              )}
                             </Link>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </ScrollArea>
-                <div className="border-border border-t p-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full rounded-xl"
-                    asChild
-                  >
-                    <Link
-                      href="/notifications"
-                      onClick={() => setNotifPopoverOpen(false)}
+                          );
+                        })}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </PopoverContent>
+              </Popover>
+            )}
+
+            {!loading &&
+              (user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 rounded-md border border-border bg-card p-1 pr-2.5 text-xs font-medium transition-colors hover:border-foreground/30"
                     >
-                      View All Notifications
-                    </Link>
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            <span className={NAV_PILL_DIVIDER} aria-hidden />
-
-            <DropdownMenu
-              open={profileMenuOpen}
-              onOpenChange={setProfileMenuOpen}
-            >
-              <DropdownMenuTrigger asChild>
-                <m.button
-                  type="button"
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  transition={quickSpring}
-                  className={cn(
-                    NAV_ICON_BOX,
-                    "from-primary/20 via-primary/8 ring-border/50 focus-visible:ring-ring focus-visible:ring-offset-background bg-gradient-to-br to-transparent ring-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-                  )}
-                  aria-label="Account menu"
-                >
-                  <Avatar className="ring-background h-8 w-8 ring-2">
-                    <AvatarImage
-                      src={
-                        profile?.avatar_url || user.user_metadata?.avatar_url
-                      }
-                    />
-                    <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
-                      {profile?.full_name?.[0] ||
-                        user.user_metadata?.full_name?.[0] ||
-                        user.email?.[0]?.toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </m.button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                sideOffset={12}
-                className="border-border bg-popover w-72 overflow-hidden rounded-xl border p-0 shadow-lg"
-              >
-                <div className="border-border border-b px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        src={
-                          profile?.avatar_url || user.user_metadata?.avatar_url
-                        }
-                      />
-                      <AvatarFallback className="bg-primary text-primary-foreground text-sm font-bold">
-                        {profile?.full_name?.[0] ||
-                          user.user_metadata?.full_name?.[0] ||
-                          user.email?.[0]?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold">
-                        {profile?.full_name ||
-                          user.user_metadata?.full_name ||
-                          "Writer"}
+                      <Avatar className="h-6 w-6 rounded-sm">
+                        <AvatarImage src={profile?.avatar_url || ""} />
+                        <AvatarFallback className="rounded-sm text-[10px] font-mono">
+                          {profile?.full_name?.[0] ||
+                            profile?.username?.[0] ||
+                            "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="hidden sm:inline-block max-w-[110px] truncate">
+                        {profile?.full_name?.split(" ")[0] ||
+                          profile?.username ||
+                          "Account"}
+                      </span>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-60 rounded-lg border border-border bg-card p-1.5 shadow-lg"
+                  >
+                    <div className="px-2.5 py-2 border-b border-border mb-1">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {profile?.full_name || profile?.username}
                       </p>
-                      <p className="text-muted-foreground truncate text-xs">
-                        @{profile?.username || "user"}
+                      <p className="font-mono text-[11px] text-muted-foreground truncate">
+                        @{profile?.username}
                         {profile?.csi_id ? ` · CSI #${profile.csi_id}` : ""}
                       </p>
                     </div>
-                  </div>
-                </div>
 
-                <div className="border-border border-b p-1.5">
-                  {!isVerifiedRoster && (
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/verify-csi"
-                        className="flex cursor-pointer items-center gap-3 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-2 mb-1"
-                      >
-                        <CheckCircle2 className="h-4 w-4" />
-                        <span className="text-sm font-semibold">
-                          Verify your CSI ID
-                        </span>
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/tech-weekly"
-                      className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2"
-                    >
-                      <Terminal className="text-muted-foreground h-4 w-4" />
-                      <span className="text-sm font-medium">
-                        CSI Tech Weekly
-                      </span>
-                    </Link>
-                  </DropdownMenuItem>
-                  {isTechHeadOrAdmin && (
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/tech-weekly/review"
-                        className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2"
-                      >
-                        <FileCheck className="text-emerald-500 h-4 w-4" />
-                        <span className="text-sm font-medium">
-                          Tech Weekly Review Queue
-                        </span>
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-                  {isSuperAdmin && (
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/admin"
-                        className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2"
-                      >
-                        <CheckCircle2 className="text-amber-500 h-4 w-4" />
-                        <span className="text-sm font-medium">
-                          Super Admin Panel
-                        </span>
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/dashboard"
-                      className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2"
-                    >
-                      <LayoutDashboard className="text-muted-foreground h-4 w-4" />
-                      <span className="text-sm font-medium">Dashboard</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/profile"
-                      className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2"
-                    >
-                      <User className="text-muted-foreground h-4 w-4" />
-                      <span className="text-sm font-medium">Edit Profile</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/settings"
-                      className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2"
-                    >
-                      <Settings className="text-muted-foreground h-4 w-4" />
-                      <span className="text-sm font-medium">Settings</span>
-                    </Link>
-                  </DropdownMenuItem>
-                </div>
-
-                <div className="p-1.5">
-                  <DropdownMenuItem
-                    onClick={signOut}
-                    className="text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span className="text-sm font-medium">Sign Out</span>
-                  </DropdownMenuItem>
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        ) : (
-          <m.div
-            layout
-            transition={quickSpring}
-            className={cn(
-              NAV_PILL_SHELL,
-              "border-border/70 bg-card/95 dark:bg-card/90 gap-0 px-1 shadow-md dark:shadow-black/20",
-            )}
-            role="toolbar"
-            aria-label="Sign in and appearance"
-          >
-            <ThemeToggle />
-            <span className={NAV_PILL_DIVIDER} aria-hidden />
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <m.div
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                  transition={quickSpring}
-                >
-                  <Link
-                    href="/auth/signin"
-                    aria-label="Sign in with Google"
-                    className={cn(
-                      NAV_ICON_BOX,
-                      "bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring focus-visible:ring-offset-background shadow-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+                    {!isVerifiedRoster && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/verify-csi" className="cursor-pointer">
+                          <Shield className="mr-2 h-4 w-4" />
+                          Verify CSI Identity
+                        </Link>
+                      </DropdownMenuItem>
                     )}
-                  >
-                    <LogIn className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
-                  </Link>
-                </m.div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={8}>
-                <p className="text-xs font-medium">Sign in with Google</p>
-              </TooltipContent>
-            </Tooltip>
-          </m.div>
-        )}
-      </m.div>
 
-      {/* Spacer: write pages use their own top toolbar aligned with fixed chrome */}
-      <div
-        className={
-          pathname === "/write" ||
-          pathname === "/csi/write" ||
-          pathname === "/tech-weekly/write"
-            ? "h-0"
-            : "h-20"
-        }
-        aria-hidden
-      />
+                    {isVerifiedTech && (
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/tech-weekly/write"
+                          className="cursor-pointer"
+                        >
+                          <PenTool className="mr-2 h-4 w-4" />
+                          Write for Tech Weekly
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+
+                    {isTechHeadOrAdmin && (
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/tech-weekly/review"
+                          className="cursor-pointer"
+                        >
+                          <Award className="mr-2 h-4 w-4" />
+                          Wednesday Curation Queue
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+
+                    {isSuperAdmin && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin" className="cursor-pointer">
+                          <Shield className="mr-2 h-4 w-4" />
+                          Super Admin Command
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile" className="cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
+                      </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard" className="cursor-pointer">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem asChild>
+                      <Link href="/settings" className="cursor-pointer">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Settings
+                      </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuItem
+                      onClick={() => void signOut()}
+                      className="cursor-pointer text-destructive focus:text-destructive"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className="h-8 rounded-md px-3 text-xs font-medium"
+                >
+                  <Link href="/auth/signin">Sign in</Link>
+                </Button>
+              ))}
+
+            {/* Mobile Drawer */}
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden h-8 w-8 rounded-md"
+                  aria-label="Open menu"
+                >
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="right"
+                className="w-72 border-l border-border bg-background p-6"
+              >
+                <SheetTitle className="font-display text-lg font-semibold">
+                  The Fourth Clover
+                </SheetTitle>
+                <SheetDescription className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+                  CSI MIT-WPU Technical Publication
+                </SheetDescription>
+
+                <div className="mt-6 flex flex-col gap-1">
+                  {navItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setIsOpen(false)}
+                      className={cn(
+                        "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                        item.active
+                          ? "bg-muted text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                  <Link
+                    href={writeHref}
+                    onClick={() => setIsOpen(false)}
+                    className="mt-2 inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground"
+                  >
+                    <PenTool className="mr-1.5 h-3.5 w-3.5" />
+                    Write Dispatch
+                  </Link>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+      </header>
     </LazyMotion>
   );
 }

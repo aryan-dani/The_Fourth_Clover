@@ -39,7 +39,7 @@ export default async function TechSubmissionDetailPage({
 
   return (
     <TechSubmissionDetailClient
-      initialSubmission={submission}
+      submission={submission}
       initialComments={comments}
       initialViewerReactions={viewerReactions}
       allowMemberComments={allowMemberComments}

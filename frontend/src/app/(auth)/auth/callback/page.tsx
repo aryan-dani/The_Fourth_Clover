@@ -2,16 +2,17 @@
 
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { devLog } from "@/lib/dev/log";
 import { syncUserVerificationStatusAction } from "@/features/data/csi-verification-actions";
+import { CloverMark } from "@/components/layout/CloverMark";
 
 export default function AuthCallback() {
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading"
   );
-  const [message, setMessage] = useState("Completing Google sign in...");
+  const [message, setMessage] = useState("Completing Google sign-in...");
   const processedRef = useRef(false);
 
   useEffect(() => {
@@ -22,12 +23,12 @@ export default function AuthCallback() {
       const check = await syncUserVerificationStatusAction();
       setStatus("success");
       if (check.verified) {
-        setMessage("Sign in successful! Redirecting to CSI Tech Weekly...");
+        setMessage("Authenticated. Opening CSI Tech Weekly...");
         setTimeout(() => {
           window.location.replace("/tech-weekly");
         }, 350);
       } else {
-        setMessage("Signed in! Redirecting to CSI ID verification...");
+        setMessage("Authenticated. Redirecting to CSI ID verification...");
         setTimeout(() => {
           window.location.replace("/verify-csi");
         }, 350);
@@ -108,7 +109,7 @@ export default function AuthCallback() {
       }
 
       setStatus("error");
-      setMessage("Sign in failed. Please try again.");
+      setMessage("Sign-in failed. Please try again.");
       setTimeout(() => (window.location.href = "/auth/signin"), 3000);
     };
 
@@ -116,47 +117,33 @@ export default function AuthCallback() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="max-w-md w-full mx-4">
-        <div className="text-center space-y-4">
-          <div className="flex items-center justify-center mb-6">
-            <div className="circle-logo">
-              <span className="text-2xl">🍀</span>
-            </div>
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="max-w-md w-full rounded-lg border border-border bg-card p-8 text-center space-y-5">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-md border border-border bg-background text-primary">
+          <CloverMark className="h-6 w-6" />
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            The Fourth Clover · Identity Gateway
+          </p>
 
           {status === "loading" && (
-            <>
-              <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-              <p className="text-muted-foreground">{message}</p>
-            </>
+            <div className="pt-2 space-y-3">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
+              <p className="text-sm text-muted-foreground">{message}</p>
+            </div>
           )}
 
           {status === "success" && (
-            <>
-              <div className="h-8 w-8 mx-auto rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
-                <svg
-                  className="h-5 w-5 text-green-600 dark:text-green-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-              <p className="text-green-600 dark:text-green-400 font-medium">
-                {message}
-              </p>
-            </>
+            <div className="pt-2 space-y-2">
+              <CheckCircle2 className="h-6 w-6 mx-auto text-primary" />
+              <p className="text-sm font-medium text-foreground">{message}</p>
+            </div>
           )}
 
           {status === "error" && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="mt-3 text-left">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{message}</AlertDescription>
             </Alert>

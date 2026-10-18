@@ -1,23 +1,19 @@
-import { Loader2 } from "lucide-react";
+import { CloverMark } from "@/components/layout/CloverMark";
 
 export default function Loading() {
   return (
     <div
-      className="flex min-h-[50vh] w-full flex-col items-center justify-center gap-4 py-20"
+      className="flex min-h-[55vh] w-full flex-col items-center justify-center gap-3 py-20"
       role="status"
       aria-live="polite"
       aria-busy="true"
     >
-      <span className="text-3xl leading-none animate-pulse" aria-hidden>
-        🍀
-      </span>
-      <div className="flex flex-col items-center gap-2">
-        <Loader2
-          className="h-8 w-8 animate-spin text-muted-foreground"
-          aria-hidden
-        />
-        <span className="sr-only">Loading page</span>
+      <div className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-card text-foreground animate-pulse">
+        <CloverMark className="h-5 w-5" />
       </div>
+      <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+        Loading Dispatch...
+      </span>
     </div>
   );
 }

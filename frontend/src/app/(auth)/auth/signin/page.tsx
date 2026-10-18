@@ -1,88 +1,74 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { ArrowLeft, ShieldCheck, Sparkles, Terminal } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import GoogleSignIn from "@/features/auth/components/GoogleSignIn";
 import { LazyMotion, domAnimation, m } from "framer-motion";
 import { AuthShell } from "@/components/layout/AuthShell";
+import { CloverMark } from "@/components/layout/CloverMark";
 
 export default function SignInPage() {
   return (
     <AuthShell>
       <LazyMotion features={domAnimation}>
         <m.div
-          initial={{ opacity: 0, x: -12 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="mb-6"
-        >
-          <Button variant="ghost" size="sm" asChild>
-            <Link
-              href="/"
-              className="flex items-center text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to home
-            </Link>
-          </Button>
-        </m.div>
-
-        <m.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.3 }}
+          className="space-y-6"
         >
-          <Card className="border-border/80 bg-card/85 backdrop-blur-xl shadow-xl rounded-3xl overflow-hidden">
-            <CardHeader className="space-y-4 pb-6 text-center">
-              <div className="flex justify-center">
-                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 ring-4 ring-emerald-500/5">
-                  <span className="text-4xl leading-none" aria-hidden>
-                    🍀
-                  </span>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <CardTitle className="font-display text-2xl sm:text-3xl tracking-tight">
-                  Sign in to The Fourth Clover
-                </CardTitle>
-                <CardDescription className="font-sans text-sm leading-relaxed max-w-sm mx-auto">
-                  Authenticate with Google. Verified CSI MIT-WPU Technical members can publish to CSI Tech Weekly.
-                </CardDescription>
-              </div>
-            </CardHeader>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Return to Masthead
+          </Link>
 
-            <CardContent className="space-y-6 px-6 pb-8">
+          <div className="rounded-lg border border-border bg-card overflow-hidden shadow-xs">
+            <div className="border-b border-border bg-muted/40 px-6 py-3 flex items-center justify-between">
+              <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-foreground">
+                Institutional Access
+              </span>
+              <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                CSI MIT-WPU
+              </span>
+            </div>
+
+            <div className="p-6 sm:p-8 space-y-6">
+              <div className="space-y-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-background text-foreground">
+                  <CloverMark className="h-5 w-5" />
+                </div>
+                <h1 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+                  Sign in to The Fourth Clover
+                </h1>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Authenticate with Google. Verified members of the CSI MIT-WPU
+                  Technical Wing can file weekly engineering dispatches.
+                </p>
+              </div>
+
               <GoogleSignIn />
 
-              <div className="rounded-2xl border border-border/70 bg-muted/35 p-4 space-y-3 text-xs text-muted-foreground">
-                <div className="flex items-start gap-2.5">
-                  <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                  <span>
-                    <strong className="text-foreground">Step 1:</strong> Sign in with your Google account.
-                  </span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <Terminal className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                  <span>
-                    <strong className="text-foreground">Step 2:</strong> Enter your CSI ID and University PRN once to link your verified CSI role.
-                  </span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <Sparkles className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                  <span>
-                    <strong className="text-foreground">Step 3:</strong> Submit weekly articles (Sunday to Wednesday 09:00 IST) and collaborate with peers.
-                  </span>
-                </div>
+              <div className="border-t border-border pt-5 space-y-2.5 text-xs text-muted-foreground">
+                <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-foreground">
+                  Verification Protocol
+                </p>
+                <ol className="space-y-1.5 list-decimal list-inside">
+                  <li>Authenticate with your Google account.</li>
+                  <li>
+                    Link your CSI Roster ID and 10-digit University PRN (one-time
+                    two-factor claim).
+                  </li>
+                  <li>
+                    Publish dispatches between Sunday 00:00 and Wednesday 09:00
+                    IST.
+                  </li>
+                </ol>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </m.div>
       </LazyMotion>
     </AuthShell>

@@ -16,66 +16,66 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
+    --background: 40 28% 97.5%;
+    --foreground: 220 18% 9%;
+    --card: 40 33% 99%;
+    --card-foreground: 220 18% 9%;
+    --popover: 40 33% 99%;
+    --popover-foreground: 220 18% 9%;
+    --primary: 220 18% 10%;
+    --primary-foreground: 40 30% 98%;
+    --secondary: 38 18% 93.5%;
+    --secondary-foreground: 220 18% 10%;
+    --muted: 38 18% 93.5%;
+    --muted-foreground: 220 9% 40%;
+    --accent: 38 18% 93.5%;
+    --accent-foreground: 220 18% 10%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --brand: 0 0% 9%;
-    --brand-foreground: 0 0% 98%;
-    --surface: 0 0% 96.1%;
-    --surface-muted: 0 0% 94%;
-    --chart-1: 0 0% 35%;
-    --chart-2: 0 0% 45%;
-    --chart-3: 0 0% 55%;
-    --chart-4: 0 0% 65%;
-    --chart-5: 0 0% 75%;
+    --border: 36 14% 87%;
+    --input: 36 14% 86%;
+    --ring: 220 18% 12%;
+    --brand: 158 64% 24%;
+    --brand-foreground: 40 30% 98%;
+    --surface: 38 22% 95%;
+    --surface-muted: 36 18% 92%;
+    --chart-1: 158 55% 32%;
+    --chart-2: 220 14% 35%;
+    --chart-3: 220 10% 50%;
+    --chart-4: 36 20% 65%;
+    --chart-5: 36 15% 75%;
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --background: 220 16% 6%;
+    --foreground: 40 20% 95%;
+    --card: 220 15% 8.5%;
+    --card-foreground: 40 20% 95%;
+    --popover: 220 15% 8.5%;
+    --popover-foreground: 40 20% 95%;
+    --primary: 40 20% 95%;
+    --primary-foreground: 220 18% 8%;
+    --secondary: 220 14% 13%;
+    --secondary-foreground: 40 20% 95%;
+    --muted: 220 14% 12.5%;
+    --muted-foreground: 220 9% 60%;
+    --accent: 220 14% 13.5%;
+    --accent-foreground: 40 20% 95%;
+    --destructive: 0 62.8% 38%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --brand: 0 0% 98%;
-    --brand-foreground: 0 0% 9%;
-    --surface: 0 0% 8%;
-    --surface-muted: 0 0% 12%;
-    --chart-1: 0 0% 75%;
-    --chart-2: 0 0% 65%;
-    --chart-3: 0 0% 55%;
-    --chart-4: 0 0% 45%;
-    --chart-5: 0 0% 35%;
+    --border: 220 13% 16%;
+    --input: 220 13% 16%;
+    --ring: 40 20% 85%;
+    --brand: 156 58% 48%;
+    --brand-foreground: 220 18% 8%;
+    --surface: 220 15% 9%;
+    --surface-muted: 220 14% 12%;
+    --chart-1: 156 58% 48%;
+    --chart-2: 220 12% 65%;
+    --chart-3: 220 10% 55%;
+    --chart-4: 220 10% 45%;
+    --chart-5: 220 10% 35%;
   }
 }
 
@@ -93,10 +93,10 @@
     @apply font-sans antialiased;
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings: "rlig" 1, "calt" 1, "cv02" 1, "cv03" 1;
     font-size: 16px;
     line-height: 1.6;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.011em;
   }
 
   h1,
@@ -105,14 +105,11 @@
   h4,
   h5,
   h6 {
-    font-family: var(--font-playfair), "Playfair Display", serif,
-      "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
-      "Noto Color Emoji", sans-serif;
-    letter-spacing: -0.02em;
+    font-family: var(--font-playfair), "Playfair Display", Georgia, serif;
+    letter-spacing: -0.025em;
     font-weight: 600;
   }
 
-  p,
   .readable-text,
   .description,
   .content {

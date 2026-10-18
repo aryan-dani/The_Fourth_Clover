@@ -3,18 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { LazyMotion, domAnimation, m } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Award,
-  Copy,
-  Check,
-  ArrowRight,
-  Clock,
-  Sparkles,
-} from "lucide-react";
+import { Copy, Check, ArrowUpRight, Clock } from "lucide-react";
 import { toast } from "sonner";
 import type { TechSubmissionWithAuthor } from "@/types/database";
 
@@ -26,7 +17,6 @@ export function formatLinkedInPostText(
     submission.author?.username ||
     "CSI Technical Member";
 
-  // Convert markdown to clean LinkedIn-friendly text
   const cleanBody = (submission.content || "")
     .replace(/!\[[^\]]*\]\([^)]+\)/g, "")
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1 ($2)")
@@ -47,8 +37,8 @@ export function formatLinkedInPostText(
   const defaultHashtags = [
     "#CSIMITWPU",
     "#CSITechWeekly",
-    "#Engineering",
-    "#TechCommunity",
+    "#SoftwareEngineering",
+    "#SystemsDesign",
   ];
   const allHashtags = Array.from(
     new Set([...customTags, ...defaultHashtags])
@@ -68,7 +58,7 @@ export function formatLinkedInPostText(
 export function CopyForLinkedInButton({
   submission,
   size = "default",
-  variant = "default",
+  variant = "outline",
 }: {
   submission: TechSubmissionWithAuthor;
   size?: "sm" | "default" | "lg";
@@ -81,7 +71,7 @@ export function CopyForLinkedInButton({
       const text = formatLinkedInPostText(submission);
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      toast.success("Copied ready-to-paste LinkedIn post!");
+      toast.success("Copied formatted LinkedIn dispatch to clipboard.");
       setTimeout(() => setCopied(false), 2500);
     } catch {
       toast.error("Could not copy to clipboard.");
@@ -94,16 +84,16 @@ export function CopyForLinkedInButton({
       size={size}
       variant={variant}
       onClick={() => void handleCopy()}
-      className="rounded-xl gap-2 font-medium"
+      className="rounded-md gap-2 font-mono text-xs uppercase tracking-wider"
     >
       {copied ? (
         <>
-          <Check className="h-4 w-4 text-emerald-500" />
-          Copied for LinkedIn
+          <Check className="h-3.5 w-3.5" />
+          Copied LinkedIn Copy
         </>
       ) : (
         <>
-          <Copy className="h-4 w-4" />
+          <Copy className="h-3.5 w-3.5" />
           Copy for LinkedIn
         </>
       )}
@@ -113,135 +103,140 @@ export function CopyForLinkedInButton({
 
 export function FeaturedTechWeeklyBanner({
   submission,
+  canCopyLinkedIn = false,
   compact = false,
 }: {
   submission: TechSubmissionWithAuthor;
+  canCopyLinkedIn?: boolean;
   compact?: boolean;
 }) {
   const authorName =
-    submission.author?.full_name || submission.author?.username || "CSI Writer";
+    submission.author?.full_name ||
+    submission.author?.username ||
+    "CSI Member";
+  const authorBadge = submission.author?.dept
+    ? `CSI ${submission.author.dept}${submission.author.year ? ` · ${submission.author.year}` : ""}`
+    : "CSI Technical Wing";
+
+  const excerpt =
+    submission.summary?.trim() ||
+    submission.content
+      .replace(/[#*`>\-\[\]!]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 240) + "...";
 
   return (
-    <LazyMotion features={domAnimation}>
-      <m.section
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-        aria-label="This week's featured post"
-        className="relative overflow-hidden rounded-3xl border border-amber-500/40 bg-gradient-to-br from-amber-500/12 via-emerald-500/8 to-card/90 p-6 sm:p-8 shadow-xl backdrop-blur-xl"
+    <section className="overflow-hidden rounded-lg border border-border bg-card">
+      {/* Top Issue Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/40 px-6 py-3">
+        <div className="flex items-center gap-3">
+          <span className="inline-block h-2 w-2 rounded-full bg-foreground" />
+          <span className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-foreground">
+            Weekly Featured Selection · Official CSI LinkedIn Dispatch
+          </span>
+        </div>
+        {submission.week?.title && (
+          <span className="font-mono text-[11px] text-muted-foreground">
+            {submission.week.title}
+          </span>
+        )}
+      </div>
+
+      <div
+        className={`grid gap-8 p-6 sm:p-8 lg:p-10 ${
+          submission.cover_image && !compact
+            ? "lg:grid-cols-12 lg:items-center"
+            : "grid-cols-1"
+        }`}
       >
         <div
-          className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-amber-500/15 blur-3xl"
-          aria-hidden
-        />
-        <div className="relative z-10 flex flex-col lg:flex-row gap-6 lg:items-center justify-between">
-          <div className="space-y-4 flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <Badge className="bg-amber-500 text-amber-950 hover:bg-amber-400 font-semibold px-3 py-1 rounded-full">
-                <Award className="h-3.5 w-3.5 mr-1.5" />
-                This week&apos;s featured post
-              </Badge>
-              <Badge
-                variant="outline"
-                className="border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 rounded-full"
-              >
-                <Sparkles className="h-3 w-3 mr-1" />
-                Official CSI LinkedIn Pick
-              </Badge>
-              {submission.week?.title && (
-                <span className="text-xs text-muted-foreground font-medium">
-                  {submission.week.title}
+          className={
+            submission.cover_image && !compact
+              ? "lg:col-span-7 space-y-5"
+              : "space-y-5 max-w-3xl"
+          }
+        >
+          {submission.tags && submission.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {submission.tags.slice(0, 4).map((tag) => (
+                <span
+                  key={tag}
+                  className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground border border-border px-2 py-0.5 rounded-sm bg-background"
+                >
+                  {tag}
                 </span>
+              ))}
+            </div>
+          )}
+
+          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-foreground leading-[1.15]">
+            <Link
+              href={`/tech-weekly/${submission.slug}`}
+              className="hover:underline decoration-1 underline-offset-4"
+            >
+              {submission.title}
+            </Link>
+          </h2>
+
+          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+            {excerpt}
+          </p>
+
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-border/80">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-9 w-9 rounded-sm border border-border">
+                <AvatarImage src={submission.author?.avatar_url || ""} />
+                <AvatarFallback className="rounded-sm font-mono text-xs">
+                  {authorName[0]?.toUpperCase() || "C"}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-sm font-medium text-foreground leading-none">
+                  {authorName}
+                </p>
+                <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                  {authorBadge}
+                  {submission.author?.csi_id
+                    ? ` · #${submission.author.csi_id}`
+                    : ""}{" "}
+                  · <Clock className="inline h-3 w-3 -mt-0.5" />{" "}
+                  {submission.read_time} min read ({submission.word_count} words)
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              <Button asChild size="sm" className="rounded-md px-4 text-xs">
+                <Link href={`/tech-weekly/${submission.slug}`}>
+                  Read Dispatch
+                  <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
+                </Link>
+              </Button>
+              {canCopyLinkedIn && (
+                <CopyForLinkedInButton submission={submission} size="sm" />
               )}
             </div>
-
-            <Link
-              href={`/tech-weekly/${submission.slug}`}
-              className="block group"
-            >
-              <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                {submission.title}
-              </h2>
-            </Link>
-
-            <p className="font-serif text-muted-foreground text-sm sm:text-base line-clamp-3 max-w-3xl leading-relaxed">
-              {submission.summary ||
-                submission.content
-                  .replace(/[#*`>\[\]!]/g, "")
-                  .slice(0, 240)
-                  .trim() + "..."}
-            </p>
-
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-9 w-9 ring-2 ring-amber-500/30">
-                  <AvatarImage src={submission.author?.avatar_url || ""} />
-                  <AvatarFallback className="text-xs font-bold">
-                    {authorName[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-foreground">
-                      {authorName}
-                    </span>
-                    {submission.author?.dept && (
-                      <Badge
-                        variant="secondary"
-                        className="text-[10px] px-2 py-0 h-4"
-                      >
-                        CSI {submission.author.dept}
-                        {submission.author.year
-                          ? ` · ${submission.author.year}`
-                          : ""}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    <span>{submission.read_time} min read</span>
-                    <span>·</span>
-                    <span>{submission.word_count} words</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2.5">
-                <CopyForLinkedInButton
-                  submission={submission}
-                  variant="outline"
-                  size="sm"
-                />
-                <Button
-                  asChild
-                  size="sm"
-                  className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white"
-                >
-                  <Link href={`/tech-weekly/${submission.slug}`}>
-                    Read Article
-                    <ArrowRight className="h-4 w-4 ml-1.5" />
-                  </Link>
-                </Button>
-              </div>
-            </div>
           </div>
+        </div>
 
-          {!compact && submission.cover_image && (
+        {submission.cover_image && !compact && (
+          <div className="lg:col-span-5">
             <Link
               href={`/tech-weekly/${submission.slug}`}
-              className="lg:w-72 shrink-0 overflow-hidden rounded-2xl border border-border/60 aspect-video relative bg-muted/30"
+              className="block relative aspect-[16/10] w-full overflow-hidden rounded-md border border-border bg-muted"
             >
               <Image
                 src={submission.cover_image}
                 alt={submission.title}
-                width={560}
-                height={315}
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                fill
+                sizes="(max-width: 1024px) 100vw, 40vw"
+                className="object-cover transition-transform duration-500 hover:scale-[1.02]"
               />
             </Link>
-          )}
-        </div>
-      </m.section>
-    </LazyMotion>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

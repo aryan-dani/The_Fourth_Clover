@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 
 export default async function TechWeeklyPage() {
   const data = await fetchTechWeeklyLandingData();
-  return <TechWeeklyClient data={data} />;
+  return <TechWeeklyClient initialData={data} />;
 }

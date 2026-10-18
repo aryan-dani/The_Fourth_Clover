@@ -21,7 +21,6 @@ import {
   Settings,
   Shield,
   ShieldAlert,
-  Sparkles,
   Trash2,
   Unlink,
   Users,
@@ -257,8 +256,8 @@ export default function AdminClient({
   if (!initialData.authorized) {
     return (
       <div className="container max-w-3xl py-20">
-        <div className="rounded-3xl border border-destructive/30 bg-destructive/5 p-8 text-center">
-          <ShieldAlert className="mx-auto mb-4 h-12 w-12 text-destructive" />
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-8 text-center">
+          <ShieldAlert className="mx-auto mb-4 h-10 w-10 text-destructive" />
           <h1 className="font-display text-2xl font-bold">
             Super Admin Access Required
           </h1>
@@ -282,17 +281,17 @@ export default function AdminClient({
   return (
     <LazyMotion features={domAnimation}>
       <PageShell className="py-10 space-y-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="space-y-1">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-6">
+          <div className="space-y-1.5">
             <Link
               href="/tech-weekly"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+              className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              Back to CSI Tech Weekly
+              CSI Tech Weekly
             </Link>
             <h1 className="font-display text-3xl font-bold tracking-tight flex items-center gap-2.5">
-              <Shield className="h-7 w-7 text-emerald-500" />
+              <Shield className="h-6 w-6 text-primary" />
               Super Admin Command Center
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -308,11 +307,11 @@ export default function AdminClient({
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" asChild>
               <Link href="/tech-weekly/review">
-                <Award className="mr-1.5 h-4 w-4 text-emerald-500" />
+                <Award className="mr-1.5 h-3.5 w-3.5 text-primary" />
                 Wednesday Review Queue
               </Link>
             </Button>
-            <Button variant="outline" size="sm" asChild>
+            <Button size="sm" asChild>
               <Link href="/tech-weekly/write">Write Tech Weekly Post</Link>
             </Button>
           </div>
@@ -320,41 +319,41 @@ export default function AdminClient({
 
         {/* Summary Metrics */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-border/70 bg-card/90">
+          <Card className="border-border bg-card">
             <CardContent className="p-5">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Registered Profiles
               </p>
-              <p className="mt-2 font-display text-3xl font-bold">
+              <p className="mt-2 font-display text-3xl font-bold tabular-nums">
                 {initialData.users.length}
               </p>
-              <p className="mt-1 text-xs text-emerald-500">
+              <p className="mt-1 text-xs text-primary font-medium">
                 {initialData.users.filter((u) => Boolean(u.csi_id)).length}{" "}
                 verified CSI accounts
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-border/70 bg-card/90">
+          <Card className="border-border bg-card">
             <CardContent className="p-5">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Seeded CSI Roster
               </p>
-              <p className="mt-2 font-display text-3xl font-bold">
+              <p className="mt-2 font-display text-3xl font-bold tabular-nums">
                 {initialData.roster.length}
               </p>
-              <p className="mt-1 text-xs text-amber-400">
+              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
                 {flaggedRoster.length} flagged rows (manual link only)
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-border/70 bg-card/90">
+          <Card className="border-border bg-card">
             <CardContent className="p-5">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Tech Weekly Submissions
               </p>
-              <p className="mt-2 font-display text-3xl font-bold">
+              <p className="mt-2 font-display text-3xl font-bold tabular-nums">
                 {initialData.submissions.length}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -367,12 +366,12 @@ export default function AdminClient({
             </CardContent>
           </Card>
 
-          <Card className="border-border/70 bg-card/90">
+          <Card className="border-border bg-card">
             <CardContent className="p-5">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Open Reports & Audit Log
               </p>
-              <p className="mt-2 font-display text-3xl font-bold">
+              <p className="mt-2 font-display text-3xl font-bold tabular-nums">
                 {
                   initialData.reports.filter((r) => r.status === "open").length
                 }
@@ -385,29 +384,29 @@ export default function AdminClient({
         </div>
 
         <Tabs defaultValue="roster" className="space-y-6">
-          <TabsList className="flex flex-wrap h-auto gap-1.5 bg-muted/50 p-1.5 rounded-2xl">
-            <TabsTrigger value="roster" className="rounded-xl">
-              <Users className="mr-1.5 h-4 w-4" />
+          <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/60 p-1 rounded-md border border-border">
+            <TabsTrigger value="roster" className="rounded">
+              <Users className="mr-1.5 h-3.5 w-3.5" />
               Users & CSI Roster
             </TabsTrigger>
-            <TabsTrigger value="submissions" className="rounded-xl">
-              <Sparkles className="mr-1.5 h-4 w-4" />
+            <TabsTrigger value="submissions" className="rounded">
+              <Award className="mr-1.5 h-3.5 w-3.5" />
               Tech Weekly ({initialData.submissions.length})
             </TabsTrigger>
-            <TabsTrigger value="moderation" className="rounded-xl">
-              <ClipboardList className="mr-1.5 h-4 w-4" />
+            <TabsTrigger value="moderation" className="rounded">
+              <ClipboardList className="mr-1.5 h-3.5 w-3.5" />
               Reports & Comments
             </TabsTrigger>
-            <TabsTrigger value="settings" className="rounded-xl">
-              <Settings className="mr-1.5 h-4 w-4" />
+            <TabsTrigger value="settings" className="rounded">
+              <Settings className="mr-1.5 h-3.5 w-3.5" />
               Platform Settings
             </TabsTrigger>
-            <TabsTrigger value="audit" className="rounded-xl">
-              <History className="mr-1.5 h-4 w-4" />
+            <TabsTrigger value="audit" className="rounded">
+              <History className="mr-1.5 h-3.5 w-3.5" />
               Audit Log
             </TabsTrigger>
-            <TabsTrigger value="legacy" className="rounded-xl">
-              <FileText className="mr-1.5 h-4 w-4" />
+            <TabsTrigger value="legacy" className="rounded">
+              <FileText className="mr-1.5 h-3.5 w-3.5" />
               Open Blog ({initialData.legacyPosts.length})
             </TabsTrigger>
           </TabsList>
@@ -684,7 +683,7 @@ export default function AdminClient({
                       onClick={() => handleOverridePick(sub.id, sub.title)}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white"
                     >
-                      <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                      <Award className="mr-1.5 h-3.5 w-3.5" />
                       Override as Weekly Pick
                     </Button>
                   )}

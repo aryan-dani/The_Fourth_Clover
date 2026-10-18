@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function WritePage({
   searchParams,
 }: {
-  searchParams: Promise<{ publication?: string; edit?: string }>;
+  searchParams: Promise<{ publication?: string; edit?: string; id?: string }>;
 }) {
   const supabase = await createSupabaseServerClient();
   const {
@@ -37,14 +37,10 @@ export default async function WritePage({
     redirect("/verify-csi");
   }
 
-  if (!isTechAuthor) {
-    redirect("/tech-weekly/write");
-  }
-
   const params = await searchParams;
-  if (params.publication === "csi") {
-    const query = params.edit ? `?edit=${encodeURIComponent(params.edit)}` : "";
-    redirect(`/csi/write${query}`);
+  if (!isTechAuthor || !params.edit) {
+    const query = params.id ? `?id=${encodeURIComponent(params.id)}` : "";
+    redirect(`/tech-weekly/write${query}`);
   }
 
   const csiRoleInfo = await getUserPublicationRole("csi", user.id);

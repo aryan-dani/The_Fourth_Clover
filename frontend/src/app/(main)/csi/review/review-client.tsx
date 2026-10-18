@@ -12,7 +12,6 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
-  Sparkles,
   Loader2,
   ExternalLink,
   Award,
@@ -443,7 +442,7 @@ export function CsiReviewClient({
             <Card className="glass-card border-border/60">
               <CardContent className="p-12 text-center">
                 <div className="bg-primary/10 text-primary mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl">
-                  <Sparkles className="h-6 w-6" aria-hidden />
+                  <Award className="h-6 w-6" aria-hidden />
                 </div>
                 <h2 className="font-display mb-2 text-xl font-semibold">
                   {activeTab === "queue"
