@@ -98,6 +98,8 @@ export type Database = {
           author_id: string;
           publication_id: string | null;
           review_note: string | null;
+          linkedin_pick_week?: string | null;
+          linkedin_picked_by?: string | null;
           tags: string[] | null;
           read_time: number;
           created_at: string;
@@ -117,6 +119,8 @@ export type Database = {
           author_id: string;
           publication_id?: string | null;
           review_note?: string | null;
+          linkedin_pick_week?: string | null;
+          linkedin_picked_by?: string | null;
           tags?: string[] | null;
           read_time?: number;
           created_at?: string;
@@ -136,6 +140,8 @@ export type Database = {
           author_id?: string;
           publication_id?: string | null;
           review_note?: string | null;
+          linkedin_pick_week?: string | null;
+          linkedin_picked_by?: string | null;
           tags?: string[] | null;
           read_time?: number;
           created_at?: string;
