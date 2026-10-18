@@ -5,7 +5,7 @@ import { DashboardClient } from "./dashboard-client";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const { userId, posts, stats } = await fetchDashboardInitialData();
+  const { userId, posts, stats, csiRole } = await fetchDashboardInitialData();
   if (!userId) redirect("/auth/signin");
-  return <DashboardClient serverSnapshot={{ posts, stats }} />;
+  return <DashboardClient serverSnapshot={{ posts, stats, csiRole }} />;
 }

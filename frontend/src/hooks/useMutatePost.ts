@@ -340,6 +340,7 @@ export function useMutatePost(
         } else {
           result = await createPost({
             ...basePayload,
+            review_note: null,
             author_id: authorId,
           });
           if (result.data) {

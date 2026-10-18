@@ -1,16 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
+import { LazyMotion, domAnimation, m } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/features/auth/auth-context";
-import { formatRelativeTime, toTitleCase } from "@/lib/utils";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+import { formatRelativeTime } from "@/lib/utils";
 import { WriterHubShell } from "@/components/layout/WriterHubShell";
 import { toast } from "sonner";
 import {
@@ -24,11 +22,15 @@ import {
   Clock,
   FileText,
   MoreHorizontal,
+  Send,
+  ShieldCheck,
+  Terminal,
 } from "lucide-react";
 import Link from "next/link";
-import { Post } from "@/types/database";
+import { Post, PublicationRole } from "@/types/database";
 import { supabase } from "@/lib/supabase";
 import { updatePost, deletePost } from "@/features/data/database-operations";
+import { notifyEditorsOfReviewSubmissionAction } from "@/features/data/server-actions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,18 +58,35 @@ function StatCard({
   color?: string;
 }) {
   return (
-    <Card className="glass rounded-3xl border border-border/60">
+    <Card className="glass border-border/60 rounded-3xl border">
       <CardContent className="p-4 md:p-5">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="text-muted-foreground text-sm">{title}</p>
             <p className="text-2xl font-bold">{value}</p>
           </div>
-          <Icon className={`w-8 h-8 ${color}`} />
+          <Icon className={`h-8 w-8 ${color}`} />
         </div>
       </CardContent>
     </Card>
   );
+}
+
+function getStatusBadge(status: Post["status"]) {
+  if (status === "published") {
+    return <Badge variant="default">Published</Badge>;
+  }
+  if (status === "in_review") {
+    return (
+      <Badge
+        variant="outline"
+        className="border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-300"
+      >
+        In Review
+      </Badge>
+    );
+  }
+  return <Badge variant="secondary">Draft</Badge>;
 }
 
 export function DashboardClient({
@@ -76,6 +95,7 @@ export function DashboardClient({
   serverSnapshot: {
     posts: DashboardPostRow[];
     stats: DashboardStatsSnapshot;
+    csiRole?: PublicationRole | null;
   };
 }) {
   const router = useRouter();
@@ -86,8 +106,8 @@ export function DashboardClient({
   const [stats, setStats] = useState<DashboardStatsSnapshot>(
     serverSnapshot.stats,
   );
+  const csiRole = serverSnapshot.csiRole ?? null;
 
-  // Sync dashboard prop changes via server to client correctly
   useEffect(() => {
     setPosts(serverSnapshot.posts);
     setStats(serverSnapshot.stats);
@@ -105,7 +125,8 @@ export function DashboardClient({
             `
           *,
           likes (count),
-          comments (count)
+          comments (count),
+          publication:publications (id, slug, name)
         `,
           )
           .eq("author_id", userId)
@@ -127,10 +148,14 @@ export function DashboardClient({
         const publishedPosts = userPosts.filter(
           (post) => post.status === "published",
         ).length;
+        const inReviewPosts = userPosts.filter(
+          (post) => post.status === "in_review",
+        ).length;
 
         setStats({
           totalPosts: userPosts.length,
           publishedPosts,
+          inReviewPosts,
           totalLikes,
           totalComments,
         });
@@ -166,26 +191,41 @@ export function DashboardClient({
     }
   };
 
-  const handlePublish = async (post: Post) => {
+  const handleStatusAction = async (post: DashboardPostRow) => {
+    const isCsiPost = Boolean(
+      post.publication_id || post.publication?.slug === "csi",
+    );
+    const isWriterOnly = isCsiPost && csiRole !== "editor";
+
     try {
-      if (post.status === "published") {
+      if (post.status === "published" || post.status === "in_review") {
         const { error } = await updatePost(post.id, {
           status: "draft",
           published_at: null,
         });
         if (error) throw error;
-        toast.success("Post unpublished and moved to drafts.");
+        toast.success("Post moved back to drafts.");
+      } else if (isWriterOnly) {
+        const { error } = await updatePost(post.id, {
+          status: "in_review",
+          published_at: null,
+          review_note: null,
+        });
+        if (error) throw error;
+        await notifyEditorsOfReviewSubmissionAction(post.id, post.title);
+        toast.success("Submitted to CSI editors for review!");
       } else {
         const { error } = await updatePost(post.id, {
           status: "published",
           published_at: new Date().toISOString(),
+          review_note: null,
         });
         if (error) throw error;
         toast.success("Post published successfully!");
       }
       fetchPosts(false);
     } catch (error: unknown) {
-      console.error("Error updating publish status:", error);
+      console.error("Error updating post status:", error);
       const message =
         error instanceof Error ? error.message : "Could not update post";
       toast.error(`Error: ${message}`);
@@ -193,6 +233,7 @@ export function DashboardClient({
   };
 
   const published = posts.filter((post) => post.status === "published");
+  const inReview = posts.filter((post) => post.status === "in_review");
   const drafts = posts.filter(
     (post) => post.status === "draft" && !post.scheduled_at,
   );
@@ -206,18 +247,43 @@ export function DashboardClient({
       header: "Title",
       cell: ({ row }: { row: Row<DashboardPostRow> }) => {
         const post = row.original;
+        const isCsi = Boolean(
+          post.publication_id || post.publication?.slug === "csi",
+        );
+        const editHref = isCsi
+          ? `/csi/write?edit=${post.id}`
+          : `/write?edit=${post.id}`;
+        const viewHref = isCsi ? `/csi/${post.slug}` : `/post/${post.slug}`;
         const href =
-          post.status === "published"
-            ? `/post/${post.slug}`
-            : `/write?edit=${post.id}`;
+          post.status === "published" || post.status === "in_review"
+            ? viewHref
+            : editHref;
 
         return (
-          <Link
-            href={href}
-            className="font-medium text-primary hover:underline"
-          >
-            {post.title}
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href={href}
+              className="text-primary font-medium hover:underline"
+            >
+              {post.title}
+            </Link>
+            {isCsi && (
+              <Badge
+                variant="outline"
+                className="border-primary/35 bg-primary/10 text-primary rounded-full px-2 py-0 text-[10px] font-semibold uppercase"
+              >
+                {post.publication?.slug || "CSI"}
+              </Badge>
+            )}
+            {post.status === "draft" && post.review_note && (
+              <Badge
+                variant="outline"
+                className="rounded-full border-amber-500/40 bg-amber-500/10 px-2 py-0 text-[10px] text-amber-600 dark:text-amber-300"
+              >
+                Feedback available
+              </Badge>
+            )}
+          </div>
         );
       },
     },
@@ -225,14 +291,7 @@ export function DashboardClient({
       accessorKey: "status",
       header: "Status",
       cell: ({ row }: { row: Row<DashboardPostRow> }) => {
-        const post = row.original;
-        return (
-          <Badge
-            variant={post.status === "published" ? "default" : "secondary"}
-          >
-            {toTitleCase(post.status)}
-          </Badge>
-        );
+        return getStatusBadge(row.original.status);
       },
     },
     {
@@ -241,7 +300,7 @@ export function DashboardClient({
       cell: ({ row }: { row: Row<DashboardPostRow> }) => {
         const post = row.original;
         return (
-          <span className="text-sm text-muted-foreground">
+          <span className="text-muted-foreground text-sm">
             {formatRelativeTime(post.created_at)}
           </span>
         );
@@ -252,6 +311,23 @@ export function DashboardClient({
       header: "Actions",
       cell: ({ row }: { row: Row<DashboardPostRow> }) => {
         const post = row.original;
+        const isCsi = Boolean(
+          post.publication_id || post.publication?.slug === "csi",
+        );
+        const editHref = isCsi
+          ? `/csi/write?edit=${post.id}`
+          : `/write?edit=${post.id}`;
+        const isWriterOnly = isCsi && csiRole !== "editor";
+
+        let statusActionLabel = "Publish";
+        if (post.status === "published") {
+          statusActionLabel = "Unpublish";
+        } else if (post.status === "in_review") {
+          statusActionLabel = "Withdraw to Draft";
+        } else if (isWriterOnly) {
+          statusActionLabel = "Submit for Review";
+        }
+
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -268,11 +344,11 @@ export function DashboardClient({
                 Copy post ID
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Link href={`/write?edit=${post.id}`}>Edit</Link>
+              <DropdownMenuItem asChild>
+                <Link href={editHref}>Edit</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handlePublish(post)}>
-                {post.status === "published" ? "Unpublish" : "Publish"}
+              <DropdownMenuItem onClick={() => handleStatusAction(post)}>
+                {statusActionLabel}
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-red-500"
@@ -291,164 +367,224 @@ export function DashboardClient({
     return (
       <WriterHubShell>
         <div className="animate-pulse space-y-6">
-          <div className="h-10 bg-muted rounded-2xl max-w-md ml-auto" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="bg-muted ml-auto h-10 max-w-md rounded-2xl" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-28 bg-muted rounded-3xl" />
+              <div key={i} className="bg-muted h-28 rounded-3xl" />
             ))}
           </div>
-          <div className="h-96 bg-muted rounded-3xl" />
+          <div className="bg-muted h-96 rounded-3xl" />
         </div>
       </WriterHubShell>
     );
   }
 
   return (
-    <WriterHubShell>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight md:text-3xl">
-            Your Writing
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1 max-w-xl">
-            Manage drafts, publishing, and how readers see your work.
-          </p>
+    <LazyMotion features={domAnimation}>
+      <WriterHubShell>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="font-display text-2xl font-semibold tracking-tight md:text-3xl">
+              Your Writing
+            </h1>
+            <p className="text-muted-foreground mt-1 max-w-xl text-sm">
+              Manage drafts, CSI submissions, publishing, and how readers see
+              your work.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {csiRole === "editor" && (
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="shrink-0 gap-2 rounded-2xl"
+              >
+                <Link href="/csi/review">
+                  <ShieldCheck className="h-4 w-4" aria-hidden />
+                  CSI Review Queue
+                </Link>
+              </Button>
+            )}
+            {csiRole && (
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="shrink-0 gap-2 rounded-2xl"
+              >
+                <Link href="/csi/write">
+                  <Terminal className="h-4 w-4" aria-hidden />
+                  Write for CSI
+                </Link>
+              </Button>
+            )}
+            <Button asChild size="lg" className="shrink-0 rounded-2xl shadow-md">
+              <Link href="/write">
+                <PenTool className="mr-2 h-5 w-5" />
+                New Post
+              </Link>
+            </Button>
+          </div>
         </div>
-        <Button asChild size="lg" className="shrink-0 rounded-2xl shadow-md">
-          <Link href="/write">
-            <PenTool className="mr-2 h-5 w-5" />
-            New Post
-          </Link>
-        </Button>
-      </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
-      >
-        <StatCard
-          title="Total Posts"
-          value={stats.totalPosts}
-          icon={FileText}
-        />
-        <StatCard title="Published" value={stats.publishedPosts} icon={Eye} />
-        <StatCard title="Total Likes" value={stats.totalLikes} icon={Heart} />
-        <StatCard
-          title="Comments"
-          value={stats.totalComments}
-          icon={MessageCircle}
-        />
-      </motion.div>
+        <m.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        >
+          <StatCard
+            title="Total Posts"
+            value={stats.totalPosts}
+            icon={FileText}
+          />
+          <StatCard title="Published" value={stats.publishedPosts} icon={Eye} />
+          <StatCard title="Total Likes" value={stats.totalLikes} icon={Heart} />
+          <StatCard
+            title="Comments"
+            value={stats.totalComments}
+            icon={MessageCircle}
+          />
+        </m.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <Card className="rounded-3xl border border-border/70 shadow-lg glass overflow-hidden">
-          <CardContent className="p-4 sm:p-6">
-            <Tabs defaultValue="all" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 gap-2 rounded-2xl bg-muted/50 p-1 h-auto sm:grid-cols-4">
-                <TabsTrigger value="all" className="rounded-xl">
-                  All ({posts.length})
-                </TabsTrigger>
-                <TabsTrigger value="published" className="rounded-xl">
-                  Published ({published.length})
-                </TabsTrigger>
-                <TabsTrigger value="drafts" className="rounded-xl">
-                  Drafts ({drafts.length})
-                </TabsTrigger>
-                <TabsTrigger value="scheduled" className="rounded-xl gap-1">
-                  <Clock className="w-3 h-3" />
-                  Scheduled ({scheduled.length})
-                </TabsTrigger>
-              </TabsList>
+        <m.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="border-border/70 glass overflow-hidden rounded-3xl border shadow-lg">
+            <CardContent className="p-4 sm:p-6">
+              <Tabs defaultValue="all" className="w-full">
+                <TabsList className="bg-muted/50 grid h-auto w-full grid-cols-2 gap-2 rounded-2xl p-1 sm:grid-cols-5">
+                  <TabsTrigger value="all" className="rounded-xl">
+                    All ({posts.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="published" className="rounded-xl">
+                    Published ({published.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="in_review" className="gap-1 rounded-xl">
+                    <Send className="h-3 w-3" aria-hidden />
+                    In Review ({inReview.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="drafts" className="rounded-xl">
+                    Drafts ({drafts.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="scheduled" className="gap-1 rounded-xl">
+                    <Clock className="h-3 w-3" aria-hidden />
+                    Scheduled ({scheduled.length})
+                  </TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="all" className="mt-6">
-                <DataTable columns={columns} data={posts} />
-              </TabsContent>
-              <TabsContent value="published" className="mt-6">
-                <DataTable columns={columns} data={published} />
-              </TabsContent>
-              <TabsContent value="drafts" className="mt-6">
-                <DataTable columns={columns} data={drafts} />
-              </TabsContent>
-              <TabsContent value="scheduled" className="mt-6">
-                {scheduled.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-border/80 p-12 text-center">
-                    <Clock className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                    <h3 className="text-lg font-semibold mb-2">
-                      No scheduled posts
-                    </h3>
-                    <p className="text-muted-foreground mb-4 text-sm max-w-md mx-auto">
-                      Schedule posts to be published at a specific date and
-                      time.
-                    </p>
-                    <Button asChild className="rounded-2xl">
-                      <Link href="/write">Schedule a post</Link>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {scheduled.map((post) => (
-                      <Card key={post.id} className="rounded-2xl glass">
-                        <CardContent className="p-4">
-                          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex-1 min-w-0">
-                              <Link
-                                href={`/write?edit=${post.id}`}
-                                className="font-medium hover:text-primary transition-colors"
-                              >
-                                {post.title}
-                              </Link>
-                              <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                                <Clock className="w-3 h-3 shrink-0" />
-                                <span>
-                                  Scheduled for{" "}
-                                  {new Date(
-                                    post.scheduled_at!,
-                                  ).toLocaleString()}
-                                </span>
+                <TabsContent value="all" className="mt-6">
+                  <DataTable columns={columns} data={posts} />
+                </TabsContent>
+                <TabsContent value="published" className="mt-6">
+                  <DataTable columns={columns} data={published} />
+                </TabsContent>
+                <TabsContent value="in_review" className="mt-6">
+                  <DataTable columns={columns} data={inReview} />
+                </TabsContent>
+                <TabsContent value="drafts" className="mt-6">
+                  <DataTable columns={columns} data={drafts} />
+                </TabsContent>
+                <TabsContent value="scheduled" className="mt-6">
+                  {scheduled.length === 0 ? (
+                    <div className="border-border/80 rounded-2xl border border-dashed p-12 text-center">
+                      <Clock className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                      <h3 className="mb-2 text-lg font-semibold">
+                        No scheduled posts
+                      </h3>
+                      <p className="text-muted-foreground mx-auto mb-4 max-w-md text-sm">
+                        Schedule posts to be published at a specific date and
+                        time.
+                      </p>
+                      <Button asChild className="rounded-2xl">
+                        <Link href="/write">Schedule a post</Link>
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {scheduled.map((post) => {
+                        const isCsi = Boolean(
+                          post.publication_id ||
+                            post.publication?.slug === "csi",
+                        );
+                        const editHref = isCsi
+                          ? `/csi/write?edit=${post.id}`
+                          : `/write?edit=${post.id}`;
+                        return (
+                          <Card key={post.id} className="glass rounded-2xl">
+                            <CardContent className="p-4">
+                              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <Link
+                                      href={editHref}
+                                      className="hover:text-primary font-medium transition-colors"
+                                    >
+                                      {post.title}
+                                    </Link>
+                                    {isCsi && (
+                                      <Badge
+                                        variant="outline"
+                                        className="border-primary/35 bg-primary/10 text-primary rounded-full px-2 py-0 text-[10px]"
+                                      >
+                                        CSI
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
+                                    <Clock className="h-3 w-3 shrink-0" />
+                                    <span>
+                                      Scheduled for{" "}
+                                      {new Date(
+                                        post.scheduled_at!,
+                                      ).toLocaleString()}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <Badge
+                                    variant="secondary"
+                                    className="rounded-lg"
+                                  >
+                                    <Calendar className="mr-1 h-3 w-3" />
+                                    {formatRelativeTime(post.scheduled_at!)}
+                                  </Badge>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="rounded-xl"
+                                    asChild
+                                  >
+                                    <Link href={editHref}>
+                                      <Edit3 className="mr-1 h-3 w-3" />
+                                      Edit
+                                    </Link>
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeletePost(post.id)}
+                                    className="text-destructive hover:text-destructive rounded-xl"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <Badge variant="secondary" className="rounded-lg">
-                                <Calendar className="w-3 h-3 mr-1" />
-                                {formatRelativeTime(post.scheduled_at!)}
-                              </Badge>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="rounded-xl"
-                                asChild
-                              >
-                                <Link href={`/write?edit=${post.id}`}>
-                                  <Edit3 className="w-3 h-3 mr-1" />
-                                  Edit
-                                </Link>
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeletePost(post.id)}
-                                className="text-destructive hover:text-destructive rounded-xl"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </motion.div>
-    </WriterHubShell>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </m.div>
+      </WriterHubShell>
+    </LazyMotion>
   );
 }

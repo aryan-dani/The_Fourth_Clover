@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, type ReactNode } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { LazyMotion, domAnimation, m, AnimatePresence } from "framer-motion";
 import {
   Bell,
   Check,
@@ -9,6 +9,9 @@ import {
   MessageCircle,
   Reply,
   User,
+  CheckCircle2,
+  AlertCircle,
+  FileCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +27,7 @@ import {
   markAsRead,
   markAllAsRead,
   getUnreadCount,
+  getNotificationHref,
   NotificationWithSender,
 } from "@/features/notifications/notifications";
 import Link from "next/link";
@@ -95,6 +99,18 @@ export function NotificationBell() {
         return <Reply className={className} strokeWidth={1.75} aria-hidden />;
       case "follow":
         return <User className={className} strokeWidth={1.75} aria-hidden />;
+      case "review_submitted":
+        return (
+          <FileCheck className={className} strokeWidth={1.75} aria-hidden />
+        );
+      case "review_approved":
+        return (
+          <CheckCircle2 className={className} strokeWidth={1.75} aria-hidden />
+        );
+      case "changes_requested":
+        return (
+          <AlertCircle className={className} strokeWidth={1.75} aria-hidden />
+        );
       default:
         return <Bell className={className} strokeWidth={1.75} aria-hidden />;
     }
@@ -103,124 +119,123 @@ export function NotificationBell() {
   if (!user) return null;
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <button
-          className="relative flex items-center justify-center w-10 h-10 rounded-full text-muted-foreground hover:text-foreground transition-all duration-300"
-          aria-label="Notifications"
-        >
-          <Bell className="w-[18px] h-[18px]" strokeWidth={1.8} />
-          <AnimatePresence>
-            {unreadCount > 0 && (
-              <motion.span
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0 }}
-                className="absolute top-1 right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center font-medium"
-              >
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        className={cn(
-          "w-80 p-0 rounded-2xl border border-border/50 shadow-2xl bg-popover/98 backdrop-blur-xl overflow-hidden",
-          "origin-top-right duration-200 ease-out",
-          "data-[state=open]:zoom-in-98 data-[state=closed]:zoom-out-98",
-          "data-[side=bottom]:slide-in-from-top-1 data-[side=top]:slide-in-from-bottom-1",
-        )}
-        align="end"
-        sideOffset={12}
-      >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-gradient-to-b from-accent/30 to-transparent">
-          <h3 className="font-semibold text-sm">Notifications</h3>
-          {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleMarkAllAsRead}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              <Check className="h-3 w-3 mr-1" />
-              Mark all read
-            </Button>
+    <LazyMotion features={domAnimation}>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          <button
+            className="text-muted-foreground hover:text-foreground relative flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300"
+            aria-label="Notifications"
+          >
+            <Bell className="h-[18px] w-[18px]" strokeWidth={1.8} />
+            <AnimatePresence>
+              {unreadCount > 0 && (
+                <m.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
+                  className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white"
+                >
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </m.span>
+              )}
+            </AnimatePresence>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          className={cn(
+            "border-border/50 bg-popover/98 w-80 overflow-hidden rounded-2xl border p-0 shadow-2xl backdrop-blur-xl",
+            "origin-top-right duration-200 ease-out",
+            "data-[state=open]:zoom-in-98 data-[state=closed]:zoom-out-98",
+            "data-[side=bottom]:slide-in-from-top-1 data-[side=top]:slide-in-from-bottom-1",
           )}
-        </div>
+          align="end"
+          sideOffset={12}
+        >
+          <div className="border-border/50 from-accent/30 flex items-center justify-between border-b bg-gradient-to-b to-transparent px-4 py-3">
+            <h3 className="text-sm font-semibold">Notifications</h3>
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleMarkAllAsRead}
+                className="text-muted-foreground hover:text-foreground text-xs"
+              >
+                <Check className="mr-1 h-3 w-3" />
+                Mark all read
+              </Button>
+            )}
+          </div>
 
-        <ScrollArea className="h-80 [&_[data-radix-scroll-area-viewport]]:overscroll-y-contain">
-          {loading && notifications.length === 0 ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-            </div>
-          ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
-              <Bell className="h-8 w-8 mb-2 opacity-50" />
-              <p className="text-sm">No notifications yet</p>
-            </div>
-          ) : (
-            <div className="divide-y">
-              {notifications.map((notification) => {
-                const NotificationContent = (
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0">
-                      {notification.from_user ? (
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage
-                            src={notification.from_user.avatar_url || ""}
-                          />
-                          <AvatarFallback className="text-xs">
-                            {notification.from_user.full_name?.[0] || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                      ) : (
-                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                          {getNotificationIcon(notification.type)}
-                        </div>
+          <ScrollArea className="h-80 [&_[data-radix-scroll-area-viewport]]:overscroll-y-contain">
+            {loading && notifications.length === 0 ? (
+              <div className="flex h-32 items-center justify-center">
+                <div className="border-primary h-6 w-6 animate-spin rounded-full border-b-2"></div>
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="text-muted-foreground flex h-32 flex-col items-center justify-center">
+                <Bell className="mb-2 h-8 w-8 opacity-50" />
+                <p className="text-sm">No notifications yet</p>
+              </div>
+            ) : (
+              <div className="divide-y">
+                {notifications.map((notification) => {
+                  const href = getNotificationHref(notification);
+                  const NotificationContent = (
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0">
+                        {notification.from_user ? (
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage
+                              src={notification.from_user.avatar_url || ""}
+                            />
+                            <AvatarFallback className="text-xs">
+                              {notification.from_user.full_name?.[0] || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                        ) : (
+                          <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-full">
+                            {getNotificationIcon(notification.type)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-2 text-sm">
+                          {notification.message}
+                        </p>
+                        <p className="text-muted-foreground mt-1 text-xs">
+                          {formatRelativeTime(notification.created_at)}
+                        </p>
+                      </div>
+                      {!notification.read && (
+                        <div className="bg-primary mt-2 h-2 w-2 flex-shrink-0 rounded-full"></div>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm line-clamp-2">
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {formatRelativeTime(notification.created_at)}
-                      </p>
+                  );
+
+                  const handleClick = () => {
+                    if (!notification.read) {
+                      handleMarkAsRead(notification.id);
+                    }
+                    setIsOpen(false);
+                  };
+
+                  return (
+                    <div
+                      key={notification.id}
+                      className={`hover:bg-muted/50 cursor-pointer p-3 transition-colors duration-150 ${
+                        !notification.read ? "bg-primary/5" : ""
+                      }`}
+                      onClick={handleClick}
+                    >
+                      <Link href={href}>{NotificationContent}</Link>
                     </div>
-                    {!notification.read && (
-                      <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-2"></div>
-                    )}
-                  </div>
-                );
-
-                const handleClick = () => {
-                  if (!notification.read) {
-                    handleMarkAsRead(notification.id);
-                  }
-                  setIsOpen(false);
-                };
-
-                return (
-                  <div
-                    key={notification.id}
-                    className={`p-3 hover:bg-muted/50 transition-colors duration-150 cursor-pointer ${!notification.read ? "bg-primary/5" : ""}`}
-                    onClick={handleClick}
-                  >
-                    {notification.post_id ? (
-                      <Link href={`/post/${notification.post_id}`}>
-                        {NotificationContent}
-                      </Link>
-                    ) : (
-                      NotificationContent
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </ScrollArea>
-      </PopoverContent>
-    </Popover>
+                  );
+                })}
+              </div>
+            )}
+          </ScrollArea>
+        </PopoverContent>
+      </Popover>
+    </LazyMotion>
   );
 }

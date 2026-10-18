@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+import { LazyMotion, domAnimation, m } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/features/auth/auth-context";
 import {
@@ -14,6 +14,7 @@ import {
 import {
   Menu,
   BookOpen,
+  Terminal,
   PenTool,
   Users,
   User,
@@ -27,12 +28,14 @@ import {
   Heart,
   MessageCircle,
   Reply,
+  CheckCircle2,
+  AlertCircle,
+  FileCheck,
 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -41,7 +44,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import {
@@ -49,6 +58,7 @@ import {
   markAsRead,
   markAllAsRead,
   getUnreadCount,
+  getNotificationHref,
   NotificationWithSender,
 } from "@/features/notifications/notifications";
 import { formatRelativeTime, cn } from "@/lib/utils";
@@ -61,13 +71,6 @@ import {
   NAV_STROKE,
 } from "@/components/layout/nav-metrics";
 
-function notificationItemHref(n: NotificationWithSender): string {
-  if (n.type === "follow" && n.from_user?.username) {
-    return `/profile/${encodeURIComponent(n.from_user.username)}`;
-  }
-  return "/notifications";
-}
-
 function notificationIconForType(type: string) {
   switch (type) {
     case "like":
@@ -78,6 +81,12 @@ function notificationIconForType(type: string) {
       return Reply;
     case "follow":
       return User;
+    case "review_submitted":
+      return FileCheck;
+    case "review_approved":
+      return CheckCircle2;
+    case "changes_requested":
+      return AlertCircle;
     default:
       return Bell;
   }
@@ -90,7 +99,9 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [notifPopoverOpen, setNotifPopoverOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationWithSender[]>([]);
+  const [notifications, setNotifications] = useState<NotificationWithSender[]>(
+    [],
+  );
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifLoading, setNotifLoading] = useState(false);
   const [navPendingHref, setNavPendingHref] = useState<string | null>(null);
@@ -98,15 +109,19 @@ export function Header() {
 
   const userId = user?.id;
 
-  const handleMainNavClick = useCallback((href: string) => {
-    if (pathname !== href) setNavPendingHref(href);
-  }, [pathname]);
+  const handleMainNavClick = useCallback(
+    (href: string) => {
+      if (pathname !== href) setNavPendingHref(href);
+    },
+    [pathname],
+  );
 
   useEffect(() => {
     if (navPendingHref && pathname === navPendingHref) {
       setNavPendingHref(null);
     }
   }, [pathname, navPendingHref]);
+
   const fetchNotifications = useCallback(async () => {
     if (!userId) return;
     setNotifLoading(true);
@@ -161,18 +176,32 @@ export function Header() {
     icon: typeof BookOpen;
   }[] = [
     { name: "Explore", href: "/explore", icon: BookOpen },
+    { name: "CSI", href: "/csi", icon: Terminal },
     ...(user
       ? [{ name: "Following", href: "/explore/following", icon: Users }]
       : []),
     { name: "Write", href: "/write", icon: PenTool },
   ];
 
-  const isActive = (href: string) => pathname === href;
+  const isActive = (href: string) => {
+    if (href === "/csi") {
+      return (
+        pathname === "/csi" ||
+        (pathname.startsWith("/csi/") && pathname !== "/csi/write")
+      );
+    }
+    if (href === "/write") {
+      return pathname === "/write" || pathname === "/csi/write";
+    }
+    return pathname === href;
+  };
   const isExploreActive = pathname === "/explore";
+  const isCsiActive = isActive("/csi");
   const isFollowingActive = pathname === "/explore/following";
+  const isWriteActive = isActive("/write");
 
   const pillSpring = {
-    type: "spring",
+    type: "spring" as const,
     stiffness: 700,
     damping: 30,
   };
@@ -180,9 +209,9 @@ export function Header() {
   const quickSpring = springSnappy;
 
   return (
-    <>
+    <LazyMotion features={domAnimation}>
       {/* Left - Logo */}
-      <motion.header
+      <m.header
         initial={false}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.35, ease: motionEase }}
@@ -191,32 +220,32 @@ export function Header() {
         <Tooltip>
           <TooltipTrigger asChild>
             <Link href="/" className="group" aria-label="Home">
-              <motion.div
+              <m.div
                 whileHover={{ scale: 1.08, rotate: -4 }}
                 whileTap={{ scale: 0.94 }}
                 transition={quickSpring}
-                className="flex h-[52px] w-[52px] items-center justify-center rounded-full border border-border/60 bg-card shadow-lg ring-1 ring-border"
+                className="border-border/60 bg-card ring-border flex h-[52px] w-[52px] items-center justify-center rounded-full border shadow-lg ring-1"
               >
                 <span className="text-lg leading-none" aria-hidden>
                   🍀
                 </span>
-              </motion.div>
+              </m.div>
             </Link>
           </TooltipTrigger>
           <TooltipContent side="bottom" sideOffset={10}>
             <p className="text-xs font-medium">Home</p>
           </TooltipContent>
         </Tooltip>
-      </motion.header>
+      </m.header>
 
       {/* Center - Navigation Pill */}
-      <motion.header
+      <m.header
         initial={false}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.35, ease: motionEase }}
-        className="fixed top-4 inset-x-0 z-50 flex justify-center pointer-events-none"
+        className="pointer-events-none fixed inset-x-0 top-4 z-50 flex justify-center"
       >
-        <motion.nav
+        <m.nav
           layout
           transition={quickSpring}
           className={cn(
@@ -224,7 +253,7 @@ export function Header() {
             "pointer-events-auto gap-1 px-1 shadow-lg transition-shadow duration-200",
             scrolled
               ? "border-border/70 bg-card/90 shadow-xl"
-              : "border-border/50 bg-card/85"
+              : "border-border/50 bg-card/85",
           )}
         >
           {/* Explore */}
@@ -233,6 +262,7 @@ export function Header() {
               <Link
                 href="/explore"
                 onClick={() => handleMainNavClick("/explore")}
+                aria-label="Explore"
                 className={cn(
                   NAV_ICON_BOX,
                   "relative transition-all duration-150",
@@ -241,17 +271,17 @@ export function Header() {
                     : "",
                   isExploreActive
                     ? "text-primary"
-                    : "text-foreground/80 hover:text-foreground dark:text-foreground/85 dark:hover:text-foreground"
+                    : "text-foreground/80 hover:text-foreground dark:text-foreground/85 dark:hover:text-foreground",
                 )}
               >
                 {isExploreActive && (
-                  <motion.div
+                  <m.div
                     layoutId="activeNavBg"
-                    className="absolute inset-0 rounded-full bg-primary/15 ring-1 ring-inset ring-primary/25"
+                    className="bg-primary/15 ring-primary/25 absolute inset-0 rounded-full ring-1 ring-inset"
                     transition={pillSpring}
                   />
                 )}
-                <motion.div
+                <m.div
                   whileHover={{ scale: 1.06 }}
                   whileTap={{ scale: 0.94 }}
                   transition={quickSpring}
@@ -261,11 +291,52 @@ export function Header() {
                     className={NAV_ICON_CLASS}
                     strokeWidth={NAV_STROKE}
                   />
-                </motion.div>
+                </m.div>
               </Link>
             </TooltipTrigger>
             <TooltipContent side="bottom" sideOffset={10}>
               <p className="text-xs font-medium">Explore</p>
+            </TooltipContent>
+          </Tooltip>
+
+          {/* CSI */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                href="/csi"
+                onClick={() => handleMainNavClick("/csi")}
+                aria-label="CSI"
+                className={cn(
+                  NAV_ICON_BOX,
+                  "relative transition-all duration-150",
+                  navPendingHref === "/csi" && !isCsiActive ? "opacity-55" : "",
+                  isCsiActive
+                    ? "text-primary"
+                    : "text-foreground/80 hover:text-foreground dark:text-foreground/85 dark:hover:text-foreground",
+                )}
+              >
+                {isCsiActive && (
+                  <m.div
+                    layoutId="activeNavBg"
+                    className="bg-primary/15 ring-primary/25 absolute inset-0 rounded-full ring-1 ring-inset"
+                    transition={pillSpring}
+                  />
+                )}
+                <m.div
+                  whileHover={{ scale: 1.06 }}
+                  whileTap={{ scale: 0.94 }}
+                  transition={quickSpring}
+                  className="relative z-10"
+                >
+                  <Terminal
+                    className={NAV_ICON_CLASS}
+                    strokeWidth={NAV_STROKE}
+                  />
+                </m.div>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={10}>
+              <p className="text-xs font-medium">CSI</p>
             </TooltipContent>
           </Tooltip>
 
@@ -276,6 +347,7 @@ export function Header() {
                 <Link
                   href="/explore/following"
                   onClick={() => handleMainNavClick("/explore/following")}
+                  aria-label="Following"
                   className={cn(
                     NAV_ICON_BOX,
                     "relative transition-all duration-150",
@@ -285,24 +357,27 @@ export function Header() {
                       : "",
                     isFollowingActive
                       ? "text-primary"
-                      : "text-foreground/80 hover:text-foreground dark:text-foreground/85 dark:hover:text-foreground"
+                      : "text-foreground/80 hover:text-foreground dark:text-foreground/85 dark:hover:text-foreground",
                   )}
                 >
                   {isFollowingActive && (
-                    <motion.div
+                    <m.div
                       layoutId="activeNavBg"
-                      className="absolute inset-0 rounded-full bg-primary/15 ring-1 ring-inset ring-primary/25"
+                      className="bg-primary/15 ring-primary/25 absolute inset-0 rounded-full ring-1 ring-inset"
                       transition={pillSpring}
                     />
                   )}
-                  <motion.div
+                  <m.div
                     whileHover={{ scale: 1.06 }}
                     whileTap={{ scale: 0.94 }}
                     transition={quickSpring}
                     className="relative z-10"
                   >
-                    <Users className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
-                  </motion.div>
+                    <Users
+                      className={NAV_ICON_CLASS}
+                      strokeWidth={NAV_STROKE}
+                    />
+                  </m.div>
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="bottom" sideOffset={10}>
@@ -317,32 +392,36 @@ export function Header() {
               <Link
                 href="/write"
                 onClick={() => handleMainNavClick("/write")}
+                aria-label="Write"
                 className={cn(
                   NAV_ICON_BOX,
                   "relative transition-all duration-150",
-                  navPendingHref === "/write" && pathname !== "/write"
+                  navPendingHref === "/write" && !isWriteActive
                     ? "opacity-55"
                     : "",
-                  isActive("/write")
+                  isWriteActive
                     ? "text-primary"
-                    : "text-foreground/80 hover:text-foreground dark:text-foreground/85 dark:hover:text-foreground"
+                    : "text-foreground/80 hover:text-foreground dark:text-foreground/85 dark:hover:text-foreground",
                 )}
               >
-                {isActive("/write") && (
-                  <motion.div
+                {isWriteActive && (
+                  <m.div
                     layoutId="activeNavBg"
-                    className="absolute inset-0 rounded-full bg-primary/15 ring-1 ring-inset ring-primary/25"
+                    className="bg-primary/15 ring-primary/25 absolute inset-0 rounded-full ring-1 ring-inset"
                     transition={pillSpring}
                   />
                 )}
-                <motion.div
+                <m.div
                   whileHover={{ scale: 1.06 }}
                   whileTap={{ scale: 0.94 }}
                   transition={quickSpring}
                   className="relative z-10"
                 >
-                  <PenTool className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
-                </motion.div>
+                  <PenTool
+                    className={NAV_ICON_CLASS}
+                    strokeWidth={NAV_STROKE}
+                  />
+                </m.div>
               </Link>
             </TooltipTrigger>
             <TooltipContent side="bottom" sideOffset={10}>
@@ -352,50 +431,56 @@ export function Header() {
 
           {/* Mobile menu */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild className="md:hidden ml-1">
-              <motion.button
+            <SheetTrigger asChild className="ml-1 md:hidden">
+              <m.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 transition={quickSpring}
+                aria-label="Open navigation menu"
                 className={cn(
                   NAV_ICON_BOX,
-                  "text-foreground/80 transition-colors duration-150 hover:bg-muted/90 hover:text-foreground dark:text-foreground/85"
+                  "text-foreground/80 hover:bg-muted/90 hover:text-foreground transition-colors duration-150 dark:text-foreground/85",
                 )}
               >
                 <Menu className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
-              </motion.button>
+              </m.button>
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-80 rounded-l-3xl bg-card/97 backdrop-blur-xl border-l border-border/60 p-0 shadow-2xl"
+              className="bg-card/97 border-border/60 w-80 rounded-l-3xl border-l p-0 shadow-2xl backdrop-blur-xl"
             >
               <SheetTitle className="sr-only">Navigation menu</SheetTitle>
               <SheetDescription className="sr-only">
                 Site sections, theme, notifications, and sign-in links.
               </SheetDescription>
-              <div className="flex flex-col h-full">
-                <div className="flex items-center gap-3 p-5 border-b border-border/60 bg-muted/40">
-                <div className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-muted ring-2 ring-border">
-                  <span className="text-2xl leading-none" aria-hidden>
-                    🍀
-                  </span>
-                </div>
+              <div className="flex h-full flex-col">
+                <div className="border-border/60 bg-muted/40 flex items-center gap-3 border-b p-5">
+                  <div className="bg-muted ring-border flex h-[52px] w-[52px] items-center justify-center rounded-full ring-2">
+                    <span className="text-2xl leading-none" aria-hidden>
+                      🍀
+                    </span>
+                  </div>
                   <div>
-                    <span className="font-display font-semibold text-foreground">The Fourth Clover</span>
-                    <p className="text-xs text-muted-foreground font-sans">Navigation</p>
+                    <span className="font-display text-foreground font-semibold">
+                      The Fourth Clover
+                    </span>
+                    <p className="text-muted-foreground font-sans text-xs">
+                      Navigation
+                    </p>
                   </div>
                 </div>
 
-                <nav className="flex flex-col p-3 gap-1">
+                <nav className="flex flex-col gap-1 p-3">
                   <Link
                     href="/"
                     onClick={() => setIsOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-sans ${pathname === "/"
-                      ? "bg-primary/12 text-primary ring-1 ring-primary/20"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
-                      }`}
+                    className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-sans transition-all ${
+                      pathname === "/"
+                        ? "bg-primary/12 text-primary ring-primary/20 ring-1"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                    }`}
                   >
-                    <span className="text-2xl leading-none mr-1" aria-hidden>
+                    <span className="mr-1 text-2xl leading-none" aria-hidden>
                       🍀
                     </span>
                     <span className="font-medium">Home</span>
@@ -405,35 +490,38 @@ export function Header() {
                       key={item.name}
                       href={item.href}
                       onClick={() => setIsOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-sans ${isActive(item.href)
-                        ? "bg-primary/12 text-primary ring-1 ring-primary/15"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
-                        }`}
+                      className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-sans transition-all ${
+                        isActive(item.href)
+                          ? "bg-primary/12 text-primary ring-primary/15 ring-1"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                      }`}
                     >
-                      <item.icon className="w-5 h-5" strokeWidth={1.8} />
+                      <item.icon className="h-5 w-5" strokeWidth={1.8} />
                       <span className="font-medium">{item.name}</span>
                     </Link>
                   ))}
                 </nav>
 
                 {user && (
-                  <div className="px-3 pb-3 space-y-2 border-b border-border/50">
-                    <p className="px-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  <div className="border-border/50 space-y-2 border-b px-3 pb-3">
+                    <p className="text-muted-foreground px-2 text-[11px] font-medium tracking-wide uppercase">
                       Appearance & Alerts
                     </p>
                     <div className="flex items-center gap-2 px-2">
                       <ThemeToggle />
-                      <span className="text-sm text-muted-foreground">Theme</span>
+                      <span className="text-muted-foreground text-sm">
+                        Theme
+                      </span>
                     </div>
                     <Link
                       href="/notifications"
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 rounded-2xl text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                      className="text-muted-foreground hover:text-foreground hover:bg-muted/80 flex items-center gap-3 rounded-2xl px-4 py-3"
                     >
-                      <Bell className="w-5 h-5" strokeWidth={1.8} />
+                      <Bell className="h-5 w-5" strokeWidth={1.8} />
                       <span className="font-medium">Notifications</span>
                       {unreadCount > 0 && (
-                        <span className="ml-auto px-2 py-0.5 text-[10px] font-bold bg-red-500 text-white rounded-full">
+                        <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
                           {unreadCount > 9 ? "9+" : unreadCount}
                         </span>
                       )}
@@ -442,29 +530,26 @@ export function Header() {
                 )}
 
                 {!user && (
-                  <div className="mt-auto p-4 border-t border-border/50 space-y-2">
+                  <div className="border-border/50 mt-auto space-y-2 border-t p-4">
                     <Button
                       asChild
                       variant="outline"
-                      className="w-full rounded-2xl h-12"
+                      className="h-12 w-full rounded-2xl"
                     >
                       <Link
                         href="/auth/signin"
                         onClick={() => setIsOpen(false)}
                       >
-                        <LogIn className="w-4 h-4 mr-2" />
+                        <LogIn className="mr-2 h-4 w-4" />
                         Sign In
                       </Link>
                     </Button>
-                    <Button
-                      asChild
-                      className="w-full rounded-2xl h-12"
-                    >
+                    <Button asChild className="h-12 w-full rounded-2xl">
                       <Link
                         href="/auth/signup"
                         onClick={() => setIsOpen(false)}
                       >
-                        <UserPlus className="w-4 h-4 mr-2" />
+                        <UserPlus className="mr-2 h-4 w-4" />
                         Get Started
                       </Link>
                     </Button>
@@ -473,28 +558,28 @@ export function Header() {
               </div>
             </SheetContent>
           </Sheet>
-        </motion.nav>
-      </motion.header>
+        </m.nav>
+      </m.header>
 
-      {/* Right — theme | notifications | account (aligned segmented bar) */}
-      <motion.div
+      {/* Right - theme | notifications | account (aligned segmented bar) */}
+      <m.div
         initial={false}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.35, ease: motionEase, delay: 0.05 }}
-        className="fixed top-4 right-4 z-50 hidden md:flex h-[52px] items-center"
+        className="fixed top-4 right-4 z-50 hidden h-[52px] items-center md:flex"
       >
         {!isClient || loading ? (
           <div
             className={cn(
               NAV_PILL_SHELL,
-              "w-44 animate-pulse border-border/50 bg-muted px-1 shadow-none"
+              "border-border/50 bg-muted w-44 animate-pulse px-1 shadow-none",
             )}
           />
         ) : user ? (
           <div
             className={cn(
               NAV_PILL_SHELL,
-              "gap-0 border-border/70 bg-card/95 px-1 shadow-md dark:bg-card/90 dark:shadow-black/20"
+              "border-border/70 bg-card/95 dark:bg-card/90 gap-0 px-1 shadow-md dark:shadow-black/20",
             )}
             role="toolbar"
             aria-label="Account and settings"
@@ -503,59 +588,59 @@ export function Header() {
             <span className={NAV_PILL_DIVIDER} aria-hidden />
             <Popover open={notifPopoverOpen} onOpenChange={setNotifPopoverOpen}>
               <PopoverTrigger asChild>
-                <motion.button
+                <m.button
                   type="button"
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.96 }}
                   transition={quickSpring}
                   className={cn(
                     NAV_ICON_BOX,
-                    "relative text-foreground/85 transition-colors hover:bg-muted/90 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    "text-foreground/85 hover:bg-muted/90 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background relative transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
                   )}
                   aria-label="Notifications"
                 >
                   <Bell className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
                   {unreadCount > 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-card shadow-sm">
+                    <span className="ring-card absolute -top-0.5 -right-0.5 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-sm ring-2">
                       {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                   )}
-                </motion.button>
+                </m.button>
               </PopoverTrigger>
               <PopoverContent
                 align="end"
                 sideOffset={10}
-                className="w-[min(24rem,calc(100vw-2rem))] p-0 rounded-2xl border-border/80 shadow-xl"
+                className="border-border/80 w-[min(24rem,calc(100vw-2rem))] rounded-2xl p-0 shadow-xl"
               >
-                <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border">
-                  <p className="font-semibold text-sm">Notifications</p>
+                <div className="border-border flex items-center justify-between gap-2 border-b px-4 py-3">
+                  <p className="text-sm font-semibold">Notifications</p>
                   {unreadCount > 0 && (
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-8 text-xs rounded-lg"
+                      className="h-8 rounded-lg text-xs"
                       onClick={async () => {
                         if (!userId) return;
                         await markAllAsRead(userId);
                         setNotifications((prev) =>
-                          prev.map((n) => ({ ...n, read: true }))
+                          prev.map((n) => ({ ...n, read: true })),
                         );
                         setUnreadCount(0);
                       }}
                     >
-                      <Check className="w-3.5 h-3.5 mr-1" />
+                      <Check className="mr-1 h-3.5 w-3.5" />
                       Mark All Read
                     </Button>
                   )}
                 </div>
                 <ScrollArea className="h-[min(22rem,50vh)]">
                   {notifLoading && notifications.length === 0 ? (
-                    <p className="p-4 text-sm text-muted-foreground">
-                      Loading…
+                    <p className="text-muted-foreground p-4 text-sm">
+                      Loading...
                     </p>
                   ) : notifications.length === 0 ? (
-                    <p className="p-4 text-sm text-muted-foreground">
+                    <p className="text-muted-foreground p-4 text-sm">
                       You&apos;re all caught up.
                     </p>
                   ) : (
@@ -564,26 +649,28 @@ export function Header() {
                         const IconCmp = n.from_user
                           ? null
                           : notificationIconForType(n.type);
-                        const href = notificationItemHref(n);
+                        const href = getNotificationHref(n);
                         return (
                           <li key={n.id}>
                             <Link
                               href={href}
-                              className={`flex gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-muted/80 ${!n.read ? "bg-primary/5" : ""}`}
+                              className={`hover:bg-muted/80 flex gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
+                                !n.read ? "bg-primary/5" : ""
+                              }`}
                               onClick={async () => {
                                 if (!n.read) {
                                   await markAsRead(n.id);
                                   setNotifications((prev) =>
                                     prev.map((x) =>
-                                      x.id === n.id ? { ...x, read: true } : x
-                                    )
+                                      x.id === n.id ? { ...x, read: true } : x,
+                                    ),
                                   );
                                   setUnreadCount((c) => Math.max(0, c - 1));
                                 }
                                 setNotifPopoverOpen(false);
                               }}
                             >
-                              <div className="shrink-0 mt-0.5">
+                              <div className="mt-0.5 shrink-0">
                                 {n.from_user ? (
                                   <Avatar className="h-9 w-9">
                                     <AvatarImage
@@ -594,21 +681,21 @@ export function Header() {
                                     </AvatarFallback>
                                   </Avatar>
                                 ) : IconCmp ? (
-                                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
-                                    <IconCmp className="h-4 w-4 text-primary" />
+                                  <div className="bg-muted flex h-9 w-9 items-center justify-center rounded-full">
+                                    <IconCmp className="text-primary h-4 w-4" />
                                   </div>
                                 ) : null}
                               </div>
                               <div className="min-w-0 flex-1">
-                                <p className="text-sm leading-snug line-clamp-3">
+                                <p className="line-clamp-3 text-sm leading-snug">
                                   {n.message}
                                 </p>
-                                <p className="text-[11px] text-muted-foreground mt-1">
+                                <p className="text-muted-foreground mt-1 text-[11px]">
                                   {formatRelativeTime(n.created_at)}
                                 </p>
                               </div>
                               {!n.read && (
-                                <span className="shrink-0 w-2 h-2 rounded-full bg-primary mt-2" />
+                                <span className="bg-primary mt-2 h-2 w-2 shrink-0 rounded-full" />
                               )}
                             </Link>
                           </li>
@@ -617,9 +704,17 @@ export function Header() {
                     </ul>
                   )}
                 </ScrollArea>
-                <div className="border-t border-border p-2">
-                  <Button variant="ghost" size="sm" className="w-full rounded-xl" asChild>
-                    <Link href="/notifications" onClick={() => setNotifPopoverOpen(false)}>
+                <div className="border-border border-t p-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full rounded-xl"
+                    asChild
+                  >
+                    <Link
+                      href="/notifications"
+                      onClick={() => setNotifPopoverOpen(false)}
+                    >
                       View All Notifications
                     </Link>
                   </Button>
@@ -629,90 +724,93 @@ export function Header() {
 
             <span className={NAV_PILL_DIVIDER} aria-hidden />
 
-            <DropdownMenu open={profileMenuOpen} onOpenChange={setProfileMenuOpen}>
+            <DropdownMenu
+              open={profileMenuOpen}
+              onOpenChange={setProfileMenuOpen}
+            >
               <DropdownMenuTrigger asChild>
-                <motion.button
+                <m.button
                   type="button"
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.96 }}
                   transition={quickSpring}
                   className={cn(
                     NAV_ICON_BOX,
-                    "bg-gradient-to-br from-primary/20 via-primary/8 to-transparent ring-1 ring-border/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    "from-primary/20 via-primary/8 ring-border/50 focus-visible:ring-ring focus-visible:ring-offset-background bg-gradient-to-br to-transparent ring-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
                   )}
                   aria-label="Account menu"
                 >
-                  <Avatar className="h-8 w-8 ring-2 ring-background">
+                  <Avatar className="ring-background h-8 w-8 ring-2">
                     <AvatarImage
                       src={
                         profile?.avatar_url || user.user_metadata?.avatar_url
                       }
                     />
-                    <AvatarFallback className="bg-primary text-xs font-bold text-primary-foreground">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
                       {profile?.full_name?.[0] ||
                         user.user_metadata?.full_name?.[0] ||
                         user.email?.[0]?.toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                </motion.button>
+                </m.button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
                 sideOffset={12}
-                className="w-72 rounded-xl border border-border shadow-lg bg-popover p-0 overflow-hidden"
+                className="border-border bg-popover w-72 overflow-hidden rounded-xl border p-0 shadow-lg"
               >
-                <div className="px-4 py-3 border-b border-border">
+                <div className="border-border border-b px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <Avatar className="w-10 h-10">
+                    <Avatar className="h-10 w-10">
                       <AvatarImage
                         src={
                           profile?.avatar_url || user.user_metadata?.avatar_url
                         }
                       />
-                      <AvatarFallback className="bg-primary text-primary-foreground font-bold text-sm">
+                      <AvatarFallback className="bg-primary text-primary-foreground text-sm font-bold">
                         {profile?.full_name?.[0] ||
                           user.user_metadata?.full_name?.[0] ||
                           user.email?.[0]?.toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">
                         {profile?.full_name ||
                           user.user_metadata?.full_name ||
                           "Writer"}
                       </p>
-                      <p className="text-xs text-muted-foreground truncate">
+                      <p className="text-muted-foreground truncate text-xs">
                         @{profile?.username || "user"}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-1.5 border-b border-border">
+                <div className="border-border border-b p-1.5">
                   <DropdownMenuItem asChild>
                     <Link
                       href="/dashboard"
-                      className="flex items-center gap-3 py-2 px-3 cursor-pointer rounded-lg"
+                      className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2"
                     >
-                      <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
+                      <LayoutDashboard className="text-muted-foreground h-4 w-4" />
                       <span className="text-sm font-medium">Dashboard</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link
                       href="/profile"
-                      className="flex items-center gap-3 py-2 px-3 cursor-pointer rounded-lg"
+                      className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2"
                     >
-                      <User className="w-4 h-4 text-muted-foreground" />
+                      <User className="text-muted-foreground h-4 w-4" />
                       <span className="text-sm font-medium">Edit Profile</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link
                       href="/settings"
-                      className="flex items-center gap-3 py-2 px-3 cursor-pointer rounded-lg"
+                      className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2"
                     >
-                      <Settings className="w-4 h-4 text-muted-foreground" />
+                      <Settings className="text-muted-foreground h-4 w-4" />
                       <span className="text-sm font-medium">Settings</span>
                     </Link>
                   </DropdownMenuItem>
@@ -721,9 +819,9 @@ export function Header() {
                 <div className="p-1.5">
                   <DropdownMenuItem
                     onClick={signOut}
-                    className="flex items-center gap-3 py-2 px-3 cursor-pointer rounded-lg text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10"
+                    className="text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2"
                   >
-                    <LogOut className="w-4 h-4" />
+                    <LogOut className="h-4 w-4" />
                     <span className="text-sm font-medium">Sign Out</span>
                   </DropdownMenuItem>
                 </div>
@@ -731,12 +829,12 @@ export function Header() {
             </DropdownMenu>
           </div>
         ) : (
-          <motion.div
+          <m.div
             layout
             transition={quickSpring}
             className={cn(
               NAV_PILL_SHELL,
-              "gap-0 border-border/70 bg-card/95 px-1 shadow-md dark:bg-card/90 dark:shadow-black/20"
+              "border-border/70 bg-card/95 dark:bg-card/90 gap-0 px-1 shadow-md dark:shadow-black/20",
             )}
             role="toolbar"
             aria-label="Sign in and appearance"
@@ -745,7 +843,7 @@ export function Header() {
             <span className={NAV_PILL_DIVIDER} aria-hidden />
             <Tooltip>
               <TooltipTrigger asChild>
-                <motion.div
+                <m.div
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.96 }}
                   transition={quickSpring}
@@ -754,12 +852,12 @@ export function Header() {
                     href="/auth/signin"
                     className={cn(
                       NAV_ICON_BOX,
-                      "text-foreground/85 transition-colors hover:bg-muted/90 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      "text-foreground/85 hover:bg-muted/90 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                     )}
                   >
                     <LogIn className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
                   </Link>
-                </motion.div>
+                </m.div>
               </TooltipTrigger>
               <TooltipContent side="bottom" sideOffset={8}>
                 <p className="text-xs font-medium">Sign in</p>
@@ -768,7 +866,7 @@ export function Header() {
             <span className={NAV_PILL_DIVIDER} aria-hidden />
             <Tooltip>
               <TooltipTrigger asChild>
-                <motion.div
+                <m.div
                   whileHover={{ scale: 1.04 }}
                   whileTap={{ scale: 0.96 }}
                   transition={quickSpring}
@@ -777,23 +875,31 @@ export function Header() {
                     href="/auth/signup"
                     className={cn(
                       NAV_ICON_BOX,
-                      "bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      "bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring focus-visible:ring-offset-background shadow-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                     )}
                   >
-                    <UserPlus className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
+                    <UserPlus
+                      className={NAV_ICON_CLASS}
+                      strokeWidth={NAV_STROKE}
+                    />
                   </Link>
-                </motion.div>
+                </m.div>
               </TooltipTrigger>
               <TooltipContent side="bottom" sideOffset={8}>
                 <p className="text-xs font-medium">Get started</p>
               </TooltipContent>
             </Tooltip>
-          </motion.div>
+          </m.div>
         )}
-      </motion.div>
+      </m.div>
 
-      {/* Spacer: write page uses its own top toolbar aligned with fixed chrome */}
-      <div className={pathname === "/write" ? "h-0" : "h-20"} aria-hidden />
-    </>
+      {/* Spacer: write pages use their own top toolbar aligned with fixed chrome */}
+      <div
+        className={
+          pathname === "/write" || pathname === "/csi/write" ? "h-0" : "h-20"
+        }
+        aria-hidden
+      />
+    </LazyMotion>
   );
 }

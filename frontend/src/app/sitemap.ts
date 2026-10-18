@@ -9,6 +9,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = [
     { url: absoluteUrl("/"), changeFrequency: "weekly", priority: 1 },
     { url: absoluteUrl("/explore"), changeFrequency: "daily", priority: 0.9 },
+    { url: absoluteUrl("/csi"), changeFrequency: "daily", priority: 0.9 },
     { url: absoluteUrl("/about"), changeFrequency: "monthly", priority: 0.5 },
     { url: absoluteUrl("/privacy"), changeFrequency: "yearly", priority: 0.3 },
     {
@@ -23,16 +24,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     listProfileUsernamesForSitemap(),
   ]);
 
-  const postEntries: MetadataRoute.Sitemap = postRows.map((p) => ({
-    url: absoluteUrl(`/post/${encodeURIComponent(p.slug)}`),
-    lastModified: p.updated_at
-      ? new Date(p.updated_at)
-      : p.published_at
-        ? new Date(p.published_at)
-        : undefined,
-    changeFrequency: "weekly",
-    priority: 0.8,
-  }));
+  const postEntries: MetadataRoute.Sitemap = postRows.map((p) => {
+    const routePrefix = p.publication_slug === "csi" ? "/csi" : "/post";
+    return {
+      url: absoluteUrl(`${routePrefix}/${encodeURIComponent(p.slug)}`),
+      lastModified: p.updated_at
+        ? new Date(p.updated_at)
+        : p.published_at
+          ? new Date(p.published_at)
+          : undefined,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    };
+  });
 
   const profileEntries: MetadataRoute.Sitemap = profileRows.map((row) => ({
     url: absoluteUrl(`/profile/${encodeURIComponent(row.username)}`),

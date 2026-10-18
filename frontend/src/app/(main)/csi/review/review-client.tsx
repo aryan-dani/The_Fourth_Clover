@@ -36,7 +36,7 @@ import {
   approvePublicationPostAction,
   requestPublicationChangesAction,
 } from "@/features/data/server-actions";
-import { formatDate, formatReadTime } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
 import type { PostWithAuthor } from "@/types/database";
 
@@ -202,7 +202,7 @@ export function CsiReviewClient({
                               </span>
                               <span className="text-muted-foreground flex items-center gap-1 text-xs">
                                 <Clock className="h-3.5 w-3.5" aria-hidden />
-                                {formatReadTime(post.read_time)}
+                                {post.read_time} min read
                               </span>
                             </div>
 
