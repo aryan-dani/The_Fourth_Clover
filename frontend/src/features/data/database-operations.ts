@@ -388,10 +388,46 @@ export class DatabaseOperations {
           avatar_url
         ),
         likes(count),
-        comments(count)
+        comments(count),
+        publication:publications (
+          id,
+          slug,
+          name
+        )
       `)
       .limit(limit)
       .order("created_at", { ascending: false });
+  }
+
+  static async getPublicationMembersClient(publicationSlug: string) {
+    const { data: pub } = await supabase
+      .from("publications")
+      .select("id")
+      .eq("slug", publicationSlug)
+      .maybeSingle();
+
+    if (!pub) {
+      return { data: [], error: null };
+    }
+
+    return await supabase
+      .from("publication_members")
+      .select(`
+        publication_id,
+        user_id,
+        role,
+        created_at,
+        profile:profiles!publication_members_user_id_fkey (
+          id,
+          username,
+          full_name,
+          avatar_url,
+          bio
+        )
+      `)
+      .eq("publication_id", pub.id)
+      .order("role", { ascending: true })
+      .order("created_at", { ascending: true });
   }
 }
 
@@ -424,4 +460,5 @@ export const {
   isUserAdmin,
   getAllUsers,
   getAllPostsAdmin,
+  getPublicationMembersClient,
 } = DatabaseOperations;
