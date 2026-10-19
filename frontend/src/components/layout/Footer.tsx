@@ -117,7 +117,7 @@ export function Footer() {
         </div>
 
         <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-border/70 pt-6 text-xs text-muted-foreground sm:flex-row">
-          <p className="font-mono text-[11px]">
+          <p className="font-mono text-[11px]" suppressHydrationWarning>
             © {new Date().getFullYear()} The Fourth Clover · CSI MIT-WPU
           </p>
           <p className="font-mono text-[11px]">

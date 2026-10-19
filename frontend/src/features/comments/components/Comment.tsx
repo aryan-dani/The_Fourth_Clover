@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { cn, formatRelativeTime } from "@/lib/utils";import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
+import { RelativeTime } from "@/components/time/RelativeTime";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { AddComment } from "./AddComment";
 import { Trash2, MoreHorizontal } from "lucide-react";
@@ -93,7 +95,7 @@ export function Comment({
                 {comment.author.username}
               </span>
               <span className="text-xs text-muted-foreground">
-                {formatRelativeTime(comment.created_at)}
+                <RelativeTime date={comment.created_at} />
               </span>
             </div>
             {isOwner && (

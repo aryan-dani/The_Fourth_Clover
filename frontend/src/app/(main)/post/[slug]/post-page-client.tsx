@@ -107,14 +107,16 @@ export function PostPageClient({
 
   const checkIfLiked = useCallback(async (postId: string, userId: string) => {
     try {
+      // maybeSingle avoids PostgREST 406 when the user has not liked yet
+      // (.single() requests an object and 0 rows → HTTP 406).
       const { data, error } = await supabase
         .from("likes")
         .select("id")
         .eq("post_id", postId)
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== "PGRST116") {
+      if (error) {
         logSupabaseError("Check If Liked", error, { postId, userId });
         return;
       }

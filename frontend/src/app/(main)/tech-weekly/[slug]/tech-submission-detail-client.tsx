@@ -28,9 +28,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/features/auth/auth-context";
-import { formatRelativeTime } from "@/lib/utils";
+import { RelativeTime } from "@/components/time/RelativeTime";
+import { supabase } from "@/lib/supabase";
 import {
-  toggleTechReactionAction,
   addTechCommentAction,
   deleteTechCommentAction,
   submitTechReportAction,
@@ -121,18 +121,48 @@ export function TechSubmissionDetailClient({
 
     setReactingType(reactionType);
     try {
-      const res = await toggleTechReactionAction({
-        submissionId: submission.id,
-        reactionType,
-        slug: submission.slug,
-      });
+      // Client-side toggle uses the browser session (cookie-backed createBrowserClient).
+      // Server Actions alone were unreliable without a session-refresh proxy.
+      const { data: existing, error: lookupError } = await supabase
+        .from("tech_reactions")
+        .select("id")
+        .eq("submission_id", submission.id)
+        .eq("user_id", user.id)
+        .eq("reaction_type", reactionType)
+        .maybeSingle();
 
-      if (!res.success) {
-        toast.error(res.error || "Could not update endorsement.");
+      if (lookupError) {
+        toast.error(lookupError.message || "Could not update endorsement.");
         return;
       }
 
-      const added = Boolean(res.added);
+      let added = false;
+      if (existing?.id) {
+        const { error } = await supabase
+          .from("tech_reactions")
+          .delete()
+          .eq("id", existing.id);
+        if (error) {
+          toast.error(error.message || "Could not remove endorsement.");
+          return;
+        }
+        added = false;
+      } else {
+        const { error } = await supabase.from("tech_reactions").insert({
+          submission_id: submission.id,
+          user_id: user.id,
+          reaction_type: reactionType,
+        });
+        if (error) {
+          toast.error(
+            error.message ||
+              "Verify your CSI ID to use technical reactions."
+          );
+          return;
+        }
+        added = true;
+      }
+
       setViewerReactions((prev) =>
         added
           ? [...prev, reactionType]
@@ -156,6 +186,10 @@ export function TechSubmissionDetailClient({
           },
         };
       });
+      router.refresh();
+    } catch (err) {
+      console.error("toggleTechReaction failed:", err);
+      toast.error("Could not update endorsement.");
     } finally {
       setReactingType(null);
     }
@@ -475,7 +509,7 @@ export function TechSubmissionDetailClient({
                     {submission.author?.csi_id
                       ? ` · CSI #${submission.author.csi_id}`
                       : ""}{" "}
-                    · {formatRelativeTime(submission.created_at)}
+                    · <RelativeTime date={submission.created_at} />
                   </p>
                 </div>
               </Link>
@@ -659,7 +693,7 @@ export function TechSubmissionDetailClient({
                           </span>
                         )}
                         <span className="font-mono text-[11px] text-muted-foreground">
-                          · {formatRelativeTime(comment.created_at)}
+                          · <RelativeTime date={comment.created_at} />
                         </span>
                       </div>
 
@@ -753,7 +787,7 @@ export function TechSubmissionDetailClient({
                                   </span>
                                 )}
                                 <span className="font-mono text-[10px] text-muted-foreground">
-                                  · {formatRelativeTime(reply.created_at)}
+                                  · <RelativeTime date={reply.created_at} />
                                 </span>
                               </div>
                               {canDeleteReply && (

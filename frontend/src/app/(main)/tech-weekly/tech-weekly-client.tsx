@@ -46,9 +46,11 @@ export function TechWeeklyClient({
   const [selectedWeekId, setSelectedWeekId] = useState<string>(
     initialData.currentWeek?.id || "all"
   );
-  const [countdown, setCountdown] = useState(() =>
-    formatCountdown(initialData.currentWeek?.cutoff_at)
-  );
+  // Stable SSR placeholder — Date.now() in useState causes React #418 hydration mismatches.
+  const [countdown, setCountdown] = useState<{
+    expired: boolean;
+    label: string;
+  }>({ expired: false, label: "--d : --h : --m" });
 
   useEffect(() => {
     const update = () => {
