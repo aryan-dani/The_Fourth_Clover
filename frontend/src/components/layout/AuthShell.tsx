@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { LazyMotion, domAnimation, m } from "framer-motion";
 import { CloverMark } from "@/components/layout/CloverMark";
 
 type AuthShellProps = {
@@ -14,8 +13,7 @@ export function AuthShell({
   quote = "Clarity in engineering begins with clarity in writing. Every system design decision deserves a permanent record.",
 }: AuthShellProps) {
   return (
-    <LazyMotion features={domAnimation}>
-      <div className="min-h-screen bg-background lg:grid lg:grid-cols-12">
+    <div className="min-h-screen bg-background lg:grid lg:grid-cols-12">
         <aside className="hidden lg:col-span-6 xl:col-span-7 lg:flex flex-col justify-between border-r border-border bg-card p-12 xl:p-16">
           <div className="space-y-12">
             <Link
@@ -30,19 +28,14 @@ export function AuthShell({
               </span>
             </Link>
 
-            <m.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="space-y-4 max-w-lg"
-            >
+            <div className="space-y-4 max-w-lg">
               <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
                 CSI MIT-WPU · Technical Press
               </p>
               <blockquote className="font-display text-2xl xl:text-3xl font-semibold tracking-tight text-foreground leading-snug">
                 &ldquo;{quote}&rdquo;
               </blockquote>
-            </m.div>
+            </div>
           </div>
 
           <div className="border-t border-border pt-6 flex items-center justify-between font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
@@ -67,6 +60,5 @@ export function AuthShell({
           </div>
         </div>
       </div>
-    </LazyMotion>
   );
 }

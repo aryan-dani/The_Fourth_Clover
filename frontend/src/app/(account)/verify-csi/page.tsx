@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LazyMotion, domAnimation, m } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -141,12 +140,6 @@ export default function VerifyCsiPage() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-12 sm:py-16">
-      <LazyMotion features={domAnimation}>
-        <m.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
           {isVerified ? (
             <div className="rounded-lg border border-border bg-card overflow-hidden">
               <div className="flex items-center justify-between border-b border-border bg-muted/40 px-6 py-3.5">
@@ -321,8 +314,6 @@ export default function VerifyCsiPage() {
               </div>
             </div>
           )}
-        </m.div>
-      </LazyMotion>
     </div>
   );
 }

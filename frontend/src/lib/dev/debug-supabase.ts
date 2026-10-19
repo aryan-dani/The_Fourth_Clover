@@ -385,26 +385,5 @@ export async function runAllTests(): Promise<{ [key: string]: DebugResult }> {
   return results;
 }
 
-// 🚨 Enhanced Error Logger for Production Debugging
-export function logSupabaseError(operation: string, error: any, context?: any) {
-  console.group(`🚨 Supabase Error - ${operation}`);
-  console.error('Error:', error);
-  console.error('Error Message:', error?.message);
-  console.error('Error Code:', error?.code);
-  console.error('Error Details:', error?.details);
-  console.error('Error Hint:', error?.hint);
-  if (context) {
-    console.error('Context:', context);
-  }
-  console.groupEnd();
-  
-  // Return formatted error for UI display
-  return {
-    message: error?.message || 'Unknown error',
-    code: error?.code,
-    details: error?.details,
-    hint: error?.hint,
-    operation,
-    context
-  };
-}
+/** @deprecated Prefer `@/lib/errors` in production UI. Kept for local debug scripts. */
+export { logSupabaseError } from "@/lib/errors";

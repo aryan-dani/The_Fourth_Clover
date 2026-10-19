@@ -39,6 +39,23 @@ export async function loadMoreExplorePostsAction(
   return (data || []) as PostWithAuthor[];
 }
 
+export async function loadMoreJournalPostsAction(options: {
+  limit: number;
+  offset: number;
+  sort?: "latest" | "popular";
+  format?: "all" | "poetry" | "prose";
+  tag?: string;
+}) {
+  const { fetchJournalPostsPage } = await import(
+    "@/features/data/server-queries"
+  );
+  const { posts, error } = await fetchJournalPostsPage(options);
+  if (error) {
+    throw new Error(error);
+  }
+  return posts;
+}
+
 export async function loadMorePublicationPostsAction(
   publicationSlug: string,
   limit: number,

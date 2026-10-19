@@ -31,6 +31,8 @@ export interface Profile {
 
 export type Post = Database["public"]["Tables"]["posts"]["Row"];
 export type PostStatus = Post["status"];
+export type PostFormat = Post["format"];
+export type Bookmark = Database["public"]["Tables"]["bookmarks"]["Row"];
 export type Publication = Database["public"]["Tables"]["publications"]["Row"];
 export type PublicationMember =
   Database["public"]["Tables"]["publication_members"]["Row"];

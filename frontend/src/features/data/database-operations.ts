@@ -16,7 +16,11 @@ import type {
 export class DatabaseOperations {
   // Profile operations
   static async getProfile(id: string): Promise<QueryResult<Profile>> {
-    return await supabase.from("profiles").select("*").eq("id", id).single();
+    return await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
   }
 
   static async getProfileByUsername(
@@ -26,7 +30,7 @@ export class DatabaseOperations {
       .from("profiles")
       .select("*")
       .eq("username", username)
-      .single();
+      .maybeSingle();
   }
   static async getAllProfiles(
     limit = 50
@@ -98,11 +102,19 @@ export class DatabaseOperations {
   }
 
   static async getPost(id: string): Promise<QueryResultSingle<Post>> {
-    return await supabase.from("posts").select("*").eq("id", id).single();
+    return await supabase
+      .from("posts")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
   }
 
   static async getPostBySlug(slug: string): Promise<QueryResultSingle<Post>> {
-    return await supabase.from("posts").select("*").eq("slug", slug).single();
+    return await supabase
+      .from("posts")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
   }
 
   static async getUserPosts(
@@ -305,7 +317,7 @@ export class DatabaseOperations {
       )
       .eq("slug", slug)
       .eq("status", "published")
-      .single();
+      .maybeSingle();
   }
 
   // Get posts by tag
@@ -361,7 +373,7 @@ export class DatabaseOperations {
       .from("profiles")
       .select("is_admin")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     return data?.is_admin || false;
   }

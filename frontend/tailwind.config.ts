@@ -1,6 +1,5 @@
 import type { Config } from "tailwindcss";
 
-/** Ensure emoji render (Charter/Playfair do not include color emoji glyphs). */
 const emojiFallback = [
   "Apple Color Emoji",
   "Segoe UI Emoji",
@@ -30,21 +29,21 @@ const config: Config = {
           ...emojiFallback,
         ],
         serif: [
-          "Charter",
-          "Bitstream Charter",
-          "Sitka Text",
-          "Cambria",
+          "var(--font-newsreader)",
+          "Newsreader",
           "Georgia",
           "serif",
           ...emojiFallback,
         ],
         display: [
-          "var(--font-playfair)",
-          "Playfair Display",
+          "var(--font-newsreader)",
+          "Newsreader",
+          "Georgia",
           "serif",
           ...emojiFallback,
         ],
         mono: [
+          "var(--font-mono)",
           "ui-monospace",
           "SFMono-Regular",
           "Menlo",
@@ -56,25 +55,43 @@ const config: Config = {
         ],
       },
       spacing: {
-        section: "2rem",
-        "section-sm": "1.25rem",
+        section: "2.5rem",
+        "section-sm": "1.5rem",
       },
       maxWidth: {
+        measure: "40rem",
         reading: "42rem",
         content: "72rem",
         wide: "90rem",
       },
-      backgroundImage: {
-        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-conic":
-          "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
-        "mesh-botanical":
-          "radial-gradient(at 40% 20%, hsl(var(--primary) / 0.08) 0px, transparent 50%), radial-gradient(at 80% 0%, hsl(142 40% 45% / 0.06) 0px, transparent 45%), radial-gradient(at 0% 100%, hsl(158 42% 38% / 0.05) 0px, transparent 45%)",
+      fontSize: {
+        "display-xl": [
+          "3.5rem",
+          { lineHeight: "1.1", letterSpacing: "-0.03em", fontWeight: "600" },
+        ],
+        "display-lg": [
+          "2.75rem",
+          { lineHeight: "1.15", letterSpacing: "-0.025em", fontWeight: "600" },
+        ],
+        "display-md": [
+          "2rem",
+          { lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "600" },
+        ],
+        "display-sm": [
+          "1.5rem",
+          { lineHeight: "1.25", letterSpacing: "-0.015em", fontWeight: "600" },
+        ],
+      },
+      transitionDuration: {
+        editorial: "180ms",
+      },
+      transitionTimingFunction: {
+        editorial: "cubic-bezier(0.22, 1, 0.36, 1)",
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 1px)",
+        sm: "calc(var(--radius) - 2px)",
       },
       colors: {
         background: "hsl(var(--background))",
@@ -118,6 +135,7 @@ const config: Config = {
           DEFAULT: "hsl(var(--surface))",
           muted: "hsl(var(--surface-muted))",
         },
+        hairline: "hsl(var(--hairline))",
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",
@@ -140,11 +158,16 @@ const config: Config = {
           "55%": { transform: "translateX(35%)", opacity: "1" },
           "100%": { transform: "translateX(220%)", opacity: "0.35" },
         },
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "nav-progress": "nav-progress 0.95s ease-in-out infinite",
+        "fade-in": "fade-in 180ms cubic-bezier(0.22, 1, 0.36, 1)",
       },
     },
   },

@@ -1,61 +1,67 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { LazyMotion, domAnimation, m } from "framer-motion";
-import { motionEase, fadeUp } from "@/lib/motion";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import {
+  CommentThread,
+  type CommentNode,
+} from "@/components/editorial/CommentThread";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/features/auth/auth-context";
-import { AddComment } from "@/features/comments/components/AddComment";
-import { Comment } from "@/features/comments/components/Comment";
-import { toast } from "sonner";
-import { MessageCircle } from "lucide-react";
-import Link from "next/link";
 
-interface CommentType {
+type RawComment = {
   id: string;
   content: string;
   created_at: string;
   author_id: string;
   post_id: string;
   parent_id: string | null;
-  author: {
-    username: string;
-    avatar_url: string;
-  };
-  replies?: CommentType[];
+};
+
+function nestComments(
+  rows: (RawComment & {
+    author: { username: string; full_name?: string | null; avatar_url?: string | null };
+  })[],
+): CommentNode[] {
+  const map: Record<string, CommentNode> = {};
+
+  rows.forEach((row) => {
+    map[row.id] = {
+      id: row.id,
+      content: row.content,
+      created_at: row.created_at,
+      user_id: row.author_id,
+      author: {
+        username: row.author.username,
+        fullName: row.author.full_name,
+        avatarUrl: row.author.avatar_url,
+      },
+      replies: [],
+    };
+  });
+
+  const roots: CommentNode[] = [];
+  rows.forEach((row) => {
+    const node = map[row.id];
+    if (row.parent_id && map[row.parent_id]) {
+      map[row.parent_id].replies = map[row.parent_id].replies || [];
+      map[row.parent_id].replies!.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+
+  return roots;
 }
 
 export function CommentSection({ postId }: { postId: string }) {
-  const { user } = useAuth();
-  const [comments, setComments] = useState<CommentType[]>([]);
+  const { user, profile } = useAuth();
+  const [comments, setComments] = useState<CommentNode[]>([]);
   const [loading, setLoading] = useState(true);
-  const [totalComments, setTotalComments] = useState(0);
 
-  // Update total comments count
-  const updateTotalComments = (comments: CommentType[]): number => {
-    let total = 0;
-    comments.forEach((comment) => {
-      total += 1; // Count the comment itself
-      if (comment.replies) {
-        total += updateTotalComments(comment.replies); // Count replies recursively
-      }
-    });
-    return total;
-  };
-
-  useEffect(() => {
-    const total = updateTotalComments(comments);
-    setTotalComments(total);
-  }, [comments]);
-
-  useEffect(() => {
-    fetchComments();
-  }, [postId]);
-
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     setLoading(true);
 
-    // First, get comments
     const { data: commentsData, error: commentsError } = await supabase
       .from("comments")
       .select("*")
@@ -69,9 +75,8 @@ export function CommentSection({ postId }: { postId: string }) {
       return;
     }
 
-    // Then, get all unique author IDs
     const authorIds = Array.from(
-      new Set(commentsData?.map((comment) => comment.author_id) || [])
+      new Set((commentsData || []).map((c) => c.author_id)),
     );
 
     if (authorIds.length === 0) {
@@ -80,10 +85,9 @@ export function CommentSection({ postId }: { postId: string }) {
       return;
     }
 
-    // Fetch author profiles
     const { data: profilesData, error: profilesError } = await supabase
       .from("profiles")
-      .select("id, username, avatar_url")
+      .select("id, username, full_name, avatar_url")
       .in("id", authorIds);
 
     if (profilesError) {
@@ -93,242 +97,172 @@ export function CommentSection({ postId }: { postId: string }) {
       return;
     }
 
-    // Create a map of profiles by ID
-    const profileMap = (profilesData || []).reduce((acc, profile) => {
-      acc[profile.id] = profile;
-      return acc;
-    }, {} as Record<string, any>);
+    const profileMap = (profilesData || []).reduce(
+      (acc, p) => {
+        acc[p.id] = p;
+        return acc;
+      },
+      {} as Record<
+        string,
+        { username: string; full_name?: string | null; avatar_url?: string | null }
+      >,
+    );
 
-    // Combine comments with author data
-    const commentsWithAuthors = (commentsData || []).map((comment) => ({
+    const withAuthors = (commentsData || []).map((comment) => ({
       ...comment,
       author: profileMap[comment.author_id] || {
-        username: "Unknown User",
-        avatar_url: "",
+        username: "Unknown",
+        full_name: null,
+        avatar_url: null,
       },
     }));
 
-    const nestedComments = nestComments(commentsWithAuthors);
-    setComments(nestedComments);
+    setComments(nestComments(withAuthors));
     setLoading(false);
-  };
+  }, [postId]);
 
-  const nestComments = (commentList: any[]): CommentType[] => {
-    const commentMap: { [key: string]: CommentType } = {};
-    commentList.forEach((comment) => {
-      commentMap[comment.id] = { ...comment, replies: [] };
-    });
+  useEffect(() => {
+    void fetchComments();
+  }, [fetchComments]);
 
-    const nested: CommentType[] = [];
-    commentList.forEach((comment) => {
-      if (comment.parent_id && commentMap[comment.parent_id]) {
-        commentMap[comment.parent_id].replies?.push(commentMap[comment.id]);
-      } else {
-        nested.push(commentMap[comment.id]);
-      }
-    });
-    return nested;
-  };
+  const handleAdd = async (content: string, parentId?: string | null) => {
+    if (!user) {
+      toast.error("Sign in to comment.");
+      throw new Error("Not signed in");
+    }
 
-  const handleAddComment = (newComment: CommentType) => {
-    // Optimistically add comment to UI
-    const newCommentWithProfile = {
-      ...newComment,
+    const { data, error } = await supabase
+      .from("comments")
+      .insert({
+        post_id: postId,
+        author_id: user.id,
+        content: content.trim(),
+        parent_id: parentId || null,
+      })
+      .select()
+      .single();
+
+    if (error || !data) {
+      console.error("Error posting comment:", error);
+      toast.error("Failed to post comment.");
+      throw error || new Error("Failed to post");
+    }
+
+    const node: CommentNode = {
+      id: data.id,
+      content: data.content,
+      created_at: data.created_at,
+      user_id: data.author_id,
       author: {
-        username: user?.user_metadata.user_name || "User",
-        avatar_url: user?.user_metadata.avatar_url || "",
+        username: profile?.username || user.user_metadata?.user_name || "User",
+        fullName: profile?.full_name || null,
+        avatarUrl:
+          profile?.avatar_url || user.user_metadata?.avatar_url || null,
       },
       replies: [],
     };
 
-    if (newComment.parent_id) {
-      setComments((prevComments) => {
-        const addReply = (comments: CommentType[]): CommentType[] => {
-          return comments.map((c) => {
-            if (c.id === newComment.parent_id) {
-              return {
-                ...c,
-                replies: [newCommentWithProfile, ...(c.replies || [])],
-              };
+    setComments((prev) => {
+      if (parentId) {
+        const addReply = (nodes: CommentNode[]): CommentNode[] =>
+          nodes.map((n) => {
+            if (n.id === parentId) {
+              return { ...n, replies: [...(n.replies || []), node] };
             }
-            if (c.replies && c.replies.length > 0) {
-              return { ...c, replies: addReply(c.replies) };
+            if (n.replies?.length) {
+              return { ...n, replies: addReply(n.replies) };
             }
-            return c;
+            return n;
           });
-        };
-        return addReply(prevComments);
-      });
-    } else {
-      setComments((prevComments) => [newCommentWithProfile, ...prevComments]);
-    }
+        return addReply(prev);
+      }
+      return [node, ...prev];
+    });
+
+    toast.success("Comment posted");
   };
 
-  const handleDeleteComment = async (commentId: string) => {
+  const handleDelete = async (id: string) => {
     if (!user) {
       toast.error("You must be signed in to delete comments");
-      return;
+      throw new Error("Not signed in");
     }
 
-    try {
-      // First, check if the user is the author of the comment
-      const { data: commentData, error: commentError } = await supabase
-        .from("comments")
-        .select("author_id")
-        .eq("id", commentId)
-        .single();
+    const { data: commentData, error: commentError } = await supabase
+      .from("comments")
+      .select("author_id")
+      .eq("id", id)
+      .single();
 
-      if (commentError) {
-        console.error("Error checking comment ownership:", commentError);
-        toast.error("Failed to verify comment ownership");
-        return;
-      }
+    if (commentError) {
+      toast.error("Failed to verify comment ownership");
+      throw commentError;
+    }
 
-      if (commentData.author_id !== user.id) {
-        toast.error("You can only delete your own comments");
-        return;
-      }
+    if (commentData.author_id !== user.id) {
+      toast.error("You can only delete your own comments");
+      throw new Error("Not owner");
+    }
 
-      // Delete all replies first (if any)
-      const { error: repliesDeleteError } = await supabase
-        .from("comments")
-        .delete()
-        .eq("parent_id", commentId);
+    const { error: repliesDeleteError } = await supabase
+      .from("comments")
+      .delete()
+      .eq("parent_id", id);
 
-      if (repliesDeleteError) {
-        console.error("Error deleting replies:", repliesDeleteError);
-        toast.error("Failed to delete comment replies");
-        return;
-      }
+    if (repliesDeleteError) {
+      toast.error("Failed to delete comment replies");
+      throw repliesDeleteError;
+    }
 
-      // Then delete the main comment
-      const { error: deleteError } = await supabase
-        .from("comments")
-        .delete()
-        .eq("id", commentId);
+    const { error: deleteError } = await supabase
+      .from("comments")
+      .delete()
+      .eq("id", id);
 
-      if (deleteError) {
-        console.error("Error deleting comment:", deleteError);
-        toast.error("Failed to delete comment");
-        return;
-      }
-
-      // Remove comment from UI
-      setComments((prevComments) => {
-        const removeComment = (comments: CommentType[]): CommentType[] => {
-          return comments
-            .filter((c) => c.id !== commentId)
-            .map((c) => ({
-              ...c,
-              replies: c.replies ? removeComment(c.replies) : [],
-            }));
-        };
-        return removeComment(prevComments);
-      });
-
-      toast.success("Comment deleted successfully");
-    } catch (error) {
-      console.error("Error deleting comment:", error);
+    if (deleteError) {
       toast.error("Failed to delete comment");
+      throw deleteError;
     }
+
+    setComments((prev) => {
+      const remove = (nodes: CommentNode[]): CommentNode[] =>
+        nodes
+          .filter((n) => n.id !== id)
+          .map((n) => ({
+            ...n,
+            replies: n.replies ? remove(n.replies) : [],
+          }));
+      return remove(prev);
+    });
+
+    toast.success("Comment deleted");
   };
 
   if (loading) {
     return (
-      <div className="mt-12">
-        <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground md:text-3xl mb-8 border-b border-border/60 pb-4">
-          Comments
-        </h2>
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="animate-pulse">
-              <div className="flex space-x-4">
-                <div className="w-12 h-12 bg-muted rounded-full"></div>
-                <div className="flex-1 space-y-3">
-                  <div className="h-4 bg-muted rounded w-1/4"></div>
-                  <div className="h-16 bg-muted rounded"></div>
-                </div>
+      <div className="space-y-4" aria-busy="true" aria-label="Loading comments">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="animate-pulse border-b border-hairline py-4">
+            <div className="flex gap-3">
+              <div className="h-8 w-8 rounded-full bg-muted" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-1/4 rounded bg-muted" />
+                <div className="h-12 rounded bg-muted" />
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     );
   }
 
   return (
-    <LazyMotion features={domAnimation}>
-      <m.div
-        initial={fadeUp.initial}
-        animate={fadeUp.animate}
-        transition={{ ...fadeUp.transition }}
-        className="mt-12"
-      >
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-            Comments ({totalComments})
-          </h2>
-        </div>
-
-        {user && (
-          <m.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, ease: motionEase, duration: 0.4 }}
-          >
-            <AddComment postId={postId} onCommentAdded={handleAddComment} />
-          </m.div>
-        )}
-
-        {!user && (
-          <div className="mb-8 rounded-lg border border-border/70 bg-muted/15 px-4 py-5 text-center">
-            <p className="text-sm text-muted-foreground">
-              Please{" "}
-              <Link
-                href="/auth/signin"
-                className="font-medium text-primary hover:underline"
-              >
-                sign in
-              </Link>{" "}
-              to leave a comment
-            </p>
-          </div>
-        )}
-
-        <div className="space-y-4 mt-8">
-          {comments.length === 0 ? (
-            <m.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center py-16 rounded-lg border border-dashed border-border/60 bg-muted/10"
-            >
-              <MessageCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <h3 className="text-xl font-semibold mb-2">No comments yet</h3>
-              <p className="text-muted-foreground">
-                Be the first to share your thoughts!
-              </p>
-            </m.div>
-          ) : (
-            comments.map((comment, index) => (
-              <m.div
-                key={comment.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05, ease: motionEase }}
-              >
-                <Comment
-                  comment={comment}
-                  postId={postId}
-                  onReplyAdded={handleAddComment}
-                  onCommentDeleted={handleDeleteComment}
-                  currentUserId={user?.id}
-                />
-              </m.div>
-            ))
-          )}
-        </div>
-      </m.div>
-    </LazyMotion>
+    <CommentThread
+      comments={comments}
+      canComment={Boolean(user)}
+      currentUserId={user?.id}
+      onAdd={handleAdd}
+      onDelete={handleDelete}
+    />
   );
 }
-

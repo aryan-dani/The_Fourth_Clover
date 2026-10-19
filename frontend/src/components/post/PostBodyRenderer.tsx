@@ -9,14 +9,47 @@ import {
   normalizePostContent,
   postContentToBlocks,
   slugifyHeading,
+  stripInvisibleAndControls,
 } from "@/lib/post-content";
 import { cn } from "@/lib/utils";
+
+type PostBodyFormat = "prose" | "poetry";
 
 type PostBodyRendererProps = {
   content: string | null | undefined;
   forceMarkdown?: boolean;
+  format?: PostBodyFormat;
   className?: string;
 };
+
+function cleanPoetryLine(line: string): string {
+  return stripInvisibleAndControls(line).replace(/[ \t]+$/g, "");
+}
+
+function renderPoetryBody(content: string, className?: string) {
+  const normalized = normalizePostContent(content);
+  const stanzas = normalized
+    .split(/\n\s*\n/)
+    .map((stanza) => stanza.replace(/^\n+|\n+$/g, ""))
+    .filter((stanza) => stanza.length > 0);
+
+  return (
+    <div className={cn("verse mb-12", className)}>
+      {stanzas.map((stanza, index) => (
+        <div key={`stanza-${index}`} className="stanza">
+          {stanza.split("\n").map((line, lineIndex) => {
+            const text = cleanPoetryLine(line);
+            return (
+              <p key={`line-${index}-${lineIndex}`}>
+                {text.length > 0 ? text : "\u00A0"}
+              </p>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function isNextImageSupportedUrl(src: string): boolean {
   if (src.startsWith("/")) return true;
@@ -48,10 +81,15 @@ function extractNodeText(node: React.ReactNode): string {
 export function PostBodyRenderer({
   content,
   forceMarkdown = false,
+  format = "prose",
   className,
 }: PostBodyRendererProps) {
   if (!content || content.trim().length === 0) {
     return null;
+  }
+
+  if (format === "poetry") {
+    return renderPoetryBody(content, className);
   }
 
   const useMarkdown = forceMarkdown || hasMarkdownSyntax(content);

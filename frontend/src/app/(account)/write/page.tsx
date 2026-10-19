@@ -1,15 +1,11 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getUserPublicationRole } from "@/features/data/server-queries";
+import { getCapabilities } from "@/lib/roles";
 import { WriteClient } from "./write-client";
 
 export const dynamic = "force-dynamic";
 
-export default async function WritePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ publication?: string; edit?: string; id?: string }>;
-}) {
+export default async function WritePage() {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -21,29 +17,22 @@ export default async function WritePage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, is_admin, is_suspended")
+    .select("role, is_admin, is_suspended, csi_id")
     .eq("id", user.id)
     .maybeSingle();
 
-  const role = profile?.role || "unverified";
-  const isTechAuthor =
-    !profile?.is_suspended &&
-    (role === "tech_member" ||
-      role === "tech_head" ||
-      role === "super_admin" ||
-      Boolean(profile?.is_admin));
+  const caps = getCapabilities(profile);
 
-  if (role === "unverified" && !profile?.is_admin) {
-    redirect("/verify-csi");
+  if (caps.isSuspended) {
+    redirect("/");
   }
 
-  const params = await searchParams;
-  if (!isTechAuthor || !params.edit) {
-    const query = params.id ? `?id=${encodeURIComponent(params.id)}` : "";
-    redirect(`/tech-weekly/write${query}`);
+  // Journal writing is open to any signed-in non-suspended user.
+  // CSI verification is optional (required only for Tech Weekly).
+  // Optional ?edit= loading is handled client-side by WriteClient.
+  if (!caps.canWriteJournal) {
+    redirect("/auth/signin");
   }
 
-  const csiRoleInfo = await getUserPublicationRole("csi", user.id);
-
-  return <WriteClient memberRole={csiRoleInfo.role} />;
+  return <WriteClient />;
 }

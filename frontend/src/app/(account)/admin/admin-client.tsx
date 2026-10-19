@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LazyMotion, domAnimation, m } from "framer-motion";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -419,8 +418,7 @@ export default function AdminClient({
   }
 
   return (
-    <LazyMotion features={domAnimation}>
-      <PageShell className="py-8 space-y-8 pb-24">
+    <PageShell className="py-8 space-y-8 pb-24">
         {/* Top Command Banner */}
         <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-card p-6 sm:p-8 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-6">
@@ -1704,6 +1702,5 @@ export default function AdminClient({
           </TabsContent>
         </Tabs>
       </PageShell>
-    </LazyMotion>
   );
 }

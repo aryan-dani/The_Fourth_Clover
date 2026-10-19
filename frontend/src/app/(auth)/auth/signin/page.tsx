@@ -3,20 +3,13 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import GoogleSignIn from "@/features/auth/components/GoogleSignIn";
-import { LazyMotion, domAnimation, m } from "framer-motion";
 import { AuthShell } from "@/components/layout/AuthShell";
 import { CloverMark } from "@/components/layout/CloverMark";
 
 export default function SignInPage() {
   return (
     <AuthShell>
-      <LazyMotion features={domAnimation}>
-        <m.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="space-y-6"
-        >
+      <div className="space-y-6">
           <Link
             href="/"
             className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
@@ -69,8 +62,7 @@ export default function SignInPage() {
               </div>
             </div>
           </div>
-        </m.div>
-      </LazyMotion>
+        </div>
     </AuthShell>
   );
 }

@@ -17,6 +17,7 @@ export const postSchema = z.object({
   featured_image: z.string().url().optional().nullable(),
   scheduled_at: z.string().optional().nullable(),
   publication_id: z.string().uuid().optional().nullable(),
+  format: z.enum(["prose", "poetry"]).default("prose"),
 });
 
 export const inlineImageAltSchema = z.object({

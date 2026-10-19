@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { LazyMotion, domAnimation, m } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,7 +15,7 @@ import {
   getNotificationHref,
   NotificationWithSender,
 } from "@/features/notifications/notifications";
-import { formatRelativeTime } from "@/lib/utils";
+import { RelativeTime } from "@/components/time/RelativeTime";
 import {
   Bell,
   Check,
@@ -128,8 +127,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <LazyMotion features={domAnimation}>
-      <div className="bg-background flex min-h-screen flex-col">
+    <div className="bg-background flex min-h-screen flex-col">
         <main className="flex-1 pt-20 pb-8">
           <PageShell
             variant="default"
@@ -156,14 +154,6 @@ export default function NotificationsPage() {
             }
           >
             {/* Notifications List */}
-            <m.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.28,
-                ease: [0.25, 0.1, 0.25, 1],
-              }}
-            >
               {notifications.length === 0 ? (
                 <Card>
                   <CardContent className="p-12 text-center">
@@ -176,7 +166,7 @@ export default function NotificationsPage() {
                       here.
                     </p>
                     <Button asChild variant="outline">
-                      <Link href="/explore">
+                      <Link href="/journal">
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Explore posts
                       </Link>
@@ -188,8 +178,8 @@ export default function NotificationsPage() {
                   {notifications.map((notification) => {
                     const href = getNotificationHref(notification);
                     return (
-                      <div key={notification.id}>
                         <Link
+                          key={notification.id}
                           href={href}
                           onClick={() => {
                             if (!notification.read) {
@@ -243,11 +233,10 @@ export default function NotificationsPage() {
                                   <p className="text-sm leading-relaxed">
                                     {notification.message}
                                   </p>
-                                  <p className="text-muted-foreground mt-1 text-xs">
-                                    {formatRelativeTime(
-                                      notification.created_at,
-                                    )}
-                                  </p>
+                                  <RelativeTime
+                                    date={notification.created_at}
+                                    className="text-muted-foreground mt-1 block text-xs"
+                                  />
                                 </div>
                                 {!notification.read && (
                                   <div className="bg-primary mt-2 h-2 w-2 flex-shrink-0 rounded-full"></div>
@@ -256,15 +245,12 @@ export default function NotificationsPage() {
                             </CardContent>
                           </Card>
                         </Link>
-                      </div>
                     );
                   })}
                 </div>
               )}
-            </m.div>
           </PageShell>
         </main>
       </div>
-    </LazyMotion>
   );
 }

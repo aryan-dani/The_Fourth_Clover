@@ -1,16 +1,9 @@
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+import { SiteChrome } from "@/components/layout/SiteChrome";
 
 export default function MarketingLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
-      <main className="flex-1 pt-20 pb-8">{children}</main>
-      <Footer />
-    </div>
-  );
+  return <SiteChrome>{children}</SiteChrome>;
 }

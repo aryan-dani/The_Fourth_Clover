@@ -1,14 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { LazyMotion, domAnimation, m } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  ArticleLayout,
+  BookmarkButton,
+  CommentThread,
+  ReactionBar,
+  ShareMenu,
+  TagChip,
+  type CommentNode,
+} from "@/components/editorial";
 import { PostBodyRenderer } from "@/components/post/PostBodyRenderer";
 import { CopyForLinkedInButton } from "@/components/tech-weekly/FeaturedTechWeeklyBanner";
 import {
@@ -16,19 +30,13 @@ import {
   ThumbsUp,
   Lightbulb,
   Code2,
-  MessageSquare,
-  Reply,
-  Trash2,
   Flag,
   CheckCircle2,
   XCircle,
   Edit3,
-  Clock,
-  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/features/auth/auth-context";
-import { RelativeTime } from "@/components/time/RelativeTime";
 import { supabase } from "@/lib/supabase";
 import {
   addTechCommentAction,
@@ -42,6 +50,25 @@ import type {
   TechReactionType,
   TechSubmissionWithAuthor,
 } from "@/types/database";
+
+function toCommentNodes(
+  comments: TechCommentWithAuthor[],
+): CommentNode[] {
+  return comments.map((c) => ({
+    id: c.id,
+    content: c.content,
+    created_at: c.created_at,
+    user_id: c.user_id,
+    author: c.author
+      ? {
+          username: c.author.username,
+          fullName: c.author.full_name,
+          avatarUrl: c.author.avatar_url,
+        }
+      : null,
+    replies: c.replies ? toCommentNodes(c.replies) : [],
+  }));
+}
 
 export function TechSubmissionDetailClient({
   submission: initialSubmission,
@@ -59,17 +86,10 @@ export function TechSubmissionDetailClient({
 
   const [submission, setSubmission] = useState(initialSubmission);
   const [viewerReactions, setViewerReactions] = useState<TechReactionType[]>(
-    initialViewerReactions
+    initialViewerReactions,
   );
   const [comments, setComments] =
     useState<TechCommentWithAuthor[]>(initialComments);
-  const [newComment, setNewComment] = useState("");
-  const [replyingToId, setReplyingToId] = useState<string | null>(null);
-  const [replyText, setReplyText] = useState("");
-  const [submittingComment, setSubmittingComment] = useState(false);
-  const [reactingType, setReactingType] = useState<TechReactionType | null>(
-    null
-  );
 
   const [reviewNote, setReviewNote] = useState(submission.review_note || "");
   const [curationBusy, setCurationBusy] = useState(false);
@@ -81,6 +101,9 @@ export function TechSubmissionDetailClient({
   } | null>(null);
   const [reportReason, setReportReason] = useState("");
   const [reportingBusy, setReportingBusy] = useState(false);
+  const [reactingType, setReactingType] = useState<TechReactionType | null>(
+    null,
+  );
 
   const role = profile?.role || "unverified";
   const isSuperAdmin =
@@ -107,6 +130,8 @@ export function TechSubmissionDetailClient({
     total: 0,
   };
 
+  const commentNodes = useMemo(() => toCommentNodes(comments), [comments]);
+
   const handleToggleReaction = async (reactionType: TechReactionType) => {
     if (!user) {
       toast.error("Sign in with Google to endorse dispatches.");
@@ -114,15 +139,13 @@ export function TechSubmissionDetailClient({
     }
     if (reactionType !== "like" && !isTechMember) {
       toast.error(
-        "Verify your CSI Technical ID to add Insightful and Rigorous endorsements."
+        "Verify your CSI Technical ID to add Insightful and Rigorous endorsements.",
       );
       return;
     }
 
     setReactingType(reactionType);
     try {
-      // Client-side toggle uses the browser session (cookie-backed createBrowserClient).
-      // Server Actions alone were unreliable without a session-refresh proxy.
       const { data: existing, error: lookupError } = await supabase
         .from("tech_reactions")
         .select("id")
@@ -155,8 +178,7 @@ export function TechSubmissionDetailClient({
         });
         if (error) {
           toast.error(
-            error.message ||
-              "Verify your CSI ID to use technical reactions."
+            error.message || "Verify your CSI ID to use technical reactions.",
           );
           return;
         }
@@ -166,7 +188,7 @@ export function TechSubmissionDetailClient({
       setViewerReactions((prev) =>
         added
           ? [...prev, reactionType]
-          : prev.filter((r) => r !== reactionType)
+          : prev.filter((r) => r !== reactionType),
       );
 
       setSubmission((prev) => {
@@ -195,74 +217,64 @@ export function TechSubmissionDetailClient({
     }
   };
 
-  const handleAddComment = async (parentId?: string | null) => {
-    const text = (parentId ? replyText : newComment).trim();
-    if (!text) return;
+  const handleAddComment = async (
+    content: string,
+    parentId?: string | null,
+  ) => {
+    const res = await addTechCommentAction({
+      submissionId: submission.id,
+      content,
+      parentId: parentId || null,
+      slug: submission.slug,
+    });
 
-    setSubmittingComment(true);
-    try {
-      const res = await addTechCommentAction({
-        submissionId: submission.id,
-        content: text,
-        parentId: parentId || null,
-        slug: submission.slug,
-      });
-
-      if (!res.success || !res.comment) {
-        toast.error(res.error || "Failed to post comment.");
-        return;
-      }
-
-      const created: TechCommentWithAuthor = {
-        ...res.comment,
-        replies: [],
-      };
-
-      if (parentId) {
-        setComments((prev) =>
-          prev.map((c) =>
-            c.id === parentId
-              ? { ...c, replies: [...(c.replies || []), created] }
-              : c
-          )
-        );
-        setReplyText("");
-        setReplyingToId(null);
-      } else {
-        setComments((prev) => [...prev, created]);
-        setNewComment("");
-      }
-
-      toast.success("Comment published.");
-    } finally {
-      setSubmittingComment(false);
+    if (!res.success || !res.comment) {
+      toast.error(res.error || "Failed to post comment.");
+      throw new Error(res.error || "Failed to post");
     }
+
+    const created: TechCommentWithAuthor = {
+      ...res.comment,
+      replies: [],
+    };
+
+    if (parentId) {
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id === parentId
+            ? { ...c, replies: [...(c.replies || []), created] }
+            : c,
+        ),
+      );
+    } else {
+      setComments((prev) => [...prev, created]);
+    }
+
+    toast.success("Comment published.");
   };
 
-  const handleDeleteComment = async (commentId: string, parentId?: string) => {
+  const handleDeleteComment = async (commentId: string) => {
     const res = await deleteTechCommentAction({
       commentId,
       slug: submission.slug,
     });
     if (!res.success) {
       toast.error(res.error || "Could not delete comment.");
-      return;
+      throw new Error(res.error || "Delete failed");
     }
 
-    if (parentId) {
-      setComments((prev) =>
-        prev.map((c) =>
-          c.id === parentId
-            ? {
-                ...c,
-                replies: (c.replies || []).filter((r) => r.id !== commentId),
-              }
-            : c
-        )
-      );
-    } else {
-      setComments((prev) => prev.filter((c) => c.id !== commentId));
-    }
+    setComments((prev) => {
+      const remove = (
+        nodes: TechCommentWithAuthor[],
+      ): TechCommentWithAuthor[] =>
+        nodes
+          .filter((c) => c.id !== commentId)
+          .map((c) => ({
+            ...c,
+            replies: c.replies ? remove(c.replies) : [],
+          }));
+      return remove(prev);
+    });
     toast.success("Comment removed.");
   };
 
@@ -286,7 +298,7 @@ export function TechSubmissionDetailClient({
       toast.success(
         status === "approved"
           ? "Dispatch marked as Approved."
-          : "Revision note sent to author."
+          : "Revision note sent to author.",
       );
       router.refresh();
     } finally {
@@ -312,8 +324,8 @@ export function TechSubmissionDetailClient({
       }));
       toast.success(
         res.replacedId
-          ? "Selected as this week's LinkedIn Feature (previous pick replaced and logged)."
-          : "Selected as this week's official CSI LinkedIn Feature."
+          ? "Selected as this week's LinkedIn Feature (previous pick replaced)."
+          : "Selected as this week's official CSI LinkedIn Feature.",
       );
       router.refresh();
     } finally {
@@ -337,6 +349,7 @@ export function TechSubmissionDetailClient({
       toast.success("Report submitted to CSI Moderation.");
       setReportModalOpen(false);
       setReportReason("");
+      setReportTarget(null);
     } finally {
       setReportingBusy(false);
     }
@@ -346,515 +359,284 @@ export function TechSubmissionDetailClient({
     submission.author?.full_name ||
     submission.author?.username ||
     "CSI Member";
-  const authorBadge = submission.author?.dept
-    ? `CSI ${submission.author.dept}${submission.author.year ? ` · ${submission.author.year}` : ""}`
-    : "CSI Technical Wing";
 
   return (
-    <LazyMotion features={domAnimation}>
-      <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 space-y-10">
-        {/* Top Navigation Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-          <Link
-            href="/tech-weekly"
-            className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            CSI Tech Weekly Index
-          </Link>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {(isAuthor || isSuperAdmin) && (
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="h-8 rounded-md text-xs"
-              >
-                <Link href={`/tech-weekly/write?id=${submission.id}`}>
-                  <Edit3 className="mr-1.5 h-3.5 w-3.5" />
-                  Edit Dispatch
-                </Link>
-              </Button>
-            )}
-            {submission.status === "selected" && isTechHeadOrAdmin && (
-              <CopyForLinkedInButton submission={submission} size="sm" />
-            )}
-          </div>
-        </div>
-
-        {/* Technical Head & Super Admin Curation Bar */}
-        {isTechHeadOrAdmin && (
-          <div className="rounded-lg border border-border bg-card p-5 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
-              <span className="font-mono text-xs uppercase tracking-[0.14em] text-foreground">
-                Editorial Board Curation Controls
-              </span>
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                Status: {submission.status.toUpperCase()}
-              </span>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Input
-                value={reviewNote}
-                onChange={(e) => setReviewNote(e.target.value)}
-                placeholder="Editorial note or feedback for author..."
-                className="h-9 text-xs flex-1 rounded-md"
-              />
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={curationBusy}
-                  onClick={() => void handleReviewStatus("approved")}
-                  className="h-9 rounded-md text-xs"
-                >
-                  <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
-                  Approve
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={curationBusy}
-                  onClick={() => void handleReviewStatus("rejected")}
-                  className="h-9 rounded-md text-xs"
-                >
-                  <XCircle className="mr-1.5 h-3.5 w-3.5" />
-                  Request Revision
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={curationBusy || submission.status === "selected"}
-                  onClick={() => void handleSelectWeeklyPick()}
-                  className="h-9 rounded-md text-xs"
-                >
-                  {submission.status === "selected"
-                    ? "Selected for LinkedIn"
-                    : "Select as Weekly Pick"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Monograph Header */}
-        <m.article
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="space-y-8"
+    <div className="mx-auto max-w-content space-y-8 px-4 py-10 sm:px-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline pb-4">
+        <Link
+          href="/tech-weekly"
+          className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground transition-colors hover:text-foreground"
         >
-          <header className="space-y-5 border-b border-border pb-8">
-            <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-              <span>{submission.week?.title || "CSI Tech Weekly"}</span>
-              <span>·</span>
-              <span>
-                <Clock className="inline h-3 w-3 -mt-0.5 mr-1" />
-                {submission.read_time} MIN READ ({submission.word_count} WORDS)
-              </span>
-              {submission.status === "selected" && (
-                <>
-                  <span>·</span>
-                  <span className="border border-foreground px-1.5 py-0.5 text-[10px] text-foreground">
-                    OFFICIAL LINKEDIN SELECTION
-                  </span>
-                </>
-              )}
-            </div>
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+          Tech Weekly Index
+        </Link>
 
-            <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight text-foreground leading-[1.12]">
-              {submission.title}
-            </h1>
-
-            {submission.summary && (
-              <p className="font-serif text-lg sm:text-xl text-muted-foreground leading-relaxed">
-                {submission.summary}
-              </p>
-            )}
-
-            {submission.tags && submission.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {submission.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground border border-border bg-card px-2.5 py-0.5 rounded-sm"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-border/70">
-              <Link
-                href={`/profile/${submission.author?.username}`}
-                className="flex items-center gap-3 group"
-              >
-                <Avatar className="h-10 w-10 rounded-sm border border-border">
-                  <AvatarImage src={submission.author?.avatar_url || ""} />
-                  <AvatarFallback className="rounded-sm font-mono text-xs">
-                    {authorName[0]?.toUpperCase() || "C"}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="text-sm font-medium text-foreground group-hover:underline">
-                    {authorName}
-                  </p>
-                  <p className="font-mono text-[11px] text-muted-foreground">
-                    {authorBadge}
-                    {submission.author?.csi_id
-                      ? ` · CSI #${submission.author.csi_id}`
-                      : ""}{" "}
-                    · <RelativeTime date={submission.created_at} />
-                  </p>
-                </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {(isAuthor || isSuperAdmin) && (
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="border-hairline"
+            >
+              <Link href={`/tech-weekly/write?id=${submission.id}`}>
+                <Edit3 className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                Edit Dispatch
               </Link>
-
-              {user && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setReportTarget({
-                      type: "submission",
-                      id: submission.id,
-                    });
-                    setReportModalOpen(true);
-                  }}
-                  className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
-                >
-                  <Flag className="h-3 w-3" />
-                  Report
-                </button>
-              )}
-            </div>
-          </header>
-
-          {submission.cover_image && (
-            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-md border border-border bg-muted">
-              <Image
-                src={submission.cover_image}
-                alt={submission.title}
-                fill
-                sizes="(max-width: 768px) 100vw, 768px"
-                className="object-cover"
-              />
-            </div>
+            </Button>
           )}
+          {submission.status === "selected" && isTechHeadOrAdmin && (
+            <CopyForLinkedInButton submission={submission} size="sm" />
+          )}
+          <ShareMenu title={submission.title} />
+        </div>
+      </div>
 
-          {/* Markdown Monograph Body */}
-          <div className="py-2">
-            <PostBodyRenderer content={submission.content} forceMarkdown />
-          </div>
-
-          {/* Peer Endorsement Bar (Zero Emojis / Zero Fire Icons) */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-y border-border py-5">
-            <div className="flex flex-wrap items-center gap-2.5">
-              {(
-                [
-                  {
-                    type: "like" as const,
-                    label: "Endorse",
-                    icon: ThumbsUp,
-                    count: counts.like,
-                  },
-                  {
-                    type: "insightful" as const,
-                    label: "Insightful",
-                    icon: Lightbulb,
-                    count: counts.insightful,
-                  },
-                  {
-                    type: "fire" as const,
-                    label: "Well-Engineered",
-                    icon: Code2,
-                    count: counts.fire,
-                  },
-                ] as const
-              ).map((item) => {
-                const active = viewerReactions.includes(item.type);
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.type}
-                    type="button"
-                    disabled={reactingType === item.type}
-                    onClick={() => void handleToggleReaction(item.type)}
-                    className={`inline-flex items-center gap-2 rounded-md border px-3.5 py-2 text-xs font-medium transition-colors ${
-                      active
-                        ? "border-foreground bg-foreground text-background"
-                        : "border-border bg-card text-foreground hover:border-foreground/40"
-                    }`}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    <span>{item.label}</span>
-                    <span className="font-mono text-[11px] tabular-nums opacity-80">
-                      {item.count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="font-mono text-xs text-muted-foreground tabular-nums">
-              <MessageSquare className="inline h-3.5 w-3.5 mr-1.5 -mt-0.5" />
-              {comments.reduce(
-                (acc, c) => acc + 1 + (c.replies?.length || 0),
-                0
-              )}{" "}
-              responses
-            </div>
-          </div>
-        </m.article>
-
-        {/* Threaded Technical Discussion */}
-        <section className="space-y-6 pt-2">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-2xl font-semibold text-foreground">
-              Technical Discourse
-            </h2>
-            <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-              Peer Review & Commentary
+      {isTechHeadOrAdmin && (
+        <div className="space-y-4 border border-hairline p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline pb-3">
+            <span className="meta-label text-foreground">
+              Editorial curation
+            </span>
+            <span className="meta-label">
+              Status: {submission.status}
             </span>
           </div>
 
-          {canComment ? (
-            <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-              <Textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                rows={3}
-                placeholder="Contribute technical feedback, architectural questions, or benchmarks..."
-                className="text-sm resize-none border-0 bg-transparent p-0 focus-visible:ring-0"
-              />
-              <div className="flex items-center justify-between border-t border-border pt-3">
-                <span className="font-mono text-[11px] text-muted-foreground">
-                  Commenting as CSI #{profile?.csi_id ?? "Verified"}
-                </span>
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={submittingComment || !newComment.trim()}
-                  onClick={() => void handleAddComment(null)}
-                  className="rounded-md px-4 text-xs"
-                >
-                  {submittingComment && (
-                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                  )}
-                  Post Response
-                </Button>
-              </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Input
+              value={reviewNote}
+              onChange={(e) => setReviewNote(e.target.value)}
+              placeholder="Editorial note or feedback for author…"
+              className="h-9 flex-1 border-hairline text-xs"
+              aria-label="Editorial review note"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={curationBusy}
+                onClick={() => void handleReviewStatus("approved")}
+                className="border-hairline"
+                aria-label="Approve dispatch"
+              >
+                <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                Approve
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={curationBusy}
+                onClick={() => void handleReviewStatus("rejected")}
+                className="border-hairline"
+                aria-label="Request revision"
+              >
+                <XCircle className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                Request Revision
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={curationBusy || submission.status === "selected"}
+                onClick={() => void handleSelectWeeklyPick()}
+                aria-label="Select as weekly LinkedIn pick"
+              >
+                {submission.status === "selected"
+                  ? "Selected for LinkedIn"
+                  : "Select as Weekly Pick"}
+              </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      <ArticleLayout
+        sectionLabel={submission.week?.title || "CSI Tech Weekly"}
+        sectionHref="/tech-weekly"
+        title={submission.title}
+        dek={submission.summary}
+        author={
+          submission.author
+            ? {
+                username: submission.author.username,
+                fullName: submission.author.full_name,
+                avatarUrl: submission.author.avatar_url,
+                dept: submission.author.dept,
+                year: submission.author.year,
+                isCsi: true,
+              }
+            : null
+        }
+        publishedAt={submission.created_at}
+        readTime={submission.read_time}
+        coverImage={submission.cover_image}
+        showProgress
+        actions={
+          <div className="flex flex-wrap items-center gap-1">
+            <BookmarkButton
+              targetType="tech_submission"
+              targetId={submission.id}
+            />
+            <ShareMenu title={submission.title} />
+            {user ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
+                onClick={() => {
+                  setReportTarget({ type: "submission", id: submission.id });
+                  setReportModalOpen(true);
+                }}
+                aria-label="Report this dispatch"
+              >
+                <Flag className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                Report
+              </Button>
+            ) : null}
+          </div>
+        }
+        reactions={
+          <div className="space-y-4">
+            {submission.tags && submission.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {submission.tags.map((tag) => (
+                  <TagChip key={tag} tag={tag} />
+                ))}
+              </div>
+            )}
+            {submission.status === "selected" && (
+              <p className="meta-label text-foreground">
+                Official LinkedIn selection
+              </p>
+            )}
+            <ReactionBar
+              items={[
+                {
+                  key: "like",
+                  label: "Endorse",
+                  icon: <ThumbsUp className="h-3.5 w-3.5" aria-hidden />,
+                  count: counts.like,
+                  active: viewerReactions.includes("like"),
+                  disabled: reactingType === "like",
+                  onClick: () => void handleToggleReaction("like"),
+                },
+                {
+                  key: "insightful",
+                  label: "Insightful",
+                  icon: <Lightbulb className="h-3.5 w-3.5" aria-hidden />,
+                  count: counts.insightful,
+                  active: viewerReactions.includes("insightful"),
+                  disabled: reactingType === "insightful",
+                  onClick: () => void handleToggleReaction("insightful"),
+                },
+                {
+                  key: "fire",
+                  label: "Well-Engineered",
+                  icon: <Code2 className="h-3.5 w-3.5" aria-hidden />,
+                  count: counts.fire,
+                  active: viewerReactions.includes("fire"),
+                  disabled: reactingType === "fire",
+                  onClick: () => void handleToggleReaction("fire"),
+                },
+              ]}
+            />
+            <p className="font-mono text-[11px] text-muted-foreground">
+              {submission.word_count} words · authored by {authorName}
+            </p>
+          </div>
+        }
+        comments={
+          canComment || comments.length > 0 ? (
+            <CommentThread
+              comments={commentNodes}
+              canComment={canComment}
+              currentUserId={user?.id}
+              onAdd={handleAddComment}
+              onDelete={handleDeleteComment}
+              emptyMessage={
+                !user
+                  ? "Sign in and verify your CSI ID to join the discussion."
+                  : role === "unverified"
+                    ? "Verify your CSI ID to participate in technical discussions."
+                    : "No comments yet. Start the technical discourse."
+              }
+            />
           ) : (
-            <div className="rounded-lg border border-border bg-card p-5 text-xs text-muted-foreground flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 border border-hairline px-4 py-4 font-serif text-sm text-muted-foreground">
               <span>
                 {!user
-                  ? "Sign in with Google and verify your CSI Technical ID to join the technical discussion."
+                  ? "Sign in with Google and verify your CSI Technical ID to join the discussion."
                   : role === "unverified"
-                    ? "Verify your CSI ID and PRN to participate in technical discussions."
-                    : "Commentary is currently restricted to verified CSI Technical Wing members."}
+                    ? "Verify your CSI ID and PRN to participate."
+                    : "Commentary is restricted to verified CSI Technical Wing members."}
               </span>
               {!user ? (
-                <Button asChild size="sm" variant="outline" className="rounded-md">
+                <Button asChild size="sm" variant="outline" className="border-hairline">
                   <Link href="/auth/signin">Sign in</Link>
                 </Button>
               ) : role === "unverified" ? (
-                <Button asChild size="sm" variant="outline" className="rounded-md">
+                <Button asChild size="sm" variant="outline" className="border-hairline">
                   <Link href="/verify-csi">Verify CSI ID</Link>
                 </Button>
               ) : null}
             </div>
-          )}
+          )
+        }
+      >
+        <PostBodyRenderer content={submission.content} forceMarkdown />
+      </ArticleLayout>
 
-          <div className="divide-y divide-border">
-            {comments.map((comment) => {
-              const cAuthor =
-                comment.author?.full_name ||
-                comment.author?.username ||
-                "CSI Member";
-              const canDelete =
-                user?.id === comment.user_id || isSuperAdmin;
-
-              return (
-                <div key={comment.id} className="py-5 space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="font-medium text-foreground">
-                          {cAuthor}
-                        </span>
-                        {comment.author?.csi_id && (
-                          <span className="font-mono text-[11px] text-muted-foreground">
-                            CSI #{comment.author.csi_id} ·{" "}
-                            {comment.author.dept || "Tech"}
-                          </span>
-                        )}
-                        <span className="font-mono text-[11px] text-muted-foreground">
-                          · <RelativeTime date={comment.created_at} />
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        {canComment && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setReplyingToId(
-                                replyingToId === comment.id ? null : comment.id
-                              )
-                            }
-                            className="inline-flex items-center gap-1 font-mono text-[11px] text-muted-foreground hover:text-foreground"
-                          >
-                            <Reply className="h-3 w-3" />
-                            Reply
-                          </button>
-                        )}
-                        {canDelete && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              void handleDeleteComment(comment.id)
-                            }
-                            className="inline-flex items-center gap-1 font-mono text-[11px] text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                      {comment.content}
-                    </p>
-                  </div>
-
-                  {/* Reply Input */}
-                  {replyingToId === comment.id && (
-                    <div className="ml-6 rounded-md border border-border bg-card p-3 space-y-2">
-                      <Textarea
-                        value={replyText}
-                        onChange={(e) => setReplyText(e.target.value)}
-                        rows={2}
-                        placeholder={`Reply to ${cAuthor}...`}
-                        className="text-xs"
-                      />
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setReplyingToId(null)}
-                          className="h-7 text-xs"
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          disabled={submittingComment || !replyText.trim()}
-                          onClick={() => void handleAddComment(comment.id)}
-                          className="h-7 text-xs rounded-md"
-                        >
-                          Reply
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 1-Level Nested Replies */}
-                  {comment.replies && comment.replies.length > 0 && (
-                    <div className="ml-6 border-l border-border pl-4 space-y-3">
-                      {comment.replies.map((reply) => {
-                        const rAuthor =
-                          reply.author?.full_name ||
-                          reply.author?.username ||
-                          "CSI Member";
-                        const canDeleteReply =
-                          user?.id === reply.user_id || isSuperAdmin;
-                        return (
-                          <div key={reply.id} className="space-y-1">
-                            <div className="flex items-center justify-between text-xs">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-foreground">
-                                  {rAuthor}
-                                </span>
-                                {reply.author?.csi_id && (
-                                  <span className="font-mono text-[10px] text-muted-foreground">
-                                    CSI #{reply.author.csi_id}
-                                  </span>
-                                )}
-                                <span className="font-mono text-[10px] text-muted-foreground">
-                                  · <RelativeTime date={reply.created_at} />
-                                </span>
-                              </div>
-                              {canDeleteReply && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    void handleDeleteComment(
-                                      reply.id,
-                                      comment.id
-                                    )
-                                  }
-                                  className="text-muted-foreground hover:text-destructive"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </button>
-                              )}
-                            </div>
-                            <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">
-                              {reply.content}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Report Modal */}
-        {reportModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-            <div className="w-full max-w-md rounded-lg border border-border bg-card p-6 space-y-4 shadow-xl">
-              <h3 className="font-display text-lg font-semibold text-foreground">
-                Report Content to CSI Moderation
-              </h3>
-              <Textarea
-                value={reportReason}
-                onChange={(e) => setReportReason(e.target.value)}
-                rows={3}
-                placeholder="Describe why this content violates publication standards..."
-                className="text-sm"
-              />
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setReportModalOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={reportingBusy || reportReason.trim().length < 3}
-                  onClick={() => void handleReportSubmit()}
-                >
-                  Submit Report
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </LazyMotion>
+      <Dialog
+        open={reportModalOpen}
+        onOpenChange={(open) => {
+          setReportModalOpen(open);
+          if (!open) {
+            setReportReason("");
+            setReportTarget(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-display">
+              Report to CSI Moderation
+            </DialogTitle>
+            <DialogDescription>
+              Describe why this content violates publication standards.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={reportReason}
+            onChange={(e) => setReportReason(e.target.value)}
+            rows={3}
+            placeholder="Reason for report…"
+            className="border-hairline font-serif text-sm"
+            aria-label="Report reason"
+          />
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              className="border-hairline"
+              onClick={() => setReportModalOpen(false)}
+              disabled={reportingBusy}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={reportingBusy || reportReason.trim().length < 3}
+              onClick={() => void handleReportSubmit()}
+              aria-label="Submit report"
+            >
+              {reportingBusy ? "Submitting…" : "Submit Report"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

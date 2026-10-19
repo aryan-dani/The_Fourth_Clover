@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LazyMotion, domAnimation, m } from "framer-motion";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -200,8 +199,7 @@ export default function TechWeeklyReviewClient({
   }
 
   return (
-    <LazyMotion features={domAnimation}>
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8 space-y-8">
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8 space-y-8">
         {/* Header */}
         <header className="border-b border-border pb-6 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
@@ -337,14 +335,10 @@ export default function TechWeeklyReviewClient({
               const isSelected = sub.status === "selected";
 
               return (
-                <m.div
-                  key={sub.id}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
+                <div key={sub.id}
                   className={`rounded-lg border bg-card p-6 transition-colors ${
                     isSelected ? "border-foreground" : "border-border"
-                  }`}
-                >
+                  }`}>
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="space-y-2 max-w-3xl">
                       <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] uppercase tracking-wider">
@@ -481,12 +475,11 @@ export default function TechWeeklyReviewClient({
                       </Button>
                     </div>
                   </div>
-                </m.div>
+                </div>
               );
             })}
           </div>
         )}
       </div>
-    </LazyMotion>
   );
 }

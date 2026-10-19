@@ -230,6 +230,7 @@ export function FeaturedTechWeeklyBanner({
                 src={submission.cover_image}
                 alt={submission.title}
                 fill
+                priority
                 sizes="(max-width: 1024px) 100vw, 40vw"
                 className="object-cover transition-transform duration-500 hover:scale-[1.02]"
               />

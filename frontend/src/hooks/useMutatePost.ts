@@ -92,6 +92,7 @@ export function useMutatePost(
       featured_image: null,
       scheduled_at: null,
       publication_id: options?.publicationId ?? null,
+      format: "prose",
     },
   });
 
@@ -147,6 +148,7 @@ export function useMutatePost(
         featured_image: data.featured_image || null,
         scheduled_at: data.scheduled_at || null,
         publication_id: data.publication_id ?? options?.publicationId ?? null,
+        format: data.format === "poetry" ? "poetry" : "prose",
       });
     } catch (error) {
       console.error("Error loading post:", error);
@@ -222,6 +224,7 @@ export function useMutatePost(
         cover_image: values.cover_image || null,
         excerpt: values.excerpt || null,
         tags: tagsArray,
+        format: values.format ?? "prose",
         read_time,
         slug: values.slug,
         featured_image: values.featured_image || null,
@@ -331,6 +334,7 @@ export function useMutatePost(
           cover_image: values.cover_image || null,
           excerpt: values.excerpt || null,
           tags: tagsArray,
+          format: values.format ?? "prose",
           read_time,
           slug: values.slug,
           featured_image: values.featured_image || null,

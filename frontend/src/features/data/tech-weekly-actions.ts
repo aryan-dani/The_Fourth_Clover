@@ -95,42 +95,50 @@ function computeIsWindowOpen(
 export async function fetchTechWeeklyLandingData(): Promise<TechWeeklyLandingPayload> {
   const supabase = createSupabasePublicServerClient();
 
-  const [
-    currentWeekRpcRes,
-    weeksRes,
-    settingsRes,
-    submissionsRes,
-    reactionsRes,
-    commentsRes,
-  ] = await Promise.all([
-    supabase.rpc("get_or_create_current_tech_week"),
-    supabase
-      .from("tech_weeks")
-      .select("*")
-      .order("starts_at", { ascending: false })
-      .limit(26),
-    supabase.from("platform_settings").select("*").eq("id", 1).maybeSingle(),
-    supabase
-      .from("tech_submissions")
-      .select(
-        `
+  const [currentWeekRpcRes, weeksRes, settingsRes, submissionsRes] =
+    await Promise.all([
+      supabase.rpc("get_or_create_current_tech_week"),
+      supabase
+        .from("tech_weeks")
+        .select("*")
+        .order("starts_at", { ascending: false })
+        .limit(26),
+      supabase.from("platform_settings").select("*").eq("id", 1).maybeSingle(),
+      supabase
+        .from("tech_submissions")
+        .select(
+          `
           id, week_id, author_id, title, slug, summary, cover_image, tags, word_count,
           status, selected_by, selected_at, reviewed_by, reviewed_at, review_note,
           is_deleted, created_at, updated_at,
           author:profiles!tech_submissions_author_id_fkey (${AUTHOR_BADGE_SELECT}),
           week:tech_weeks!tech_submissions_week_id_fkey (*)
         `
-      )
-      .eq("is_deleted", false)
-      .in("status", ["submitted", "approved", "selected", "archived"])
-      .order("created_at", { ascending: false })
-      .limit(120),
-    supabase.from("tech_reactions").select("submission_id, reaction_type"),
-    supabase
-      .from("tech_comments")
-      .select("submission_id")
-      .eq("is_deleted", false),
-  ]);
+        )
+        .eq("is_deleted", false)
+        .in("status", ["submitted", "approved", "selected", "archived"])
+        .order("created_at", { ascending: false })
+        .limit(120),
+    ]);
+
+  const submissionIds = (submissionsRes.data || []).map((s) => s.id as string);
+  const [reactionsRes, commentsRes] =
+    submissionIds.length === 0
+      ? [
+          { data: [] as { submission_id: string; reaction_type: string }[] },
+          { data: [] as { submission_id: string }[] },
+        ]
+      : await Promise.all([
+          supabase
+            .from("tech_reactions")
+            .select("submission_id, reaction_type")
+            .in("submission_id", submissionIds),
+          supabase
+            .from("tech_comments")
+            .select("submission_id")
+            .eq("is_deleted", false)
+            .in("submission_id", submissionIds),
+        ]);
 
   const rawWeeks = (weeksRes.data || []) as TechWeek[];
   const rpcWeek = (currentWeekRpcRes.data as TechWeek | null) ?? null;

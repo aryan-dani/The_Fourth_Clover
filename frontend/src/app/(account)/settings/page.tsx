@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { LazyMotion, domAnimation, m } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +18,6 @@ import { useTheme } from "next-themes";
 import {
     User,
     Settings,
-    Bell,
     Shield,
     Loader2,
     Save,
@@ -31,7 +29,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-// Theme Toggle Switch Component
 function ThemeToggleSwitch() {
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
@@ -69,14 +66,6 @@ export default function SettingsPage() {
         github: "",
     });
 
-    // Notification preferences (stored in localStorage for now)
-    const [notifications, setNotifications] = useState({
-        emailLikes: true,
-        emailComments: true,
-        emailReplies: true,
-        emailNewsletter: false,
-    });
-
     useEffect(() => {
         if (!loading && !user) {
             router.push("/auth/signin");
@@ -95,14 +84,6 @@ export default function SettingsPage() {
             });
         }
     }, [profile]);
-
-    // Load notification preferences from localStorage
-    useEffect(() => {
-        const saved = localStorage.getItem("notification_preferences");
-        if (saved) {
-            setNotifications(JSON.parse(saved));
-        }
-    }, []);
 
     const handleSaveProfile = async () => {
         if (!user) return;
@@ -124,13 +105,6 @@ export default function SettingsPage() {
         } finally {
             setSaving(false);
         }
-    };
-
-    const handleNotificationChange = (key: string, value: boolean) => {
-        const updated = { ...notifications, [key]: value };
-        setNotifications(updated);
-        localStorage.setItem("notification_preferences", JSON.stringify(updated));
-        toast.success("Notification preference updated");
     };
 
     if (loading || (user && profileLoading)) {
@@ -160,30 +134,18 @@ export default function SettingsPage() {
                         </Button>
                     }
                 >
-                {/* Settings Tabs */}
-                <LazyMotion features={domAnimation}>
-                <m.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                >
                     <Tabs defaultValue="profile" className="space-y-6">
-                        <TabsList className="grid w-full grid-cols-3 h-12">
+                        <TabsList className="grid w-full grid-cols-2 h-12">
                             <TabsTrigger value="profile" className="flex items-center gap-2">
                                 <User className="w-4 h-4" />
                                 Profile
                             </TabsTrigger>
-                            <TabsTrigger value="notifications" className="flex items-center gap-2">
-                                <Bell className="w-4 h-4" />
-                                Notifications
-                            </TabsTrigger>
-                            <TabsTrigger value="account" className="flex items-center gap-2">
-                                <Shield className="w-4 h-4" />
-                                Account
+                            <TabsTrigger value="appearance" className="flex items-center gap-2">
+                                <Settings className="w-4 h-4" />
+                                Appearance
                             </TabsTrigger>
                         </TabsList>
 
-                        {/* Profile Tab */}
                         <TabsContent value="profile" className="space-y-6">
                             <Card className="glass">
                                 <CardHeader>
@@ -196,7 +158,6 @@ export default function SettingsPage() {
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
-                                    {/* Avatar */}
                                     <div className="flex items-center gap-6">
                                         <Avatar className="w-20 h-20 ring-2 ring-primary/20">
                                             <AvatarImage src={profile?.avatar_url || ""} />
@@ -243,7 +204,6 @@ export default function SettingsPage() {
                                         />
                                     </div>
 
-                                    {/* Social Links */}
                                     <div className="space-y-4">
                                         <Label>Social Links</Label>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -291,80 +251,7 @@ export default function SettingsPage() {
                                     </Button>
                                 </CardContent>
                             </Card>
-                        </TabsContent>
 
-                        {/* Notifications Tab */}
-                        <TabsContent value="notifications" className="space-y-6">
-                            <Card className="glass">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Bell className="w-5 h-5" />
-                                        Notification Preferences
-                                    </CardTitle>
-                                    <CardDescription>
-                                        Choose what notifications you want to receive
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between p-4 rounded-lg border">
-                                            <div>
-                                                <p className="font-medium">Likes</p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Get notified when someone likes your post
-                                                </p>
-                                            </div>
-                                            <Switch
-                                                checked={notifications.emailLikes}
-                                                onCheckedChange={(checked) => handleNotificationChange("emailLikes", checked)}
-                                            />
-                                        </div>
-
-                                        <div className="flex items-center justify-between p-4 rounded-lg border">
-                                            <div>
-                                                <p className="font-medium">Comments</p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Get notified when someone comments on your post
-                                                </p>
-                                            </div>
-                                            <Switch
-                                                checked={notifications.emailComments}
-                                                onCheckedChange={(checked) => handleNotificationChange("emailComments", checked)}
-                                            />
-                                        </div>
-
-                                        <div className="flex items-center justify-between p-4 rounded-lg border">
-                                            <div>
-                                                <p className="font-medium">Replies</p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Get notified when someone replies to your comment
-                                                </p>
-                                            </div>
-                                            <Switch
-                                                checked={notifications.emailReplies}
-                                                onCheckedChange={(checked) => handleNotificationChange("emailReplies", checked)}
-                                            />
-                                        </div>
-
-                                        <div className="flex items-center justify-between p-4 rounded-lg border">
-                                            <div>
-                                                <p className="font-medium">Newsletter</p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Receive weekly digest of popular posts
-                                                </p>
-                                            </div>
-                                            <Switch
-                                                checked={notifications.emailNewsletter}
-                                                onCheckedChange={(checked) => handleNotificationChange("emailNewsletter", checked)}
-                                            />
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-
-                        {/* Account Tab */}
-                        <TabsContent value="account" className="space-y-6">
                             <Card className="glass">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
@@ -386,32 +273,6 @@ export default function SettingsPage() {
                                         <p className="text-xs text-muted-foreground">
                                             Authenticated via Google OAuth.
                                         </p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            {/* Appearance Card */}
-                            <Card className="glass">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Settings className="w-5 h-5" />
-                                        Appearance
-                                    </CardTitle>
-                                    <CardDescription>
-                                        Customize how the app looks
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex items-center justify-between p-4 rounded-lg border">
-                                        <div>
-                                            <p className="font-medium">Dark Mode</p>
-                                            <p className="text-sm text-muted-foreground">
-                                                Switch between light and dark themes
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <ThemeToggleSwitch />
-                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -444,9 +305,34 @@ export default function SettingsPage() {
                                 </CardContent>
                             </Card>
                         </TabsContent>
+
+                        <TabsContent value="appearance" className="space-y-6">
+                            <Card className="glass">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Settings className="w-5 h-5" />
+                                        Appearance
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Customize how the app looks
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex items-center justify-between p-4 rounded-lg border">
+                                        <div>
+                                            <p className="font-medium">Dark Mode</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                Switch between light and dark themes
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <ThemeToggleSwitch />
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
                     </Tabs>
-                </m.div>
-                </LazyMotion>
                 </PageShell>
             </main>
 

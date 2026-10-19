@@ -19,20 +19,15 @@ export default function AuthCallback() {
     if (processedRef.current) return;
     processedRef.current = true;
 
-    const redirectVerifiedOrUnverified = async () => {
-      const check = await syncUserVerificationStatusAction();
+    const redirectAfterSignIn = async () => {
+      // Soft-sync verification status; do not force /verify-csi.
+      // CSI verification remains optional (Journal is open; Tech Weekly still gates).
+      void syncUserVerificationStatusAction();
       setStatus("success");
-      if (check.verified) {
-        setMessage("Authenticated. Opening CSI Tech Weekly...");
-        setTimeout(() => {
-          window.location.replace("/tech-weekly");
-        }, 350);
-      } else {
-        setMessage("Authenticated. Redirecting to CSI ID verification...");
-        setTimeout(() => {
-          window.location.replace("/verify-csi");
-        }, 350);
-      }
+      setMessage("Authenticated. Opening Journal...");
+      setTimeout(() => {
+        window.location.replace("/journal");
+      }, 350);
     };
 
     const handleCallback = async () => {
@@ -59,7 +54,7 @@ export default function AuthCallback() {
 
         if (existingSession) {
           devLog("Session already exists, checking verification status...");
-          await redirectVerifiedOrUnverified();
+          await redirectAfterSignIn();
           return;
         }
       } catch (err) {
@@ -78,7 +73,7 @@ export default function AuthCallback() {
               data: { session },
             } = await supabase.auth.getSession();
             if (session) {
-              await redirectVerifiedOrUnverified();
+              await redirectAfterSignIn();
               return;
             }
 
@@ -89,7 +84,7 @@ export default function AuthCallback() {
           }
 
           if (data.session) {
-            await redirectVerifiedOrUnverified();
+            await redirectAfterSignIn();
             return;
           }
         } catch (err) {
@@ -104,7 +99,7 @@ export default function AuthCallback() {
       } = await supabase.auth.getSession();
 
       if (finalSession) {
-        await redirectVerifiedOrUnverified();
+        await redirectAfterSignIn();
         return;
       }
 

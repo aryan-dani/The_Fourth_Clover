@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { LazyMotion, domAnimation, m } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
@@ -36,8 +35,7 @@ export function HomeHeroClient({
       : "/verify-csi";
 
   return (
-    <LazyMotion features={domAnimation}>
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         {/* Top Dateline Strip */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border py-3.5 font-mono text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
           <span>VOL. IV · CSI MIT-WPU ENGINEERING PRESS</span>
@@ -56,12 +54,7 @@ export function HomeHeroClient({
         {/* Main Editorial Broadsheet Grid */}
         <div className="grid border-b border-border lg:grid-cols-12">
           {/* Left Column: Manifesto & Primary Actions */}
-          <m.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="py-12 sm:py-16 lg:col-span-7 lg:border-r lg:border-border lg:pr-12 space-y-8"
-          >
+          <div className="py-12 sm:py-16 lg:col-span-7 lg:border-r lg:border-border lg:pr-12 space-y-8">
             <div className="space-y-4">
               <p className="font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
                 Technical Monograph & Weekly Chronicle
@@ -114,15 +107,10 @@ export function HomeHeroClient({
                 <Link href="/explore">Browse Open Archive</Link>
               </Button>
             </div>
-          </m.div>
+          </div>
 
           {/* Right Column: Editorial Specifications Ledger */}
-          <m.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.08 }}
-            className="flex flex-col justify-between border-t border-border py-10 lg:col-span-5 lg:border-t-0 lg:pl-10 lg:py-16 space-y-8"
-          >
+          <div className="flex flex-col justify-between border-t border-border py-10 lg:col-span-5 lg:border-t-0 lg:pl-10 lg:py-16 space-y-8">
             <div className="space-y-6">
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-foreground">
@@ -179,7 +167,7 @@ export function HomeHeroClient({
                 (CSI #303).
               </p>
             </div>
-          </m.div>
+          </div>
         </div>
 
         {/* Featured Weekly Pick Spread (if available) */}
@@ -237,6 +225,5 @@ export function HomeHeroClient({
           </div>
         </section>
       </div>
-    </LazyMotion>
   );
 }

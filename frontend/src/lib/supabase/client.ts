@@ -116,6 +116,7 @@ export type Database = {
           linkedin_pick_week?: string | null;
           linkedin_picked_by?: string | null;
           tags: string[] | null;
+          format: "prose" | "poetry";
           read_time: number;
           created_at: string;
           updated_at: string;
@@ -137,6 +138,7 @@ export type Database = {
           linkedin_pick_week?: string | null;
           linkedin_picked_by?: string | null;
           tags?: string[] | null;
+          format?: "prose" | "poetry";
           read_time?: number;
           created_at?: string;
           updated_at?: string;
@@ -158,11 +160,35 @@ export type Database = {
           linkedin_pick_week?: string | null;
           linkedin_picked_by?: string | null;
           tags?: string[] | null;
+          format?: "prose" | "poetry";
           read_time?: number;
           created_at?: string;
           updated_at?: string;
           published_at?: string | null;
           scheduled_at?: string | null;
+        };
+      };
+      bookmarks: {
+        Row: {
+          id: string;
+          user_id: string;
+          target_type: "post" | "tech_submission";
+          target_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          target_type: "post" | "tech_submission";
+          target_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          target_type?: "post" | "tech_submission";
+          target_id?: string;
+          created_at?: string;
         };
       };
       publications: {
@@ -693,6 +719,21 @@ export type Database = {
           metadata?: Record<string, unknown> | null;
           created_at?: string;
         };
+      };
+    };
+    Functions: {
+      search_content: {
+        Args: {
+          q: string;
+          lim?: number;
+        };
+        Returns: {
+          id: string;
+          title: string;
+          slug: string;
+          kind: string;
+          excerpt: string | null;
+        }[];
       };
     };
   };

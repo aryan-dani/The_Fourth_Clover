@@ -4,12 +4,27 @@ import {
   listPublishedPostSlugsForSitemap,
   listProfileUsernamesForSitemap,
 } from "@/features/data/server-queries";
+import {
+  listPopularTagSlugsForSitemap,
+  listTechSubmissionSlugsForSitemap,
+} from "@/features/data/discovery-queries";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = [
     { url: absoluteUrl("/"), changeFrequency: "weekly", priority: 1 },
-    { url: absoluteUrl("/explore"), changeFrequency: "daily", priority: 0.9 },
-    { url: absoluteUrl("/csi"), changeFrequency: "daily", priority: 0.9 },
+    { url: absoluteUrl("/journal"), changeFrequency: "daily", priority: 0.9 },
+    {
+      url: absoluteUrl("/tech-weekly"),
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+    {
+      url: absoluteUrl("/tech-weekly/issues"),
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
+    { url: absoluteUrl("/tags"), changeFrequency: "weekly", priority: 0.6 },
+    { url: absoluteUrl("/search"), changeFrequency: "monthly", priority: 0.4 },
     { url: absoluteUrl("/about"), changeFrequency: "monthly", priority: 0.5 },
     { url: absoluteUrl("/privacy"), changeFrequency: "yearly", priority: 0.3 },
     {
@@ -19,9 +34,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  const [postRows, profileRows] = await Promise.all([
+  const [postRows, profileRows, techRows, tagSlugs] = await Promise.all([
     listPublishedPostSlugsForSitemap(),
     listProfileUsernamesForSitemap(),
+    listTechSubmissionSlugsForSitemap(),
+    listPopularTagSlugsForSitemap(80),
   ]);
 
   const postEntries: MetadataRoute.Sitemap = postRows.map((p) => {
@@ -38,6 +55,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     };
   });
 
+  const techEntries: MetadataRoute.Sitemap = techRows.map((row) => ({
+    url: absoluteUrl(`/tech-weekly/${encodeURIComponent(row.slug)}`),
+    lastModified: row.updated_at ? new Date(row.updated_at) : undefined,
+    changeFrequency: "weekly",
+    priority: 0.75,
+  }));
+
+  const tagEntries: MetadataRoute.Sitemap = tagSlugs.map((tag) => ({
+    url: absoluteUrl(`/tags/${encodeURIComponent(tag)}`),
+    changeFrequency: "weekly",
+    priority: 0.55,
+  }));
+
   const profileEntries: MetadataRoute.Sitemap = profileRows.map((row) => ({
     url: absoluteUrl(`/profile/${encodeURIComponent(row.username)}`),
     lastModified: row.updated_at ? new Date(row.updated_at) : undefined,
@@ -45,5 +75,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticEntries, ...postEntries, ...profileEntries];
+  return [
+    ...staticEntries,
+    ...postEntries,
+    ...techEntries,
+    ...tagEntries,
+    ...profileEntries,
+  ];
 }

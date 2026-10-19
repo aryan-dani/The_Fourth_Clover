@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { LazyMotion, domAnimation, m } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/features/auth/auth-context";
-import { formatRelativeTime } from "@/lib/utils";
+import { RelativeTime } from "@/components/time/RelativeTime";
 import { WriterHubShell } from "@/components/layout/WriterHubShell";
 import { toast } from "sonner";
 import {
@@ -300,9 +299,10 @@ export function DashboardClient({
       cell: ({ row }: { row: Row<DashboardPostRow> }) => {
         const post = row.original;
         return (
-          <span className="text-muted-foreground text-sm">
-            {formatRelativeTime(post.created_at)}
-          </span>
+          <RelativeTime
+            date={post.created_at}
+            className="text-muted-foreground text-sm"
+          />
         );
       },
     },
@@ -380,8 +380,7 @@ export function DashboardClient({
   }
 
   return (
-    <LazyMotion features={domAnimation}>
-      <WriterHubShell>
+    <WriterHubShell>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="font-display text-2xl font-semibold tracking-tight md:text-3xl">
@@ -428,12 +427,7 @@ export function DashboardClient({
           </div>
         </div>
 
-        <m.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
-        >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             title="Total Posts"
             value={stats.totalPosts}
@@ -446,13 +440,8 @@ export function DashboardClient({
             value={stats.totalComments}
             icon={MessageCircle}
           />
-        </m.div>
+        </div>
 
-        <m.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
           <Card className="border-border/70 glass overflow-hidden rounded-3xl border shadow-lg">
             <CardContent className="p-4 sm:p-6">
               <Tabs defaultValue="all" className="w-full">
@@ -550,7 +539,7 @@ export function DashboardClient({
                                     className="rounded-lg"
                                   >
                                     <Calendar className="mr-1 h-3 w-3" />
-                                    {formatRelativeTime(post.scheduled_at!)}
+                                    <RelativeTime date={post.scheduled_at!} />
                                   </Badge>
                                   <Button
                                     variant="outline"
@@ -583,8 +572,6 @@ export function DashboardClient({
               </Tabs>
             </CardContent>
           </Card>
-        </m.div>
       </WriterHubShell>
-    </LazyMotion>
   );
 }

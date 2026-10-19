@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { LazyMotion, domAnimation, m } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { formatRelativeTime, toTitleCase } from "@/lib/utils";
+import { toTitleCase } from "@/lib/utils";
+import { RelativeTime } from "@/components/time/RelativeTime";
 import {
   Search,
   Heart,
@@ -146,8 +146,7 @@ export function ExplorePageClient({
   const canPaginateServer = !searchTerm && !selectedTag;
 
   return (
-    <LazyMotion features={domAnimation}>
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8 space-y-10">
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8 space-y-10">
         {/* Masthead */}
         <header className="border-b border-border pb-8 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
@@ -286,13 +285,8 @@ export function ExplorePageClient({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPosts.map((post, index) => (
-              <m.article
-                key={post.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25, delay: (index % 9) * 0.03 }}
-                className="group flex flex-col justify-between rounded-lg border border-border bg-card overflow-hidden transition-colors hover:border-foreground/35"
-              >
+              <article key={post.id}
+                className="group flex flex-col justify-between rounded-lg border border-border bg-card overflow-hidden transition-colors hover:border-foreground/35">
                 <div>
                   {post.cover_image && (
                     <Link
@@ -365,12 +359,12 @@ export function ExplorePageClient({
                       <MessageCircle className="h-3 w-3" />
                       {post.comments[0]?.count || 0}
                     </span>
-                    <span>
-                      {formatRelativeTime(post.published_at || post.created_at)}
-                    </span>
+                    <RelativeTime
+                      date={post.published_at || post.created_at}
+                    />
                   </div>
                 </div>
-              </m.article>
+              </article>
             ))}
           </div>
         )}
@@ -389,6 +383,5 @@ export function ExplorePageClient({
           </div>
         )}
       </div>
-    </LazyMotion>
   );
 }

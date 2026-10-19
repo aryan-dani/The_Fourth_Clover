@@ -1,7 +1,5 @@
 "use client";
 
-import { LazyMotion, domAnimation, m } from "framer-motion";
-import { motionEase } from "@/lib/motion";
 import { PageShell } from "@/components/layout/PageShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Scale, FileText, Shield, Mail } from "lucide-react";
@@ -9,18 +7,12 @@ import Link from "next/link";
 
 export default function CopyrightPage() {
   return (
-    <LazyMotion features={domAnimation}>
-      <PageShell
+    <PageShell
         variant="reading"
         title="Copyright & legal"
         description="Protecting creative content and respecting intellectual property rights."
       >
-        <m.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: motionEase }}
-          className="space-y-8"
-        >
+        <div className="space-y-8">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-display text-lg">
@@ -131,9 +123,8 @@ export default function CopyrightPage() {
           <p className="text-center font-sans text-sm text-muted-foreground">
             Last updated: January 18, 2026
           </p>
-        </m.div>
+        </div>
       </PageShell>
-    </LazyMotion>
   );
 }
 

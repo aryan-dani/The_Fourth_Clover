@@ -3,24 +3,14 @@
 import { useState, useEffect, useRef, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
-import { WriteToolbar } from "@/features/write/write-toolbar";
-import { WriteEditorForm } from "@/features/write/write-editor-form";
-import { WriteMetaFields } from "@/features/write/write-meta-fields";
-import {
-  WRITE_CHROME_INSET_CLASS,
-  WRITE_EDITOR_AREA_PT_CLASS,
-  WRITE_SIDEBAR_STICKY_TOP_CLASS,
-} from "@/features/write/layout-classes";
+import { EditorShell } from "@/features/editor/EditorShell";
+import { EditorCanvas } from "@/features/editor/EditorCanvas";
+import { EditorSettingsSheet } from "@/features/editor/EditorSettingsSheet";
+import { PostBodyRenderer } from "@/components/post/PostBodyRenderer";
 import { useMutatePost } from "@/hooks/useMutatePost";
 import { notifyEditorsOfReviewSubmissionAction } from "@/features/data/server-actions";
-import {
-  calculateReadTime,
-  countContentWords,
-  generateSlug,
-  cn,
-} from "@/lib/utils";
+import { generateSlug } from "@/lib/utils";
 import { toast } from "sonner";
 import type { PublicationRole } from "@/types/database";
 
@@ -40,10 +30,11 @@ function WritePageContent({
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
 
-  const [tagInput, setTagInput] = useState("");
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [mode, setMode] = useState<"write" | "preview">("write");
+  const inlineInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleSubmittedForReview = useCallback(
     async (postId: string, postTitle: string) => {
@@ -79,6 +70,8 @@ function WritePageContent({
     publicationSlug || (isPublicationMode ? "csi" : null);
   const resolvedPubName =
     publicationName || (isPublicationMode ? "CSI Tech Blog" : null);
+  const canDirectPublish = !isPublicationMode || memberRole === "editor";
+  const isJournal = !isPublicationMode;
 
   const {
     title,
@@ -88,14 +81,8 @@ function WritePageContent({
     excerpt,
     slug,
     cover_image,
+    format,
   } = form.watch();
-
-  const tags = tagsString
-    ? tagsString
-        .split(",")
-        .map((t: string) => t.trim())
-        .filter(Boolean)
-    : [];
 
   useEffect(() => {
     if (!editingPostId && title) {
@@ -121,7 +108,6 @@ function WritePageContent({
       autoSaveTimerRef.current = null;
     }
 
-    // Pause autosave while an explicit Save/Publish or image upload is in flight.
     if (isLoading || isUploading || isInlineUploading) return;
 
     const hasContent = Boolean(title?.trim() || content?.trim());
@@ -160,6 +146,7 @@ function WritePageContent({
     cover_image,
     excerpt,
     status,
+    format,
     isLoading,
     isUploading,
     isInlineUploading,
@@ -176,22 +163,19 @@ function WritePageContent({
     event.target.value = "";
   };
 
-  const addTag = (tag: string) => {
-    if (tag && !tags.includes(tag)) {
-      form.setValue("tags", [...tags, tag].join(", "), { shouldDirty: true });
-    }
+  const handleInlineImagePick = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const url = await uploadInlineImage(file);
+    if (!url) return;
+    const snippet = `\n\n![Image](${url})\n\n`;
+    form.setValue("content", `${form.getValues("content") || ""}${snippet}`, {
+      shouldDirty: true,
+    });
   };
-
-  const removeTag = (tagToRemove: string) => {
-    form.setValue(
-      "tags",
-      tags.filter((tag: string) => tag !== tagToRemove).join(", "),
-      { shouldDirty: true },
-    );
-  };
-
-  const wordCount = countContentWords(content || "");
-  const readTime = calculateReadTime(content || "");
 
   const submitDraft = () => {
     form.setValue("status", "draft");
@@ -208,88 +192,160 @@ function WritePageContent({
     void form.handleSubmit(handleFormSubmit)();
   };
 
-  const expandMoreInitially = Boolean(excerpt && excerpt.length > 0);
+  const saveStatus = isAutoSaving
+    ? "Saving…"
+    : lastSaved
+      ? `Saved ${lastSaved.toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit",
+        })}`
+      : status === "published"
+        ? "Live"
+        : status === "in_review"
+          ? "In review"
+          : "Draft";
 
-  const metaProps = {
-    form,
-    tagInput,
-    setTagInput,
-    tags,
-    addTag,
-    removeTag,
-    handleImageFileChange,
-    isUploading,
-  };
+  const backHref = resolvedPubSlug ? `/${resolvedPubSlug}` : "/dashboard";
+  const backLabel = resolvedPubSlug
+    ? `Back to ${resolvedPubName || "publication"}`
+    : "Back to dashboard";
+
+  const primaryAction =
+    status === "published"
+      ? {
+          label: "Update",
+          onClick: () => void submitPublished(),
+          disabled: isLoading,
+          loading: isLoading,
+        }
+      : isPublicationMode && !canDirectPublish
+        ? {
+            label:
+              status === "in_review" ? "Update submission" : "Submit",
+            onClick: () => void submitForReview(),
+            disabled: isLoading,
+            loading: isLoading,
+          }
+        : {
+            label: "Publish",
+            onClick: () => void submitPublished(),
+            disabled: isLoading,
+            loading: isLoading,
+          };
+
+  const secondaryAction =
+    status !== "published"
+      ? {
+          label: "Save draft",
+          onClick: () => void submitDraft(),
+          disabled: isLoading,
+          loading: false,
+        }
+      : undefined;
 
   return (
-    <div className="relative min-h-screen bg-background">
-      <Form {...form}>
-        <WriteToolbar
-          editId={editingPostId ?? editId}
-          isAutoSaving={isAutoSaving}
-          lastSaved={lastSaved}
-          settingsOpen={settingsOpen}
-          onSettingsOpenChange={setSettingsOpen}
-          metaProps={metaProps}
-          expandMoreInitially={expandMoreInitially}
-          status={status}
-          isLoading={isLoading}
-          onSaveDraftClick={() => void submitDraft()}
-          onPublishClick={() => void submitPublished()}
-          onSubmitForReviewClick={() => void submitForReview()}
-          publicationName={resolvedPubName}
-          publicationSlug={resolvedPubSlug}
-          memberRole={memberRole}
+    <Form {...form}>
+      <EditorShell
+        backHref={backHref}
+        backLabel={backLabel}
+        saveStatus={saveStatus}
+        mode={mode}
+        onModeChange={setMode}
+        primaryAction={primaryAction}
+        secondaryAction={secondaryAction}
+        settingsTrigger={
+          <EditorSettingsSheet
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
+            coverImage={cover_image || ""}
+            onCoverFileChange={handleImageFileChange}
+            onClearCover={() =>
+              form.setValue("cover_image", "", { shouldDirty: true })
+            }
+            isUploadingCover={isUploading}
+            tags={tagsString || ""}
+            onTagsChange={(v) =>
+              form.setValue("tags", v, { shouldDirty: true })
+            }
+            excerpt={excerpt || ""}
+            onExcerptChange={(v) =>
+              form.setValue("excerpt", v, { shouldDirty: true })
+            }
+            slug={slug || ""}
+            onSlugChange={(v) =>
+              form.setValue("slug", v, {
+                shouldDirty: true,
+                shouldValidate: true,
+              })
+            }
+            showFormat={isJournal}
+            format={format === "poetry" ? "poetry" : "prose"}
+            onFormatChange={(v) =>
+              form.setValue("format", v, { shouldDirty: true })
+            }
+          />
+        }
+        banner={
+          reviewNote || submissionMessage ? (
+            <div className="space-y-2">
+              {reviewNote && (
+                <div className="border border-border px-4 py-3 text-xs">
+                  <p className="font-medium text-foreground">Editorial note</p>
+                  <p className="mt-1 text-muted-foreground">{reviewNote}</p>
+                </div>
+              )}
+              {submissionMessage && (
+                <div className="border border-destructive/40 px-4 py-3 text-xs text-destructive">
+                  {submissionMessage}
+                </div>
+              )}
+            </div>
+          ) : null
+        }
+      >
+        <input
+          ref={inlineInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          onChange={(e) => void handleInlineImagePick(e)}
+          className="hidden"
         />
 
-        <div
-          className={cn(WRITE_EDITOR_AREA_PT_CLASS, WRITE_CHROME_INSET_CLASS)}
-        >
-          <div
-            className={cn(
-              "grid w-full max-w-[90rem] gap-10 lg:grid-cols-[minmax(0,1fr)_min(20rem,30vw)] lg:gap-12",
-            )}
-          >
-            <WriteEditorForm
-              form={form}
-              onSubmit={form.handleSubmit(handleFormSubmit)}
-              submissionMessage={submissionMessage}
-              wordCount={wordCount}
-              readTime={readTime}
-              onUploadInlineImage={uploadInlineImage}
-              isInlineUploading={isInlineUploading}
-              reviewNote={reviewNote}
-            />
-
-            <aside className="hidden lg:block">
-              <div className={cn(WRITE_SIDEBAR_STICKY_TOP_CLASS, "pb-8")}>
-                <Card className="rounded-2xl border border-border/50 bg-card/[0.92] font-sans shadow-md ring-1 ring-border/25 backdrop-blur-sm dark:bg-card/80">
-                  <CardHeader className="space-y-2 border-b border-border/40 bg-muted/[0.06] px-5 pb-4 pt-5">
-                    <CardTitle className="!font-sans text-base font-semibold leading-tight tracking-tight text-foreground">
-                      Post details
-                    </CardTitle>
-                    <p className="font-sans text-[12px] leading-relaxed text-muted-foreground">
-                      Cover, slug, and tags. Excerpt is under{" "}
-                      <span className="font-medium text-foreground/80">
-                        More options
-                      </span>
-                      .
-                    </p>
-                  </CardHeader>
-                  <CardContent className="px-5 pb-6 pt-5">
-                    <WriteMetaFields
-                      {...metaProps}
-                      idPrefix="desk"
-                      expandMoreInitially={expandMoreInitially}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-            </aside>
-          </div>
-        </div>
-      </Form>
-    </div>
+        <EditorCanvas
+          title={title || ""}
+          onTitleChange={(v) =>
+            form.setValue("title", v, { shouldDirty: true })
+          }
+          content={content || ""}
+          onContentChange={(v) =>
+            form.setValue("content", v, { shouldDirty: true })
+          }
+          showDek={false}
+          mode={mode}
+          onImageInsert={() => {
+            if (!isInlineUploading) inlineInputRef.current?.click();
+          }}
+          preview={
+            <div className="space-y-4 p-5 sm:p-8">
+              <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+                {title || "Untitled"}
+              </h1>
+              {content?.trim() ? (
+                <PostBodyRenderer
+                  content={content}
+                  forceMarkdown
+                  format={format === "poetry" ? "poetry" : "prose"}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Nothing to preview yet.
+                </p>
+              )}
+            </div>
+          }
+        />
+      </EditorShell>
+    </Form>
   );
 }
 

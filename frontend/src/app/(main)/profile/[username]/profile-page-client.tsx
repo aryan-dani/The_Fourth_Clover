@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { LazyMotion, domAnimation, m } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { formatRelativeTime, toTitleCase } from "@/lib/utils";
+import { toTitleCase } from "@/lib/utils";
+import { RelativeTime } from "@/components/time/RelativeTime";
 import { PageShell } from "@/components/layout/PageShell";
 import {
   Heart,
@@ -94,12 +94,7 @@ export function ProfilePageClient({
 
       <main className="flex-1 pt-20 pb-8">
         <PageShell variant="wide" className="max-w-4xl">
-          <LazyMotion features={domAnimation}>
-            <m.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center mb-8"
-            >
+          <div className="text-center mb-8">
               <div className="relative inline-block mb-4">
                 <Avatar className="h-28 w-28 mx-auto ring-4 ring-primary/25 ring-offset-4 ring-offset-background">
                   <AvatarImage src={profile.avatar_url || ""} />
@@ -288,13 +283,9 @@ export function ProfilePageClient({
                   </CardContent>
                 </Card>
               </div>
-            </m.div>
+            </div>
 
-            <m.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
+            <div>
               <h2 className="font-display text-xl md:text-2xl font-semibold text-foreground mb-5 border-b border-border/60 pb-3 text-center sm:text-left">
                 Posts by {profile.full_name || profile.username}
               </h2>
@@ -310,14 +301,8 @@ export function ProfilePageClient({
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {posts.map((post, index) => (
-                    <m.div
-                      key={post.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <Link href={`/post/${post.slug}`} className="block h-full">
+                  {posts.map((post) => (
+                      <Link key={post.id} href={`/post/${post.slug}`} className="block h-full">
                         <Card className="group overflow-hidden hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 glass h-full border-2 hover:border-primary/30 hover:-translate-y-2 cursor-pointer">
                           {post.cover_image && (
                             <div className="aspect-video overflow-hidden relative bg-muted/30">
@@ -370,21 +355,17 @@ export function ProfilePageClient({
                                   <span>{post.comments[0]?.count || 0}</span>
                                 </div>
                               </div>
-                              <span>
-                                {post.published_at
-                                  ? formatRelativeTime(post.published_at)
-                                  : ""}
-                              </span>
+                              {post.published_at ? (
+                                <RelativeTime date={post.published_at} />
+                              ) : null}
                             </div>
                           </CardContent>
                         </Card>
                       </Link>
-                    </m.div>
                   ))}
                 </div>
               )}
-            </m.div>
-          </LazyMotion>
+            </div>
         </PageShell>
       </main>
 

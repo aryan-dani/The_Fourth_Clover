@@ -40,7 +40,9 @@ async function requireSuperAdmin() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*")
+    .select(
+      "id, username, full_name, bio, avatar_url, website, twitter, github, is_admin, csi_id, role, dept, year, is_suspended, created_at, updated_at"
+    )
     .eq("id", user.id)
     .maybeSingle();
 
@@ -123,7 +125,9 @@ export async function fetchSuperAdminDashboardData(): Promise<SuperAdminDashboar
   ] = await Promise.all([
     supabase
       .from("profiles")
-      .select("*")
+      .select(
+        "id, username, full_name, bio, avatar_url, website, twitter, github, is_admin, csi_id, role, dept, year, is_suspended, created_at, updated_at"
+      )
       .order("created_at", { ascending: false })
       .limit(250),
     supabase
