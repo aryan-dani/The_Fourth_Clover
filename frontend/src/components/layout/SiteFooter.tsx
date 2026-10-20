@@ -43,7 +43,7 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-auto border-t border-hairline bg-background">
+    <footer className="mt-auto border-t border-hairline bg-background pb-24 md:pb-0">
       <div className="mx-auto max-w-content px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-10 md:grid-cols-12">
           <div className="md:col-span-4 space-y-3">
@@ -105,10 +105,26 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-hairline pt-6 sm:flex-row">
-          <p className="font-mono text-[11px] text-muted-foreground" suppressHydrationWarning>
-            © {year} The Fourth Clover · CSI MIT-WPU
-          </p>
+        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-hairline pt-6 sm:flex-row sm:items-center">
+          <div className="flex flex-col items-center gap-1.5 text-center sm:items-start sm:text-left">
+            <p
+              className="font-mono text-[11px] text-muted-foreground"
+              suppressHydrationWarning
+            >
+              © {year} The Fourth Clover. All rights reserved.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Made by{" "}
+              <a
+                href="https://www.aryandani.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-foreground underline decoration-hairline underline-offset-4 transition-colors duration-editorial hover:text-brand"
+              >
+                Aryan Dani
+              </a>
+            </p>
+          </div>
           <div className="flex items-center gap-3">
             <span className="font-mono text-[11px] text-muted-foreground">
               Theme

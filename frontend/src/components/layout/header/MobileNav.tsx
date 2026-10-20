@@ -51,7 +51,11 @@ export function MobileNav({
           </SheetTitle>
         </SheetHeader>
         <div className="mt-6 space-y-6">
-          <HeaderNav signedIn={signedIn} className="flex flex-col items-stretch gap-1" />
+          <HeaderNav
+            signedIn={signedIn}
+            variant="stack"
+            className="flex flex-col items-stretch gap-1"
+          />
 
           {signedIn ? (
             <div className="space-y-1 border-t border-hairline pt-4">
