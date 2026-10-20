@@ -54,9 +54,9 @@ export function UserMenu({
           className="rounded-full outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
           aria-label="Account menu"
         >
-          <Avatar className="h-8 w-8 border border-hairline">
+          <Avatar className="h-8 w-8 ring-1 ring-hairline">
             <AvatarImage src={profile?.avatar_url || ""} alt="" />
-            <AvatarFallback className="bg-surface font-mono text-xs">
+            <AvatarFallback className="bg-surface font-mono text-[11px]">
               {initial}
             </AvatarFallback>
           </Avatar>

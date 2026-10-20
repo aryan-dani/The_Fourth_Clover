@@ -6,9 +6,15 @@ import { cn } from "@/lib/utils";
 
 const LINKS = [
   {
+    href: "/",
+    label: "Home",
+    matchExact: true,
+    match: ["/"],
+  },
+  {
     href: "/journal",
     label: "Journal",
-    match: ["/journal", "/explore", "/post", "/tags"],
+    match: ["/journal", "/explore", "/post", "/tags", "/search"],
   },
   {
     href: "/tech-weekly",
@@ -38,15 +44,21 @@ export function HeaderNav({
   return (
     <nav
       className={cn(
-        isStack ? "flex flex-col items-stretch gap-1" : "items-center gap-0.5",
+        isStack ? "flex flex-col items-stretch gap-0.5" : "items-center gap-0.5",
         className,
       )}
       aria-label="Primary"
     >
       {LINKS.filter((l) => !("auth" in l && l.auth) || signedIn).map((link) => {
-        const active = link.match.some(
-          (m) => pathname === m || pathname.startsWith(`${m}/`),
-        );
+        const active =
+          "matchExact" in link && link.matchExact
+            ? pathname === "/"
+            : link.match.some(
+                (m) =>
+                  m !== "/" &&
+                  (pathname === m || pathname.startsWith(`${m}/`)),
+              );
+
         return (
           <Link
             key={link.href}
@@ -55,16 +67,16 @@ export function HeaderNav({
               "transition-colors duration-editorial",
               isStack
                 ? cn(
-                    "rounded-md px-3 py-2 text-sm",
+                    "rounded-lg px-3 py-2.5 text-sm",
+                    active
+                      ? "bg-surface font-medium text-foreground"
+                      : "text-muted-foreground hover:bg-surface/70 hover:text-foreground",
+                  )
+                : cn(
+                    "relative rounded-full px-3.5 py-1.5 text-[13px] tracking-tight",
                     active
                       ? "bg-surface font-medium text-foreground"
                       : "text-muted-foreground hover:text-foreground",
-                  )
-                : cn(
-                    "rounded-full px-3.5 py-1.5 text-[13px]",
-                    active
-                      ? "bg-foreground font-medium text-background"
-                      : "text-muted-foreground hover:bg-surface hover:text-foreground",
                   ),
             )}
           >

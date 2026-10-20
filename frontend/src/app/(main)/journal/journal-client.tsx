@@ -3,13 +3,12 @@
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertCircle, ArrowUpRight, PenTool } from "lucide-react";
+import { AlertCircle, ArrowUpRight, PenTool, X } from "lucide-react";
 import {
   ArticleCard,
   EmptyState,
   LoadMore,
   PageHeader,
-  SectionLabel,
 } from "@/components/editorial";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -45,7 +44,7 @@ function buildJournalHref(opts: {
   return qs ? `/journal?${qs}` : "/journal";
 }
 
-function FilterChip({
+function TextToggle({
   active,
   children,
   href,
@@ -58,10 +57,10 @@ function FilterChip({
     <Link
       href={href}
       className={cn(
-        "border px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.1em] transition-colors duration-editorial",
+        "text-sm transition-colors duration-editorial",
         active
-          ? "border-foreground bg-foreground text-background"
-          : "border-hairline text-muted-foreground hover:border-brand/40 hover:text-brand",
+          ? "font-medium text-foreground"
+          : "text-muted-foreground hover:text-foreground",
       )}
       aria-current={active ? "page" : undefined}
     >
@@ -130,7 +129,8 @@ export function JournalPageClient({
     });
   }, [hasMore, loadingMore, pageSize, posts.length, sort, format, selectedTag]);
 
-  const visibleTags = useMemo(() => tags.slice(0, 12), [tags]);
+  const featuredTags = useMemo(() => tags.slice(0, 6), [tags]);
+  const hasActiveFilters = format !== "all" || Boolean(selectedTag);
 
   return (
     <div className="mx-auto max-w-content space-y-10 px-4 py-10 sm:px-6 lg:px-8">
@@ -156,56 +156,105 @@ export function JournalPageClient({
         }
       />
 
-      <div className="space-y-4 border-b border-hairline pb-6">
-        <div className="flex flex-wrap items-center gap-2">
-          <SectionLabel className="mr-1">Sort</SectionLabel>
-          <FilterChip active={sort === "latest"} href={hrefFor({ sort: "latest" })}>
-            Latest
-          </FilterChip>
-          <FilterChip
-            active={sort === "popular"}
-            href={hrefFor({ sort: "popular" })}
-          >
-            Popular
-          </FilterChip>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <SectionLabel className="mr-1">Format</SectionLabel>
-          {(
-            [
-              { id: "all", label: "All" },
-              { id: "prose", label: "Prose" },
-              { id: "poetry", label: "Poetry" },
-            ] as const
-          ).map((item) => (
-            <FilterChip
-              key={item.id}
-              active={format === item.id}
-              href={hrefFor({ format: item.id })}
+      {/* Single quiet filter bar — no chip walls */}
+      <div className="space-y-3 border-b border-hairline pb-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <TextToggle active={sort === "latest"} href={hrefFor({ sort: "latest" })}>
+              Latest
+            </TextToggle>
+            <span className="text-muted-foreground/40" aria-hidden>
+              ·
+            </span>
+            <TextToggle
+              active={sort === "popular"}
+              href={hrefFor({ sort: "popular" })}
             >
-              {item.label}
-            </FilterChip>
-          ))}
+              Popular
+            </TextToggle>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {(
+              [
+                { id: "all", label: "All" },
+                { id: "prose", label: "Prose" },
+                { id: "poetry", label: "Poetry" },
+              ] as const
+            ).map((item, i) => (
+              <span key={item.id} className="inline-flex items-center gap-3">
+                {i > 0 && (
+                  <span className="text-muted-foreground/40" aria-hidden>
+                    ·
+                  </span>
+                )}
+                <TextToggle
+                  active={format === item.id}
+                  href={hrefFor({ format: item.id })}
+                >
+                  {item.label}
+                </TextToggle>
+              </span>
+            ))}
+          </div>
         </div>
 
-        {visibleTags.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            <SectionLabel className="mr-1">Topics</SectionLabel>
-            <FilterChip active={!selectedTag} href={hrefFor({ tag: "" })}>
-              All
-            </FilterChip>
-            {visibleTags.map((tag) => (
-              <FilterChip
+        {featuredTags.length > 0 && (
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5 text-sm">
+            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+              Topics
+            </span>
+            {featuredTags.map((tag) => (
+              <Link
                 key={tag}
-                active={selectedTag === tag}
                 href={hrefFor({
                   tag: selectedTag === tag ? "" : tag,
                 })}
+                className={cn(
+                  "transition-colors duration-editorial",
+                  selectedTag === tag
+                    ? "font-medium text-foreground underline decoration-brand/50 underline-offset-4"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
               >
                 {toTitleCase(tag)}
-              </FilterChip>
+              </Link>
             ))}
+            <Link
+              href="/tags"
+              className="text-muted-foreground transition-colors duration-editorial hover:text-foreground"
+            >
+              All topics →
+            </Link>
+          </div>
+        )}
+
+        {hasActiveFilters && (
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <span className="text-xs text-muted-foreground">Showing</span>
+            {format !== "all" && (
+              <span className="rounded-full bg-surface px-2.5 py-0.5 text-xs text-foreground">
+                {format === "poetry" ? "Poetry" : "Prose"}
+              </span>
+            )}
+            {selectedTag && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-surface px-2.5 py-0.5 text-xs text-foreground">
+                {toTitleCase(selectedTag)}
+                <Link
+                  href={hrefFor({ tag: "" })}
+                  aria-label={`Clear topic ${selectedTag}`}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </Link>
+              </span>
+            )}
+            <Link
+              href="/journal"
+              className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              Clear
+            </Link>
           </div>
         )}
       </div>

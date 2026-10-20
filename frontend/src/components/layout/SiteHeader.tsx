@@ -43,30 +43,28 @@ export async function SiteHeader() {
       <header className="pointer-events-none fixed inset-x-0 top-0 z-50">
         <div className="pointer-events-auto mx-auto max-w-content px-3 pt-3 sm:px-6 sm:pt-4">
           <div
-            className="flex h-14 items-center gap-2 rounded-2xl border border-hairline bg-card px-2 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_8px_24px_rgb(0_0_0/0.06)] sm:gap-3 sm:px-3 dark:shadow-[0_1px_2px_rgb(0_0_0/0.2),0_8px_28px_rgb(0_0_0/0.35)]"
+            className="nav-dock flex h-[3.25rem] items-center gap-1 px-2 sm:h-14 sm:gap-2 sm:px-2.5"
             role="navigation"
             aria-label="Site"
           >
             <Link
               href="/"
-              className="flex shrink-0 items-center gap-2 rounded-xl px-1.5 py-1 transition-opacity duration-editorial hover:opacity-80 sm:px-2"
+              className="group flex shrink-0 items-center gap-2.5 rounded-full py-1 pl-1 pr-2 transition-opacity duration-editorial hover:opacity-90 sm:pr-3"
             >
-              <span className="circle-logo h-8 w-8 text-sm">
+              <span className="circle-logo h-8 w-8 text-sm shadow-none ring-1 ring-brand/20">
                 <CloverMark size="sm" />
               </span>
               <span className="hidden font-display text-[15px] font-semibold tracking-tight text-foreground sm:inline">
-                The Fourth Clover
+                Fourth Clover
               </span>
             </Link>
-
-            <div className="mx-1 hidden h-7 w-px shrink-0 bg-hairline md:block" />
 
             <HeaderNav
               signedIn={signedIn}
               className="hidden min-w-0 flex-1 justify-center md:flex"
             />
 
-            <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
+            <div className="ml-auto flex items-center gap-0.5 border-l border-hairline pl-1.5 sm:gap-1 sm:pl-2">
               <HeaderActions
                 signedIn={signedIn}
                 profile={profile}

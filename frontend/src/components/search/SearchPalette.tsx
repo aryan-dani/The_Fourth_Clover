@@ -43,6 +43,14 @@ export function SearchPalette({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onOpenChange]);
 
+  useEffect(() => {
+    if (!open) {
+      setQuery("");
+      setHits([]);
+      setLoading(false);
+    }
+  }, [open]);
+
   const runSearch = useCallback(async (q: string) => {
     setQuery(q);
     if (q.trim().length < 2) {
@@ -79,8 +87,8 @@ export function SearchPalette({
           {loading
             ? "Searching…"
             : query.trim().length < 2
-              ? "Type at least 2 characters"
-              : "No results"}
+              ? "Start typing to search the publication"
+              : "No matching pieces"}
         </CommandEmpty>
         {hits.length > 0 && (
           <CommandGroup heading="Results">
@@ -90,11 +98,11 @@ export function SearchPalette({
                 value={`${hit.title} ${hit.slug}`}
                 onSelect={() => go(hit)}
               >
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <span className="truncate text-sm font-medium">
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="truncate font-medium leading-snug">
                     {hit.title}
                   </span>
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
                     {hit.kind === "tech" ? "Tech Weekly" : "Journal"}
                   </span>
                 </div>

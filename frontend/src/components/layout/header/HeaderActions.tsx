@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { Search, PenSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +14,7 @@ import { NotificationsMenu } from "@/components/layout/header/NotificationsMenu"
 import { UserMenu } from "@/components/layout/header/UserMenu";
 import { SearchPalette } from "@/components/search/SearchPalette";
 import type { UserCapabilities } from "@/lib/roles";
-import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 type ProfileSummary = {
   id: string;
@@ -24,6 +25,9 @@ type ProfileSummary = {
   is_admin: boolean;
   csi_id: number | null;
 } | null;
+
+const iconBtn =
+  "h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:bg-surface hover:text-foreground";
 
 export function HeaderActions({
   signedIn,
@@ -42,11 +46,11 @@ export function HeaderActions({
         type="button"
         variant="ghost"
         size="icon"
-        className="h-9 w-9 text-muted-foreground hover:text-foreground"
-        aria-label="Search"
+        className={iconBtn}
+        aria-label="Search (⌘K)"
         onClick={() => setSearchOpen(true)}
       >
-        <Search className="h-4 w-4" />
+        <Search className="h-4 w-4" strokeWidth={1.75} />
       </Button>
 
       {signedIn ? (
@@ -55,11 +59,12 @@ export function HeaderActions({
             <DropdownMenuTrigger asChild>
               <Button
                 type="button"
-                variant="ghost"
                 size="sm"
-                className="hidden h-9 gap-1.5 px-2.5 text-sm sm:inline-flex"
+                className={cn(
+                  "ml-0.5 hidden h-8 gap-1.5 rounded-full px-3 text-xs font-medium sm:inline-flex",
+                )}
               >
-                <PenSquare className="h-3.5 w-3.5" />
+                <PenSquare className="h-3.5 w-3.5" strokeWidth={1.75} />
                 Write
               </Button>
             </DropdownMenuTrigger>
@@ -86,7 +91,11 @@ export function HeaderActions({
           <UserMenu profile={profile} capabilities={capabilities} />
         </>
       ) : (
-        <Button asChild size="sm" className="h-9 rounded-md px-3 text-sm">
+        <Button
+          asChild
+          size="sm"
+          className="ml-0.5 h-8 rounded-full px-3.5 text-xs font-medium"
+        >
           <Link href="/auth/signin">Sign in</Link>
         </Button>
       )}
