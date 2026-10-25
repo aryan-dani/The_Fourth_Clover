@@ -418,8 +418,10 @@ export default function TechWeeklyWriteClient({
     );
   }
 
+  const override = initialContext.settings.submissions_override;
+  const alwaysOpen = override === "force_open";
   const saveStatus = windowLocked
-    ? "Window locked · Wed 09:00 IST"
+    ? "Window locked"
     : savingStatus === "saving_draft"
       ? "Saving draft…"
       : savingStatus === "submitting"
@@ -434,12 +436,16 @@ export default function TechWeeklyWriteClient({
         {initialContext.isWindowOpen ? (
           <>
             <Clock className="h-3.5 w-3.5 text-foreground" />
-            <span>Window open until Wed 09:00 IST</span>
+            <span>
+              {alwaysOpen
+                ? "Submissions open — post anytime"
+                : "Window open · cycles start Friday 09:00 IST"}
+            </span>
           </>
         ) : (
           <>
             <Lock className="h-3.5 w-3.5" />
-            <span>Cutoff locked (Wed 09:00 IST)</span>
+            <span>Cutoff locked · next window Friday 09:00 IST</span>
           </>
         )}
         <span className="text-border">·</span>
@@ -453,13 +459,12 @@ export default function TechWeeklyWriteClient({
           <Lock className="mt-0.5 h-4 w-4 shrink-0 text-foreground" />
           <div className="space-y-1">
             <p className="font-medium text-foreground">
-              Wednesday 09:00 IST Cutoff Reached
+              Submission window closed
             </p>
             <p className="text-muted-foreground">
-              Submissions and edits for the current issue are locked while
-              Technical Heads Darshan (CSI #241) and Tanish (CSI #246) select
-              the weekly LinkedIn feature. The next submission window opens
-              Sunday at 00:00 IST.
+              Technical Heads Darshan (CSI #241) and Tanish (CSI #246) are
+              selecting the weekly LinkedIn feature. The next writing window
+              opens Friday at 09:00 IST.
             </p>
           </div>
         </div>

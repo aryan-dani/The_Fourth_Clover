@@ -127,7 +127,7 @@ export function HomeHeroClient({
                     Submission Window
                   </dt>
                   <dd className="font-mono text-right text-foreground">
-                    Sun 00:00 to Wed 09:00 IST
+                    Opens Friday 09:00 IST · post anytime while open
                   </dd>
                 </div>
                 <div className="py-3.5 flex items-baseline justify-between gap-4">

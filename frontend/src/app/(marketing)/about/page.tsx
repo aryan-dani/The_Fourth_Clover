@@ -55,7 +55,7 @@ export default function AboutPage() {
                 <div className="flex justify-between border-b border-border/60 pb-2">
                   <dt className="text-muted-foreground">Submission Window</dt>
                   <dd className="font-mono font-medium text-foreground">
-                    Sun 00:00 to Wed 09:00 IST
+                    Opens Friday 09:00 IST
                   </dd>
                 </div>
                 <div className="flex justify-between border-b border-border/60 pb-2">

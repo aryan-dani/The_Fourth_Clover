@@ -55,7 +55,7 @@ export default function SignInPage() {
                     two-factor claim).
                   </li>
                   <li>
-                    Publish dispatches between Sunday 00:00 and Wednesday 09:00
+                    Publish anytime while open · cycles start Friday 09:00 IST
                     IST.
                   </li>
                 </ol>

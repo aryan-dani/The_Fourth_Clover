@@ -27,7 +27,7 @@ function formatCountdown(targetIso: string | undefined): {
   if (!targetIso) return { expired: false, label: "--d : --h : --m" };
   const diff = new Date(targetIso).getTime() - Date.now();
   if (diff <= 0) {
-    return { expired: true, label: "Cutoff passed (Wed 09:00 IST)" };
+    return { expired: true, label: "Cutoff passed · next window Friday 09:00 IST" };
   }
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
@@ -203,7 +203,7 @@ export function TechWeeklyClient({
           {filteredSubmissions.length === 0 ? (
             <EmptyState
               title="No dispatches filed for this cycle yet"
-              description="Verified CSI Technical Wing engineers can submit between Sunday 00:00 IST and Wednesday 09:00 IST."
+              description="Verified CSI Technical Wing engineers can submit anytime while the window is open. Cycles open Friday 09:00 IST."
               action={
                 isTechMember ? (
                   <Button asChild size="sm">
@@ -305,7 +305,7 @@ export function TechWeeklyClient({
             <SectionLabel>Editorial standards</SectionLabel>
             <ul className="space-y-2 font-serif text-sm leading-relaxed text-muted-foreground">
               <li>
-                1. Submissions open Sunday 00:00 IST and lock Wednesday 09:00
+                1. Cycles open Friday 09:00 IST — submit anytime while the window is open
                 IST.
               </li>
               <li>

@@ -1409,7 +1409,7 @@ export default function AdminClient({
                     className="w-full h-10 rounded-xl border border-input bg-background px-3 text-xs font-medium"
                   >
                     <option value="auto">
-                      Auto (Open Sun 00:00 to Cutoff IST)
+                      Auto (Open Fri 09:00 IST to Cutoff)
                     </option>
                     <option value="force_open">
                       Force Open (Allow submissions now)
