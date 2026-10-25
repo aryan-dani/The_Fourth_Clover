@@ -9,11 +9,7 @@ const nextConfig = {
         permanent: true,
       },
       { source: "/csi", destination: "/tech-weekly", permanent: true },
-      {
-        source: "/csi/write",
-        destination: "/tech-weekly/write",
-        permanent: true,
-      },
+      // /csi/write is handled by app/(main)/csi/write/page.tsx so ?edit= maps to ?id=
       {
         source: "/csi/review",
         destination: "/tech-weekly/review",

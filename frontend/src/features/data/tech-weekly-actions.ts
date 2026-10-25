@@ -583,14 +583,17 @@ export async function reviewTechSubmissionAction(input: {
   }
 
   if (sub.author_id !== user.id) {
+    // Encode tech submission id in message (notifications.post_id FKs posts only).
+    const twMarker = `\u200bTW:${sub.id}`;
     await supabase.from("notifications").insert({
       user_id: sub.author_id,
       from_user_id: user.id,
       type: input.status === "approved" ? "review_approved" : "changes_requested",
       message:
-        input.status === "approved"
+        (input.status === "approved"
           ? `Your CSI Tech Weekly article "${sub.title}" was approved!`
-          : `Review note on "${sub.title}": ${input.reviewNote || "Changes requested."}`,
+          : `Review note on "${sub.title}": ${input.reviewNote || "Changes requested."}`) +
+        twMarker,
     });
   }
 
@@ -648,7 +651,7 @@ export async function selectTechWeeklyPickAction(input: {
       user_id: sub.author_id,
       from_user_id: user.id,
       type: "review_approved",
-      message: `Congratulations! "${sub.title}" was selected as this week's official CSI LinkedIn Pick!`,
+      message: `Congratulations! "${sub.title}" was selected as this week's official CSI LinkedIn Pick!\u200bTW:${sub.id}`,
     });
   }
 

@@ -93,15 +93,17 @@ export function TechWeeklyClient({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline pb-3 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
         <span>CSI MIT-WPU · Technical Dispatch Archive</span>
         <span className="inline-flex items-center gap-2 text-foreground tabular-nums">
-          {initialData.isWindowOpen && !countdown.expired ? (
+          {initialData.isWindowOpen ? (
             <>
               <Clock className="h-3.5 w-3.5" aria-hidden />
-              Window open · {countdown.label}
+              {countdown.expired
+                ? "Submissions open"
+                : `Window open · ${countdown.label}`}
             </>
           ) : (
             <>
               <Lock className="h-3.5 w-3.5" aria-hidden />
-              Wednesday curation window
+              Window closed · next opens Friday 09:00 IST
             </>
           )}
         </span>

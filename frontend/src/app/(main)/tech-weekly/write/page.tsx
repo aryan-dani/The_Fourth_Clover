@@ -11,12 +11,13 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 type Props = {
-  searchParams: Promise<{ id?: string; new?: string }>;
+  searchParams: Promise<{ id?: string; edit?: string; new?: string }>;
 };
 
 export default async function TechWeeklyWritePage({ searchParams }: Props) {
   const resolved = await searchParams;
-  const context = await fetchTechWeeklyWriteContext(resolved?.id || null);
+  const submissionId = resolved?.id || resolved?.edit || null;
+  const context = await fetchTechWeeklyWriteContext(submissionId);
 
   // If ?new=1 is passed, allow starting a fresh draft if within posts_per_week limit
   const initialContext =

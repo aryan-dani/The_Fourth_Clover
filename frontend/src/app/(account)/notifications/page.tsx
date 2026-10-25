@@ -13,6 +13,7 @@ import {
   markAllAsRead,
   getUnreadCount,
   getNotificationHref,
+  stripTechSubmissionMarker,
   NotificationWithSender,
 } from "@/features/notifications/notifications";
 import { RelativeTime } from "@/components/time/RelativeTime";
@@ -231,7 +232,9 @@ export default function NotificationsPage() {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <p className="text-sm leading-relaxed">
-                                    {notification.message}
+                                    {stripTechSubmissionMarker(
+                                      notification.message,
+                                    )}
                                   </p>
                                   <RelativeTime
                                     date={notification.created_at}

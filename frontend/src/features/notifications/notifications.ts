@@ -34,15 +34,39 @@ export interface NotificationWithSender extends Notification {
   post?: NotificationPostMeta | null;
 }
 
+const TECH_SUB_MARKER = /\u200bTW:([0-9a-f-]{36})/i;
+
+export function stripTechSubmissionMarker(message: string): string {
+  return message.replace(TECH_SUB_MARKER, "").trimEnd();
+}
+
+function techSubmissionIdFromMessage(message: string): string | null {
+  const match = message.match(TECH_SUB_MARKER);
+  return match?.[1] ?? null;
+}
+
 export function getNotificationHref(n: NotificationWithSender): string {
   if (n.type === "follow" && n.from_user?.username) {
     return `/profile/${encodeURIComponent(n.from_user.username)}`;
   }
   if (n.type === "review_submitted") {
-    return "/csi/review";
+    return "/tech-weekly/review";
   }
+
+  const techSubId = techSubmissionIdFromMessage(n.message || "");
+  if (
+    (n.type === "changes_requested" || n.type === "review_approved") &&
+    techSubId
+  ) {
+    return n.type === "changes_requested"
+      ? `/tech-weekly/write?id=${encodeURIComponent(techSubId)}`
+      : `/tech-weekly`;
+  }
+
   if (n.type === "changes_requested") {
-    return n.post_id ? `/csi/write?edit=${encodeURIComponent(n.post_id)}` : "/dashboard";
+    return n.post_id
+      ? `/write?edit=${encodeURIComponent(n.post_id)}`
+      : "/tech-weekly/write";
   }
   if (n.post?.slug) {
     if (n.post.publication_slug) {
@@ -51,7 +75,7 @@ export function getNotificationHref(n: NotificationWithSender): string {
     return `/post/${encodeURIComponent(n.post.slug)}`;
   }
   if (n.type === "review_approved") {
-    return "/csi";
+    return "/tech-weekly";
   }
   return "/notifications";
 }

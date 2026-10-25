@@ -268,8 +268,9 @@ export async function adminUpsertRosterEntryAction(input: {
     p_dept: input.dept.trim() || "Tech",
     p_year: input.year?.trim() || null,
     p_prn_hash: prnHash,
-    p_prn_missing: !cleanPrn,
-    p_prn_duplicate: false,
+    p_prn_missing: cleanPrn ? false : true,
+    // null preserves an existing prn_duplicate flag when PRN is not re-supplied
+    p_prn_duplicate: cleanPrn ? false : null,
     p_role: input.role || null,
   });
 

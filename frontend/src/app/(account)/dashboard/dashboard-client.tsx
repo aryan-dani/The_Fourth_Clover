@@ -249,9 +249,9 @@ export function DashboardClient({
         const isCsi = Boolean(
           post.publication_id || post.publication?.slug === "csi",
         );
-        const editHref = isCsi
-          ? `/csi/write?edit=${post.id}`
-          : `/write?edit=${post.id}`;
+        // CSI publication journal drafts use the shared journal editor (/write).
+        // Tech Weekly pieces are edited at /tech-weekly/write?id=.
+        const editHref = `/write?edit=${post.id}`;
         const viewHref = isCsi ? `/csi/${post.slug}` : `/post/${post.slug}`;
         const href =
           post.status === "published" || post.status === "in_review"
@@ -314,9 +314,7 @@ export function DashboardClient({
         const isCsi = Boolean(
           post.publication_id || post.publication?.slug === "csi",
         );
-        const editHref = isCsi
-          ? `/csi/write?edit=${post.id}`
-          : `/write?edit=${post.id}`;
+        const editHref = `/write?edit=${post.id}`;
         const isWriterOnly = isCsi && csiRole !== "editor";
 
         let statusActionLabel = "Publish";
@@ -499,9 +497,7 @@ export function DashboardClient({
                           post.publication_id ||
                             post.publication?.slug === "csi",
                         );
-                        const editHref = isCsi
-                          ? `/csi/write?edit=${post.id}`
-                          : `/write?edit=${post.id}`;
+                        const editHref = `/write?edit=${post.id}`;
                         return (
                           <Card key={post.id} className="glass rounded-2xl">
                             <CardContent className="p-4">

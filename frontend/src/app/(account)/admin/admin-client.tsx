@@ -1294,7 +1294,7 @@ export default function AdminClient({
                       className="h-8 rounded-xl text-xs"
                       asChild
                     >
-                      <Link href={`/tech-weekly/write?edit=${sub.id}`}>
+                      <Link href={`/tech-weekly/write?id=${sub.id}`}>
                         Edit
                       </Link>
                     </Button>

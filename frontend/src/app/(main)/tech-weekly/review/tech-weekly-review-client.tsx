@@ -214,7 +214,7 @@ export default function TechWeeklyReviewClient({
               {initialData.isWindowOpen ? (
                 <span className="inline-flex items-center gap-1.5 text-foreground">
                   <Clock className="h-3 w-3" />
-                  SUBMISSIONS OPEN (SUN 00:00 TO WED 09:00 IST)
+                  SUBMISSIONS OPEN (CYCLES START FRIDAY 09:00 IST)
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 text-foreground">
