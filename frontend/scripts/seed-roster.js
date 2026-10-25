@@ -148,10 +148,14 @@ function computeRoleByCsiId(csiId, dept) {
   return "member";
 }
 
+// Must match frontend verification + admin upsert defaults exactly.
+const DEFAULT_PRN_HMAC_SECRET =
+  "csi-mitwpu-fourth-clover-hmac-secret-2026";
+
 function hashPrn(prn, secret) {
   return crypto
     .createHmac("sha256", secret)
-    .update(String(prn).trim())
+    .update(String(prn).trim().replace(/\s+/g, ""))
     .digest("hex");
 }
 
@@ -171,8 +175,11 @@ async function main() {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   let serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const envSecret = process.env.PRN_HASH_SECRET?.trim();
   const prnHashSecret =
-    process.env.PRN_HASH_SECRET || "csi-mitwpu-default-prn-hmac-secret-2026";
+    envSecret && envSecret.length >= 16
+      ? envSecret
+      : DEFAULT_PRN_HMAC_SECRET;
 
   if (!serviceRoleKey && supabaseUrl) {
     try {
@@ -201,9 +208,9 @@ async function main() {
     process.exit(1);
   }
 
-  if (!process.env.PRN_HASH_SECRET) {
+  if (!envSecret || envSecret.length < 16) {
     console.warn(
-      "[WARN] PRN_HASH_SECRET not set in .env.local; using fallback secret. Set PRN_HASH_SECRET in .env.local for production."
+      "[WARN] PRN_HASH_SECRET not set (or too short). Using the same app default as verify/admin. Set the identical PRN_HASH_SECRET in .env.local AND Netlify or hashes will not match."
     );
   }
 
