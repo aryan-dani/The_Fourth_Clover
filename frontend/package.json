@@ -41,6 +41,7 @@
     "test:security": "node scripts/test-rls-security.js"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
     "@radix-ui/react-avatar": "^1.1.0",
@@ -66,6 +67,8 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
+    "gsap": "^3.15.0",
+    "lenis": "^1.3.27",
     "lucide-react": "^0.446.0",
     "next": "^16.0.10",
     "next-themes": "^0.4.6",

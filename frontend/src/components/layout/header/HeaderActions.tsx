@@ -13,6 +13,7 @@ import {
 import { NotificationsMenu } from "@/components/layout/header/NotificationsMenu";
 import { UserMenu } from "@/components/layout/header/UserMenu";
 import { SearchPalette } from "@/components/search/SearchPalette";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import type { UserCapabilities } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 
@@ -26,27 +27,30 @@ type ProfileSummary = {
   csi_id: number | null;
 } | null;
 
-const iconBtn =
-  "h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:bg-surface hover:text-foreground";
-
 export function HeaderActions({
   signedIn,
   profile,
   capabilities,
+  variant = "bar",
 }: {
   signedIn: boolean;
   profile: ProfileSummary;
   capabilities: UserCapabilities;
+  variant?: "bar" | "dock";
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
+  const bar = variant === "bar";
 
   return (
     <>
+      <ThemeToggle />
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        className={iconBtn}
+        className={cn(
+          "h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground",
+        )}
         aria-label="Search (⌘K)"
         onClick={() => setSearchOpen(true)}
       >
@@ -60,15 +64,14 @@ export function HeaderActions({
               <Button
                 type="button"
                 size="sm"
-                className={cn(
-                  "ml-0.5 hidden h-8 gap-1.5 rounded-full px-3 text-xs font-medium sm:inline-flex",
-                )}
+                variant={bar ? "outline" : "default"}
+                className="ml-0.5 hidden h-9 gap-1.5 px-3 text-xs font-medium sm:inline-flex"
               >
                 <PenSquare className="h-3.5 w-3.5" strokeWidth={1.75} />
                 Write
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuContent align="end" className="w-52" data-lenis-prevent>
               {capabilities.canWriteJournal && (
                 <DropdownMenuItem asChild>
                   <Link href="/write">Journal piece</Link>
@@ -94,7 +97,8 @@ export function HeaderActions({
         <Button
           asChild
           size="sm"
-          className="ml-0.5 h-8 rounded-full px-3.5 text-xs font-medium"
+          variant={bar ? "outline" : "default"}
+          className="ml-0.5 h-9 px-3.5 text-xs font-medium"
         >
           <Link href="/auth/signin">Sign in</Link>
         </Button>

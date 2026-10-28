@@ -32,11 +32,11 @@ const LINKS = [
 export function HeaderNav({
   signedIn,
   className,
-  variant = "dock",
+  variant = "bar",
 }: {
   signedIn: boolean;
   className?: string;
-  variant?: "dock" | "stack";
+  variant?: "bar" | "stack" | "dock";
 }) {
   const pathname = usePathname() || "/";
   const isStack = variant === "stack";
@@ -44,7 +44,7 @@ export function HeaderNav({
   return (
     <nav
       className={cn(
-        isStack ? "flex flex-col items-stretch gap-0.5" : "items-center gap-0.5",
+        isStack ? "flex flex-col items-stretch gap-0.5" : "items-center gap-8",
         className,
       )}
       aria-label="Primary"
@@ -63,20 +63,21 @@ export function HeaderNav({
           <Link
             key={link.href}
             href={link.href}
+            data-active={active ? "true" : "false"}
             className={cn(
-              "transition-colors duration-editorial",
+              "transition-colors duration-expo",
               isStack
                 ? cn(
-                    "rounded-lg px-3 py-2.5 text-sm",
+                    "rounded-sm px-3 py-2.5 text-sm",
                     active
                       ? "bg-surface font-medium text-foreground"
                       : "text-muted-foreground hover:bg-surface/70 hover:text-foreground",
                   )
                 : cn(
-                    "relative rounded-full px-3.5 py-1.5 text-[13px] tracking-tight",
+                    "rounded-[var(--radius)] px-3 py-1.5 text-[13px] tracking-tight transition-colors duration-expo",
                     active
-                      ? "bg-surface font-medium text-foreground"
-                      : "text-muted-foreground hover:text-foreground",
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:bg-[var(--fg-faint)] hover:text-foreground",
                   ),
             )}
           >

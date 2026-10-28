@@ -9,7 +9,6 @@ import { useAuth } from "@/features/auth/auth-context";
 import {
   LayoutDashboard,
   UserRound,
-  PenTool,
   ExternalLink,
 } from "lucide-react";
 import { NAV_ICON_CLASS, NAV_STROKE } from "@/components/layout/nav-metrics";
@@ -43,43 +42,33 @@ export function WriterHubShell({ children }: { children: React.ReactNode }) {
 
   const navClass = (section: HubSection) =>
     cn(
-      "w-full justify-start rounded-2xl gap-2 font-medium",
+      "w-full justify-start rounded-sm gap-2 font-medium",
       active === section
-        ? "bg-primary/15 text-primary ring-1 ring-primary/25 shadow-sm"
-        : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
-    );
-
-  const writeActive =
-    pathname === "/write" || pathname.startsWith("/write?");
-  const secondaryNav = (highlight: boolean) =>
-    cn(
-      "w-full justify-start rounded-2xl gap-2 font-medium",
-      highlight
-        ? "bg-muted/70 text-foreground ring-1 ring-border/80"
-        : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
+        ? "bg-surface text-foreground ring-1 ring-[var(--fg-line)]"
+        : "text-muted-foreground hover:text-foreground hover:bg-surface/70",
     );
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pt-4 pb-12">
+    <div className="wrap pt-6 pb-12" data-lenis-prevent>
       <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-        <aside className="w-full shrink-0 lg:w-72 lg:sticky lg:top-24 xl:w-80">
-          <div className="rounded-3xl border border-border/70 bg-card/70 backdrop-blur-xl p-6 shadow-lg space-y-6 glass">
-            <div className="flex flex-col items-center text-center gap-3">
-              <Avatar className="h-24 w-24 ring-4 ring-primary/15 shadow-md">
+        <aside className="w-full shrink-0 lg:sticky lg:top-28 lg:w-72 xl:w-80">
+          <div className="space-y-6 border border-[var(--fg-line)] bg-[var(--bg)] p-6">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <Avatar className="h-20 w-20 ring-1 ring-[var(--fg-line)]">
                 <AvatarImage
                   src={profile?.avatar_url || user?.user_metadata?.avatar_url}
                 />
-                <AvatarFallback className="text-2xl font-semibold bg-gradient-to-br from-primary/25 to-primary/10">
+                <AvatarFallback className="bg-surface text-2xl font-medium">
                   {displayName[0] || "?"}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-display text-lg font-semibold text-foreground leading-tight">
+                <p className="type-display text-lg leading-tight">
                   {displayName}
                 </p>
-                <p className="text-sm text-muted-foreground mt-0.5">{handle}</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">{handle}</p>
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+              <p className="line-clamp-3 text-xs leading-relaxed text-muted-foreground">
                 {bioPreview}
               </p>
             </div>
@@ -97,8 +86,11 @@ export function WriterHubShell({ children }: { children: React.ReactNode }) {
                   Profile &amp; Links
                 </Link>
               </Button>
-
-              <Button variant="ghost" className={cn(secondaryNav(false), "h-10")} asChild>
+              <Button
+                variant="ghost"
+                className="h-10 w-full justify-start gap-2 rounded-sm font-medium text-muted-foreground hover:bg-surface/70 hover:text-foreground"
+                asChild
+              >
                 <Link href={publicHref}>
                   <ExternalLink className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
                   Public Profile

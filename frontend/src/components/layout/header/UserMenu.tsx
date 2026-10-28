@@ -20,7 +20,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useAuth } from "@/features/auth/auth-context";
 import type { UserCapabilities } from "@/lib/roles";
 
@@ -63,9 +62,9 @@ export function UserMenu({
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="space-y-0.5 font-normal">
-          <p className="text-sm font-medium text-foreground">{name}</p>
-          <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+        <DropdownMenuLabel className="space-y-1 font-normal">
+          <p className="font-sans text-sm font-medium text-foreground">{name}</p>
+          <p className="type-label text-muted-foreground">
             {(capabilities.role ?? "guest").replace("_", " ")}
             {profile?.csi_id ? ` · CSI #${profile.csi_id}` : ""}
           </p>
@@ -113,11 +112,6 @@ export function UserMenu({
             Settings
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <div className="flex items-center justify-between px-2 py-1.5">
-          <span className="text-sm text-muted-foreground">Theme</span>
-          <ThemeToggle />
-        </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={async () => {

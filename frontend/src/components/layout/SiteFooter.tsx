@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Github, Linkedin } from "lucide-react";
 import { CloverMark } from "@/components/layout/CloverMark";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 const COLUMNS = [
   {
@@ -27,7 +26,7 @@ const COLUMNS = [
       { href: "/about", label: "About" },
       { href: "/about#masthead", label: "Masthead" },
       { href: "/privacy", label: "Privacy" },
-      { href: "/copyright", label: "Copyright" },
+      { href: "/copyright", label: "Copyright & IP" },
     ],
   },
   {
@@ -43,23 +42,24 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-auto border-t border-hairline bg-background pb-24 md:pb-0">
-      <div className="mx-auto max-w-content px-4 py-12 sm:px-6 lg:px-8">
+    <footer className="mt-auto border-t border-[var(--fg-line)]">
+      <div className="wrap py-14 md:py-16">
         <div className="grid gap-10 md:grid-cols-12">
-          <div className="md:col-span-4 space-y-3">
+          <div className="space-y-4 md:col-span-4">
             <div className="flex items-center gap-2.5">
-              <span className="circle-logo h-8 w-8 text-sm">
-                <CloverMark size="sm" />
-              </span>
-              <span className="font-display text-base font-semibold tracking-tight">
-                The Fourth Clover
+              <CloverMark size="md" className="text-[var(--brand-color)]" />
+              <span className="type-display text-[0.95rem]">
+                The Fourth{" "}
+                <span className="type-script text-[1.35em] normal-case tracking-normal text-[var(--brand-color)]">
+                  Clover
+                </span>
               </span>
             </div>
-            <p className="max-w-sm font-serif text-sm leading-relaxed text-muted-foreground">
+            <p className="type-body max-w-sm text-sm">
               Writing, poetry, and engineering from CSI MIT-WPU. An editorial
               publication for thoughtful makers.
             </p>
-            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            <p className="type-label text-muted-foreground">
               CSI MIT-WPU Technical Press
             </p>
             <div className="flex items-center gap-2 pt-1">
@@ -68,7 +68,7 @@ export function SiteFooter() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="GitHub"
-                className="flex h-8 w-8 items-center justify-center rounded-md border border-hairline text-muted-foreground transition-colors duration-editorial hover:text-foreground"
+                className="flex h-8 w-8 items-center justify-center border border-[var(--fg-line)] text-muted-foreground transition-colors duration-expo hover:text-foreground"
               >
                 <Github className="h-3.5 w-3.5" />
               </a>
@@ -77,23 +77,25 @@ export function SiteFooter() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="LinkedIn"
-                className="flex h-8 w-8 items-center justify-center rounded-md border border-hairline text-muted-foreground transition-colors duration-editorial hover:text-foreground"
+                className="flex h-8 w-8 items-center justify-center border border-[var(--fg-line)] text-muted-foreground transition-colors duration-expo hover:text-foreground"
               >
                 <Linkedin className="h-3.5 w-3.5" />
               </a>
             </div>
           </div>
 
-          <div className="md:col-span-8 grid grid-cols-2 gap-8 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 md:col-span-8">
             {COLUMNS.map((col) => (
               <div key={col.title}>
-                <p className="meta-label mb-3">{col.title}</p>
+                <p className="type-label mb-3 text-muted-foreground">
+                  {col.title}
+                </p>
                 <ul className="space-y-2">
                   {col.links.map((link) => (
                     <li key={link.href}>
                       <Link
                         href={link.href}
-                        className="text-sm text-muted-foreground transition-colors duration-editorial hover:text-foreground"
+                        className="link-u text-sm text-muted-foreground hover:text-foreground"
                       >
                         {link.label}
                       </Link>
@@ -105,7 +107,7 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-hairline pt-6 sm:flex-row sm:items-center">
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-[var(--fg-line)] pt-6 sm:flex-row sm:items-center">
           <div className="flex flex-col items-center gap-1.5 text-center sm:items-start sm:text-left">
             <p
               className="font-mono text-[11px] text-muted-foreground"
@@ -119,18 +121,18 @@ export function SiteFooter() {
                 href="https://www.aryandani.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium text-foreground underline decoration-hairline underline-offset-4 transition-colors duration-editorial hover:text-brand"
+                className="link-u font-medium text-foreground"
               >
                 Aryan Dani
               </a>
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="font-mono text-[11px] text-muted-foreground">
-              Theme
-            </span>
-            <ThemeToggle />
-          </div>
+          <Link
+            href="/copyright"
+            className="type-label link-u text-muted-foreground"
+          >
+            Copyright &amp; IP
+          </Link>
         </div>
       </div>
     </footer>

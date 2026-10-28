@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ArticleCard } from "@/components/editorial/ArticleCard";
 import { EmptyState } from "@/components/editorial/EmptyState";
-import { PageHeader } from "@/components/editorial/PageHeader";
+import { PageShell } from "@/components/layout/PageShell";
 import { searchContentAction } from "@/features/data/search-actions";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +21,7 @@ export async function generateMetadata({
   if (!query) {
     return {
       title: "Search | The Fourth Clover",
-      description: "Search Journal stories and Tech Weekly dispatches.",
+      description: "Search Journal stories, Tech Weekly dispatches, and authors.",
     };
   }
   return {
@@ -38,24 +38,18 @@ export default async function SearchPage({
   const params = await searchParams;
   const q = (params.q || "").trim();
   const { hits } = q.length >= 2 ? await searchContentAction(q, 40) : { hits: [] };
+  const authors = hits.filter((h) => h.kind === "author");
+  const pieces = hits.filter((h) => h.kind !== "author");
 
   return (
-    <div className="mx-auto max-w-content px-4 py-10 sm:px-6 lg:px-8">
-      <PageHeader
-        label="Discover"
-        labelHref="/journal"
-        title={q ? `Results for “${q}”` : "Search"}
-        description={
-          q.length > 0 && q.length < 2
-            ? "Type at least two characters to search."
-            : "Journal essays and Tech Weekly dispatches."
-        }
-      />
-
+    <PageShell
+      title={q ? `Results for “${q}”` : "Search"}
+      description="Journal essays, Tech Weekly dispatches, and authors."
+    >
       <form
         action="/search"
         method="get"
-        className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"
+        className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center"
       >
         <label htmlFor="search-q" className="sr-only">
           Search query
@@ -65,28 +59,22 @@ export default async function SearchPage({
           name="q"
           type="search"
           defaultValue={q}
-          placeholder="Search titles and excerpts…"
-          className="h-11 w-full flex-1 border border-hairline bg-background px-4 font-serif text-base text-foreground outline-none transition-colors duration-editorial placeholder:text-muted-foreground focus:border-brand"
+          placeholder="Search titles, excerpts, and authors…"
+          className="h-11 w-full flex-1 border border-[var(--fg-line)] bg-transparent px-4 text-base text-foreground outline-none transition-colors duration-expo placeholder:text-muted-foreground focus:border-[var(--fg)]"
           autoFocus
         />
-        <button
-          type="submit"
-          className="inline-flex h-11 items-center justify-center border border-foreground bg-foreground px-6 font-mono text-[11px] uppercase tracking-[0.14em] text-background transition-colors duration-editorial hover:bg-brand hover:border-brand"
-        >
+        <button type="submit" className="btn-editorial shrink-0">
           Search
         </button>
       </form>
 
-      <div className="mt-10">
+      <div className="mt-10 space-y-10">
         {q.length < 2 ? (
           <EmptyState
             title="Start a search"
             description="Enter at least two characters, or open the command palette with ⌘K / Ctrl+K."
             action={
-              <Link
-                href="/journal"
-                className="font-mono text-[11px] uppercase tracking-[0.12em] text-brand transition-colors hover:text-foreground"
-              >
+              <Link href="/journal" className="btn-editorial">
                 Browse Journal
               </Link>
             }
@@ -94,34 +82,62 @@ export default async function SearchPage({
         ) : hits.length === 0 ? (
           <EmptyState
             title="No matches"
-            description={`Nothing turned up for “${q}”. Try a broader phrase or browse by tag.`}
+            description={`Nothing turned up for “${q}”. Try a name, title, or broader phrase.`}
             action={
-              <Link
-                href="/tags"
-                className="font-mono text-[11px] uppercase tracking-[0.12em] text-brand transition-colors hover:text-foreground"
-              >
+              <Link href="/tags" className="btn-editorial">
                 Explore tags
               </Link>
             }
           />
         ) : (
-          <div className="space-y-1">
-            <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+          <>
+            <p className="type-label text-muted-foreground">
               {hits.length} result{hits.length === 1 ? "" : "s"}
             </p>
-            {hits.map((hit) => (
-              <ArticleCard
-                key={`${hit.kind}-${hit.id}`}
-                section={hit.kind === "tech" ? "tech" : "journal"}
-                variant="list"
-                title={hit.title}
-                slug={hit.slug}
-                excerpt={hit.excerpt}
-              />
-            ))}
-          </div>
+
+            {authors.length > 0 && (
+              <section className="space-y-3">
+                <h2 className="type-label text-muted-foreground">Authors</h2>
+                <ul className="divide-y divide-[var(--fg-line)] border-y border-[var(--fg-line)]">
+                  {authors.map((hit) => (
+                    <li key={`author-${hit.id}`}>
+                      <Link
+                        href={`/profile/${hit.slug}`}
+                        className="group flex flex-col gap-1 py-4 sm:flex-row sm:items-baseline sm:justify-between"
+                      >
+                        <span className="text-lg tracking-tight transition-opacity group-hover:opacity-70">
+                          {hit.title}
+                        </span>
+                        <span className="type-label text-muted-foreground">
+                          @{hit.slug}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {pieces.length > 0 && (
+              <section className="space-y-3">
+                <h2 className="type-label text-muted-foreground">Pieces</h2>
+                <div className="space-y-1">
+                  {pieces.map((hit) => (
+                    <ArticleCard
+                      key={`${hit.kind}-${hit.id}`}
+                      section={hit.kind === "tech" ? "tech" : "journal"}
+                      variant="list"
+                      title={hit.title}
+                      slug={hit.slug}
+                      excerpt={hit.excerpt}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }

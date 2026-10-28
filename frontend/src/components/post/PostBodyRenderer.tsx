@@ -96,7 +96,7 @@ export function PostBodyRenderer({
 
   if (!useMarkdown) {
     return (
-      <div className={cn("prose prose-lg max-w-none mb-12 font-serif", className)}>
+      <div className={cn("prose-editorial mb-12", className)}>
         {postContentToBlocks(content).map((block, index) =>
           block.kind === "spacer" ? (
             <div key={`s-${index}`} className="h-4 sm:h-5" aria-hidden />
@@ -200,7 +200,7 @@ export function PostBodyRenderer({
   };
 
   return (
-    <div className={cn("prose prose-lg max-w-none mb-12 font-serif", className)}>
+    <div className={cn("prose-editorial mb-12", className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeSanitize, rehypeHighlight]}

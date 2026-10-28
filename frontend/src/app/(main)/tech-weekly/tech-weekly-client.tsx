@@ -3,12 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import {
-  ArticleCard,
-  EmptyState,
-  PageHeader,
-  SectionLabel,
-} from "@/components/editorial";
+import { EmptyState, SectionLabel } from "@/components/editorial";
 import {
   PenTool,
   Clock,
@@ -89,8 +84,8 @@ export function TechWeeklyClient({
   );
 
   return (
-    <div className="mx-auto max-w-content space-y-12 px-4 py-10 sm:px-6 lg:px-8">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline pb-3 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+    <div className="wrap space-y-12 py-10 md:py-14">
+      <div className="type-label flex flex-wrap items-center justify-between gap-3 border-b border-[var(--fg-line)] pb-3 text-muted-foreground">
         <span>CSI MIT-WPU · Technical Dispatch Archive</span>
         <span className="inline-flex items-center gap-2 text-foreground tabular-nums">
           {initialData.isWindowOpen ? (
@@ -109,14 +104,18 @@ export function TechWeeklyClient({
         </span>
       </div>
 
-      <PageHeader
-        label="Tech Weekly"
-        title="CSI Tech Weekly"
-        description={
-          activeWeekObj?.prompt ||
-          "Weekly engineering dispatches, systems breakdowns, and implementation notes from the CSI MIT-WPU Technical Wing."
-        }
-        actions={
+      <header className="border-b border-[var(--fg-line)] pb-8">
+        <p className="type-label text-muted-foreground">Tech Weekly</p>
+        <div className="mt-4 flex flex-wrap items-end justify-between gap-6">
+          <div className="max-w-2xl">
+            <h1 className="type-display text-[clamp(2.5rem,7vw,4.5rem)]">
+              CSI Tech Weekly
+            </h1>
+            <p className="type-body mt-4">
+              {activeWeekObj?.prompt ||
+                "Weekly engineering dispatches from the CSI MIT-WPU Technical Wing."}
+            </p>
+          </div>
           <div className="flex flex-wrap gap-2">
             {isTechMember ? (
               <Button asChild size="sm">
@@ -138,21 +137,16 @@ export function TechWeeklyClient({
             ) : null}
 
             {isTechHeadOrAdmin && (
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="border-hairline"
-              >
+              <Button asChild variant="outline" size="sm">
                 <Link href="/tech-weekly/review">
                   <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                  Curation queue
+                  Curation desk
                 </Link>
               </Button>
             )}
           </div>
-        }
-      />
+        </div>
+      </header>
 
       {initialData.featuredPick && (
         <FeaturedTechWeeklyBanner
@@ -215,34 +209,48 @@ export function TechWeeklyClient({
               }
             />
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2">
-              {filteredSubmissions.map((sub, idx) => (
-                <ArticleCard
-                  key={sub.id}
-                  section="tech"
-                  variant={idx === 0 ? "lead" : "standard"}
-                  className={idx === 0 ? "sm:col-span-2" : undefined}
-                  title={sub.title}
-                  slug={sub.slug}
-                  excerpt={
-                    sub.summary?.trim() ||
-                    `${sub.content
-                      .replace(/[#*`>\-\[\]!]/g, "")
-                      .replace(/\s+/g, " ")
-                      .trim()
-                      .slice(0, 190)}…`
-                  }
-                  coverImage={sub.cover_image}
-                  author={sub.author}
-                  publishedAt={sub.created_at}
-                  readTime={sub.read_time}
-                  tags={sub.tags}
-                  reactionCount={sub.reaction_counts?.total}
-                  commentCount={sub.comment_count}
-                  priority={idx < 2}
-                />
-              ))}
-            </div>
+            <ul className="divide-y divide-[var(--fg-line)] border-t border-[var(--fg-line)]">
+              {filteredSubmissions.map((sub) => {
+                const author =
+                  sub.author?.full_name ||
+                  sub.author?.username ||
+                  "Contributor";
+                const date = sub.created_at
+                  ? new Intl.DateTimeFormat("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    }).format(new Date(sub.created_at))
+                  : "";
+                return (
+                  <li key={sub.id}>
+                    <Link
+                      href={`/tech-weekly/${sub.slug}`}
+                      className="group flex flex-col gap-2 py-6 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8"
+                    >
+                      <div className="min-w-0">
+                        <p className="type-label text-muted-foreground">
+                          Dispatch
+                          {sub.read_time ? ` · ${sub.read_time} min` : ""}
+                        </p>
+                        <h2 className="type-display mt-2 text-[clamp(1.2rem,3vw,1.75rem)] transition-opacity group-hover:opacity-70">
+                          {sub.title}
+                        </h2>
+                        {sub.summary && (
+                          <p className="type-body mt-2 line-clamp-2 max-w-2xl text-sm">
+                            {sub.summary}
+                          </p>
+                        )}
+                      </div>
+                      <span className="type-label shrink-0 text-muted-foreground">
+                        {author}
+                        {date ? ` · ${date}` : ""}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </div>
 

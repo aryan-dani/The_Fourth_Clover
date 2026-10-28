@@ -1,130 +1,237 @@
 "use client";
 
-import { PageShell } from "@/components/layout/PageShell";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Scale, FileText, Shield, Mail } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
+import {
+  DrawLine,
+  Reveal,
+  RevealText,
+  ScriptWipe,
+} from "@/components/motion/Reveal";
 
-export default function CopyrightPage() {
-  return (
-    <PageShell
-        variant="reading"
-        title="Copyright & legal"
-        description="Protecting creative content and respecting intellectual property rights."
-      >
-        <div className="space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-display text-lg">
-                <Scale className="h-5 w-5 text-primary" aria-hidden />
-                Copyright notice
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 font-serif text-muted-foreground">
-              <p>© 2026 The Fourth Clover. All rights reserved.</p>
-              <p>
-                All content published on The Fourth Clover, including text, images, graphics, and
-                code, is protected by copyright law. The content is owned by The Fourth Clover and its
-                content creators unless otherwise stated.
-              </p>
-            </CardContent>
-          </Card>
+const PERMITTED = [
+  "Sharing direct links to published Journal pieces or Tech Weekly dispatches",
+  "Short quotations for commentary, criticism, news, or classroom use with clear credit",
+  "Internal review by CSI MIT-WPU members evaluating submissions",
+];
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-display text-lg">
-                <FileText className="h-5 w-5 text-primary" aria-hidden />
-                User-generated content
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 font-serif text-muted-foreground">
-              <p>
-                When you publish content on The Fourth Clover, you retain full ownership and
-                copyright of your original work. By publishing content on our platform, you grant
-                The Fourth Clover a non-exclusive, worldwide license to host, display, and distribute
-                your content.
-              </p>
-              <p className="font-sans text-sm">
-                You are responsible for ensuring that your content does not infringe on the
-                intellectual property rights of others.
-              </p>
-            </CardContent>
-          </Card>
+const PROHIBITED = [
+  "Republishing full articles or dispatches without the author’s written consent",
+  "Scraping articles, code samples, or the clover mark into AI / ML training sets",
+  "Cloning or redistributing this publication’s design system, motion, or mark",
+];
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-display text-lg">
-                <Shield className="h-5 w-5 text-primary" aria-hidden />
-                Fair use & permissions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 font-serif text-muted-foreground">
-              <p>
-                Limited quotations from content published on The Fourth Clover are permitted for
-                purposes of commentary, criticism, news reporting, and education, provided that
-                proper attribution is given to the original author.
-              </p>
-              <p>
-                For any other use of content beyond fair use guidelines, you must obtain explicit
-                permission from the content owner.
-              </p>
-            </CardContent>
-          </Card>
+type Clause = { id: string; tag: string; title: string; body: ReactNode };
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-display text-lg">
-                <Mail className="h-5 w-5 text-primary" aria-hidden />
-                Copyright infringement claims
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 font-serif text-muted-foreground">
-              <p>
-                The Fourth Clover respects the intellectual property rights of others. If you believe
-                that your copyrighted work has been copied in a way that constitutes copyright
-                infringement, please contact us with the following information:
-              </p>
-              <ul className="list-inside list-disc space-y-2 font-sans text-sm">
-                <li>A description of the copyrighted work you claim has been infringed</li>
-                <li>The URL where the allegedly infringing material is located</li>
-                <li>Your contact information (email address, phone number)</li>
-                <li>A statement of good faith belief</li>
-                <li>A statement, under penalty of perjury, that the information is accurate</li>
-              </ul>
-              <p className="font-sans text-sm">
-                Contact:{" "}
-                <Link href="mailto:legal@thefourthclover.com" className="text-primary hover:underline">
-                  legal@thefourthclover.com
-                </Link>
-              </p>
-            </CardContent>
-          </Card>
+const linkClass = "link-u !bg-[length:100%_1px]";
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-display text-lg">Platform code license</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-serif text-muted-foreground">
-                The Fourth Clover platform software is released under the MIT License. See our{" "}
-                <Link
-                  href="https://github.com/aryan-dani/The-Fourth-Clover"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  GitHub repository
-                </Link>{" "}
-                for more details.
-              </p>
-            </CardContent>
-          </Card>
-
-          <p className="text-center font-sans text-sm text-muted-foreground">
-            Last updated: January 18, 2026
-          </p>
-        </div>
-      </PageShell>
-  );
+function clauses(): Clause[] {
+  return [
+    {
+      id: "01",
+      tag: "Authorship",
+      title: "Pieces stay with their authors",
+      body: (
+        <>
+          Every Journal piece and Tech Weekly dispatch remains the intellectual
+          property of its author. By publishing on The Fourth Clover, authors
+          grant the publication a non-exclusive, worldwide license to host,
+          display, and distribute that work for as long as it remains on the
+          site.
+        </>
+      ),
+    },
+    {
+      id: "02",
+      tag: "Design & mark",
+      title: "The clover, the system, and the motion",
+      body: (
+        <>
+          The four-leaf clover mark, editorial design system, typography
+          choreography, and motion language were designed and engineered by{" "}
+          <a
+            href="https://www.aryandani.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={linkClass}
+          >
+            Aryan Dani (www.aryandani.com)
+          </a>
+          . Commercial reproduction or unauthorized copying of the mark or site
+          architecture is prohibited.
+        </>
+      ),
+    },
+    {
+      id: "03",
+      tag: "AI & scraping",
+      title: "No training on our pages",
+      body: (
+        <>
+          Articles, code excerpts, the clover mark, and site chrome may not be
+          harvested, scraped, or used to train, fine-tune, or evaluate machine
+          learning or generative AI systems without express written consent from
+          the rights holders.
+        </>
+      ),
+    },
+    {
+      id: "04",
+      tag: "Typefaces",
+      title: "Fonts under the SIL Open Font License",
+      body: (
+        <>
+          Noto Serif Display, Monsieur La Doulaise, and Jost are used under the
+          SIL Open Font License. JetBrains Mono is used under its respective open
+          license. Redistribution of font files follows those licenses.
+        </>
+      ),
+    },
+    {
+      id: "05",
+      tag: "Reuse desk",
+      title: "How to ask for permission",
+      body: (
+        <>
+          For republication beyond fair use, mark licensing, or other clearances,
+          email{" "}
+          <a href="mailto:legal@thefourthclover.com" className={linkClass}>
+            legal@thefourthclover.com
+          </a>{" "}
+          with the work URL, intended use, and your contact details. Governed by
+          the Indian Copyright Act, 1957 and the Berne Convention.
+        </>
+      ),
+    },
+  ];
 }
 
+export default function CopyrightPage() {
+  const list = clauses();
+  const mailto = `mailto:legal@thefourthclover.com?subject=${encodeURIComponent(
+    "Reuse & licensing inquiry — The Fourth Clover",
+  )}`;
+
+  return (
+    <main className="legal wrap pb-24 pt-10 md:pt-14">
+      <Reveal delay={0.05} y={12}>
+        <Link href="/" className="type-label link-u">
+          ← Back home
+        </Link>
+      </Reveal>
+
+      <div className="legal__hero mt-10">
+        <h1 className="type-display text-[clamp(2.5rem,8vw,4.5rem)]">
+          <RevealText as="span" by="words" className="block">
+            Copyright
+          </RevealText>
+          <span className="mt-2 flex flex-wrap items-baseline gap-3">
+            <span className="type-display text-[0.55em] opacity-50">&amp;</span>
+            <ScriptWipe
+              as="span"
+              delay={0.35}
+              className="type-script text-[0.55em] normal-case tracking-normal text-[var(--brand-color)]"
+            >
+              IP
+            </ScriptWipe>
+          </span>
+        </h1>
+        <Reveal delay={0.15} className="mt-8 max-w-2xl">
+          <p className="type-body text-lg">
+            A plain-language charter for authors, readers, and anyone who wants
+            to reuse work from The Fourth Clover.
+          </p>
+        </Reveal>
+      </div>
+
+      <div className="mt-14 grid gap-10 md:grid-cols-2">
+        <Reveal className="space-y-4">
+          <p className="type-label text-muted-foreground">
+            Permitted without a license
+          </p>
+          <ul className="space-y-3">
+            {PERMITTED.map((item) => (
+              <li key={item} className="flex gap-3 text-sm leading-relaxed">
+                <span aria-hidden className="type-label mt-0.5 text-[var(--brand-color)]">
+                  ✓
+                </span>
+                <span className="type-body text-sm">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </Reveal>
+        <Reveal delay={0.1} className="space-y-4">
+          <p className="type-label text-muted-foreground">
+            Restricted without written consent
+          </p>
+          <ul className="space-y-3">
+            {PROHIBITED.map((item) => (
+              <li key={item} className="flex gap-3 text-sm leading-relaxed">
+                <span aria-hidden className="type-label mt-0.5">
+                  ✕
+                </span>
+                <span className="type-body text-sm">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </Reveal>
+      </div>
+
+      <ol className="mt-16 list-none space-y-0 p-0">
+        {list.map((clause) => (
+          <li key={clause.id} className="py-10">
+            <DrawLine />
+            <div className="mt-8 grid gap-6 md:grid-cols-[5rem_1fr]">
+              <Reveal className="type-display text-3xl text-muted-foreground" y={16}>
+                {clause.id}
+              </Reveal>
+              <div>
+                <Reveal y={16}>
+                  <p className="type-label text-muted-foreground">{clause.tag}</p>
+                  <h2 className="type-display mt-2 text-[clamp(1.35rem,3vw,2rem)]">
+                    {clause.title}
+                  </h2>
+                </Reveal>
+                <Reveal y={16} delay={0.08}>
+                  <p className="type-body mt-4 max-w-2xl">{clause.body}</p>
+                </Reveal>
+              </div>
+            </div>
+          </li>
+        ))}
+        <li aria-hidden>
+          <DrawLine />
+        </li>
+      </ol>
+
+      <Reveal y={20} className="mt-16 flex flex-col gap-6 border border-[var(--fg-line)] p-8 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="type-display text-[clamp(1.4rem,3vw,2rem)]">
+            Need reuse rights?
+          </h2>
+          <p className="type-body mt-2 max-w-md">
+            Licensing and permissions are handled by email.
+          </p>
+        </div>
+        <a href={mailto} className="btn-editorial shrink-0">
+          Request permission
+        </a>
+      </Reveal>
+
+      <p className="type-label mt-12 flex flex-col gap-2 text-muted-foreground sm:flex-row sm:justify-between">
+        <span>© {new Date().getFullYear()} The Fourth Clover. All rights reserved.</span>
+        <span>
+          Designed &amp; developed by{" "}
+          <a
+            href="https://www.aryandani.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="link-u"
+          >
+            Aryan Dani
+          </a>
+        </span>
+      </p>
+    </main>
+  );
+}

@@ -5,16 +5,13 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PageShell } from "@/components/layout/PageShell";
 import { useAuth } from "@/features/auth/auth-context";
 import { updateProfile } from "@/features/data/database-operations";
 import { toast } from "sonner";
-import { useTheme } from "next-themes";
 import {
     User,
     Settings,
@@ -28,29 +25,7 @@ import {
     ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
-
-function ThemeToggleSwitch() {
-    const { theme, setTheme } = useTheme();
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    if (!mounted) {
-        return <Switch disabled />;
-    }
-
-    return (
-        <Switch
-            checked={theme === "dark"}
-            onCheckedChange={(checked) => {
-                setTheme(checked ? "dark" : "light");
-                toast.success(`Switched to ${checked ? "dark" : "light"} mode`);
-            }}
-        />
-    );
-}
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 export default function SettingsPage() {
     const router = useRouter();
@@ -135,202 +110,199 @@ export default function SettingsPage() {
                     }
                 >
                     <Tabs defaultValue="profile" className="space-y-6">
-                        <TabsList className="grid w-full grid-cols-2 h-12">
-                            <TabsTrigger value="profile" className="flex items-center gap-2">
+                        <TabsList className="panel grid h-12 w-full grid-cols-2 p-1">
+                            <TabsTrigger
+                                value="profile"
+                                className="flex items-center gap-2 rounded-[calc(var(--radius)-2px)] data-[state=active]:bg-foreground data-[state=active]:text-background"
+                            >
                                 <User className="w-4 h-4" />
                                 Profile
                             </TabsTrigger>
-                            <TabsTrigger value="appearance" className="flex items-center gap-2">
+                            <TabsTrigger
+                                value="appearance"
+                                className="flex items-center gap-2 rounded-[calc(var(--radius)-2px)] data-[state=active]:bg-foreground data-[state=active]:text-background"
+                            >
                                 <Settings className="w-4 h-4" />
                                 Appearance
                             </TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="profile" className="space-y-6">
-                            <Card className="glass">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <User className="w-5 h-5" />
+                            <section className="panel space-y-6 p-6 sm:p-8">
+                                <div className="space-y-1">
+                                    <h2 className="flex items-center gap-2 type-display text-xl">
+                                        <User className="h-5 w-5" />
                                         Profile Information
-                                    </CardTitle>
-                                    <CardDescription>
+                                    </h2>
+                                    <p className="text-sm text-muted-foreground">
                                         Update your public profile information
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                    <div className="flex items-center gap-6">
-                                        <Avatar className="w-20 h-20 ring-2 ring-primary/20">
-                                            <AvatarImage src={profile?.avatar_url || ""} />
-                                            <AvatarFallback className="text-2xl bg-gradient-to-br from-primary/20 to-primary/10">
-                                                {formData.full_name?.[0] || user.email?.[0]?.toUpperCase()}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <p className="text-sm text-muted-foreground">
-                                                Avatar is synced from your authentication provider
-                                            </p>
-                                        </div>
-                                    </div>
+                                    </p>
+                                </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="full_name">Full Name</Label>
-                                            <Input
-                                                id="full_name"
-                                                value={formData.full_name}
-                                                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                                                placeholder="Your full name"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="username">Username</Label>
-                                            <Input
-                                                id="username"
-                                                value={formData.username}
-                                                onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "") })}
-                                                placeholder="username"
-                                            />
-                                        </div>
-                                    </div>
+                                <div className="flex items-center gap-6">
+                                    <Avatar className="h-20 w-20 ring-1 ring-[var(--fg-line)]">
+                                        <AvatarImage src={profile?.avatar_url || ""} />
+                                        <AvatarFallback className="bg-[hsl(var(--surface))] text-2xl">
+                                            {formData.full_name?.[0] || user.email?.[0]?.toUpperCase()}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <p className="text-sm text-muted-foreground">
+                                        Avatar is synced from your authentication provider
+                                    </p>
+                                </div>
 
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                     <div className="space-y-2">
-                                        <Label htmlFor="bio">Bio</Label>
-                                        <Textarea
-                                            id="bio"
-                                            value={formData.bio}
-                                            onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                                            placeholder="Tell us about yourself..."
-                                            rows={4}
-                                        />
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <Label>Social Links</Label>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            <div className="relative">
-                                                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                                <Input
-                                                    value={formData.website}
-                                                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                                                    placeholder="Website URL"
-                                                    className="pl-10"
-                                                />
-                                            </div>
-                                            <div className="relative">
-                                                <Twitter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                                <Input
-                                                    value={formData.twitter}
-                                                    onChange={(e) => setFormData({ ...formData, twitter: e.target.value })}
-                                                    placeholder="Twitter username"
-                                                    className="pl-10"
-                                                />
-                                            </div>
-                                            <div className="relative">
-                                                <Github className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                                <Input
-                                                    value={formData.github}
-                                                    onChange={(e) => setFormData({ ...formData, github: e.target.value })}
-                                                    placeholder="GitHub username"
-                                                    className="pl-10"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <Button
-                                        onClick={handleSaveProfile}
-                                        disabled={saving}
-                                        className="w-full md:w-auto"
-                                    >
-                                        {saving ? (
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        ) : (
-                                            <Save className="w-4 h-4 mr-2" />
-                                        )}
-                                        Save Changes
-                                    </Button>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="glass">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Mail className="w-5 h-5" />
-                                        Email &amp; Security
-                                    </CardTitle>
-                                    <CardDescription>
-                                        Manage your account security settings
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                    <div className="space-y-2">
-                                        <Label>Email Address</Label>
+                                        <Label htmlFor="full_name" className="type-label text-muted-foreground">
+                                            Full Name
+                                        </Label>
                                         <Input
-                                            value={user.email || ""}
-                                            disabled
-                                            className="bg-muted"
+                                            id="full_name"
+                                            value={formData.full_name}
+                                            onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                                            placeholder="Your full name"
                                         />
-                                        <p className="text-xs text-muted-foreground">
-                                            Authenticated via Google OAuth.
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="username" className="type-label text-muted-foreground">
+                                            Username
+                                        </Label>
+                                        <Input
+                                            id="username"
+                                            value={formData.username}
+                                            onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "") })}
+                                            placeholder="username"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="bio" className="type-label text-muted-foreground">
+                                        Bio
+                                    </Label>
+                                    <Textarea
+                                        id="bio"
+                                        value={formData.bio}
+                                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                                        placeholder="Tell us about yourself..."
+                                        rows={4}
+                                    />
+                                </div>
+
+                                <div className="space-y-4">
+                                    <Label className="type-label text-muted-foreground">Social Links</Label>
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                        <div className="relative">
+                                            <Globe className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                            <Input
+                                                value={formData.website}
+                                                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                                                placeholder="Website URL"
+                                                className="pl-10"
+                                            />
+                                        </div>
+                                        <div className="relative">
+                                            <Twitter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                            <Input
+                                                value={formData.twitter}
+                                                onChange={(e) => setFormData({ ...formData, twitter: e.target.value })}
+                                                placeholder="Twitter username"
+                                                className="pl-10"
+                                            />
+                                        </div>
+                                        <div className="relative">
+                                            <Github className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                            <Input
+                                                value={formData.github}
+                                                onChange={(e) => setFormData({ ...formData, github: e.target.value })}
+                                                placeholder="GitHub username"
+                                                className="pl-10"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Button onClick={handleSaveProfile} disabled={saving}>
+                                    {saving ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Save className="mr-2 h-4 w-4" />
+                                    )}
+                                    Save Changes
+                                </Button>
+                            </section>
+
+                            <section className="panel space-y-6 p-6 sm:p-8">
+                                <div className="space-y-1">
+                                    <h2 className="flex items-center gap-2 type-display text-xl">
+                                        <Mail className="h-5 w-5" />
+                                        Email &amp; Security
+                                    </h2>
+                                    <p className="text-sm text-muted-foreground">
+                                        Manage your account security settings
+                                    </p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="type-label text-muted-foreground">Email Address</Label>
+                                    <Input
+                                        value={user.email || ""}
+                                        disabled
+                                        className="bg-[hsl(var(--surface))]"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Authenticated via Google OAuth.
+                                    </p>
+                                </div>
+                            </section>
+
+                            <section className="panel space-y-4 border-destructive/40 p-6 sm:p-8">
+                                <div className="space-y-1">
+                                    <h2 className="flex items-center gap-2 type-display text-xl text-destructive">
+                                        <Shield className="h-5 w-5" />
+                                        Danger Zone
+                                    </h2>
+                                    <p className="text-sm text-muted-foreground">
+                                        Irreversible account actions
+                                    </p>
+                                </div>
+                                <div className="flex flex-wrap items-center justify-between gap-4 rounded-[var(--radius)] border border-destructive/30 bg-destructive/5 p-4">
+                                    <div>
+                                        <p className="font-medium text-destructive">Delete Account</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Permanently delete your account and all data
                                         </p>
                                     </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="glass border-destructive/20">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2 text-destructive">
-                                        <Shield className="w-5 h-5" />
-                                        Danger Zone
-                                    </CardTitle>
-                                    <CardDescription>
-                                        Irreversible account actions
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex items-center justify-between p-4 rounded-lg border border-destructive/20 bg-destructive/5">
-                                        <div>
-                                            <p className="font-medium text-destructive">Delete Account</p>
-                                            <p className="text-sm text-muted-foreground">
-                                                Permanently delete your account and all data
-                                            </p>
-                                        </div>
-                                        <Button variant="destructive" disabled>
-                                            Delete Account
-                                        </Button>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mt-2">
-                                        Account deletion is currently disabled. Contact support for assistance.
-                                    </p>
-                                </CardContent>
-                            </Card>
+                                    <Button variant="destructive" disabled>
+                                        Delete Account
+                                    </Button>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    Account deletion is currently disabled. Contact support for assistance.
+                                </p>
+                            </section>
                         </TabsContent>
 
                         <TabsContent value="appearance" className="space-y-6">
-                            <Card className="glass">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Settings className="w-5 h-5" />
+                            <section className="panel space-y-6 p-6 sm:p-8">
+                                <div className="space-y-1">
+                                    <h2 className="flex items-center gap-2 type-display text-xl">
+                                        <Settings className="h-5 w-5" />
                                         Appearance
-                                    </CardTitle>
-                                    <CardDescription>
-                                        Customize how the app looks
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex items-center justify-between p-4 rounded-lg border">
-                                        <div>
-                                            <p className="font-medium">Dark Mode</p>
-                                            <p className="text-sm text-muted-foreground">
-                                                Switch between light and dark themes
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <ThemeToggleSwitch />
-                                        </div>
+                                    </h2>
+                                    <p className="text-sm text-muted-foreground">
+                                        Parchment in light mode, forest in dark mode.
+                                    </p>
+                                </div>
+                                <div className="flex items-center justify-between gap-4 rounded-[var(--radius)] border border-[var(--fg-line)] p-4">
+                                    <div>
+                                        <p className="font-medium">Color mode</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Switch between parchment and forest.
+                                        </p>
                                     </div>
-                                </CardContent>
-                            </Card>
+                                    <ThemeToggle />
+                                </div>
+                            </section>
                         </TabsContent>
                     </Tabs>
                 </PageShell>

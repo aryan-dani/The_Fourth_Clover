@@ -16,13 +16,13 @@ export default function AboutPage() {
         {/* Mission Spread */}
         <div className="grid gap-10 lg:grid-cols-12 items-start">
           <div className="lg:col-span-7 space-y-5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+            <p className="type-label text-muted-foreground">
               01 · Editorial Mandate
             </p>
-            <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            <h2 className="type-display text-[clamp(1.6rem,4vw,2.4rem)]">
               Built for rigorous technical writing and long-form clarity.
             </h2>
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+            <p className="type-body text-sm sm:text-base">
               The Fourth Clover was created to provide a distraction-free
               publishing environment where engineering architecture notes,
               systems breakdowns, and technical monographs are treated with

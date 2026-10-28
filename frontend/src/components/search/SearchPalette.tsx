@@ -10,15 +10,22 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { searchContentAction } from "@/features/data/search-actions";
+import {
+  searchContentAction,
+  type SearchHit,
+} from "@/features/data/search-actions";
 
-type SearchHit = {
-  id: string;
-  title: string;
-  slug: string;
-  kind: "journal" | "tech";
-  excerpt?: string | null;
-};
+function kindLabel(kind: SearchHit["kind"]) {
+  if (kind === "tech") return "Tech Weekly";
+  if (kind === "author") return "Author";
+  return "Journal";
+}
+
+function hrefFor(hit: SearchHit) {
+  if (hit.kind === "author") return `/profile/${hit.slug}`;
+  if (hit.kind === "tech") return `/tech-weekly/${hit.slug}`;
+  return `/post/${hit.slug}`;
+}
 
 export function SearchPalette({
   open,
@@ -70,15 +77,16 @@ export function SearchPalette({
 
   const go = (hit: SearchHit) => {
     onOpenChange(false);
-    router.push(
-      hit.kind === "tech" ? `/tech-weekly/${hit.slug}` : `/post/${hit.slug}`,
-    );
+    router.push(hrefFor(hit));
   };
+
+  const authors = hits.filter((h) => h.kind === "author");
+  const pieces = hits.filter((h) => h.kind !== "author");
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       <CommandInput
-        placeholder="Search journal & Tech Weekly…"
+        placeholder="Search titles, excerpts, and authors…"
         value={query}
         onValueChange={(v) => void runSearch(v)}
       />
@@ -88,14 +96,14 @@ export function SearchPalette({
             ? "Searching…"
             : query.trim().length < 2
               ? "Start typing to search the publication"
-              : "No matching pieces"}
+              : "No matching pieces or authors"}
         </CommandEmpty>
-        {hits.length > 0 && (
-          <CommandGroup heading="Results">
-            {hits.map((hit) => (
+        {authors.length > 0 && (
+          <CommandGroup heading="Authors">
+            {authors.map((hit) => (
               <CommandItem
-                key={`${hit.kind}-${hit.id}`}
-                value={`${hit.title} ${hit.slug}`}
+                key={`author-${hit.id}`}
+                value={`${hit.title} ${hit.slug} author`}
                 onSelect={() => go(hit)}
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -103,7 +111,27 @@ export function SearchPalette({
                     {hit.title}
                   </span>
                   <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                    {hit.kind === "tech" ? "Tech Weekly" : "Journal"}
+                    @{hit.slug} · Author
+                  </span>
+                </div>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+        {pieces.length > 0 && (
+          <CommandGroup heading="Pieces">
+            {pieces.map((hit) => (
+              <CommandItem
+                key={`${hit.kind}-${hit.id}`}
+                value={`${hit.title} ${hit.slug} ${hit.kind}`}
+                onSelect={() => go(hit)}
+              >
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="truncate font-medium leading-snug">
+                    {hit.title}
+                  </span>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                    {kindLabel(hit.kind)}
                   </span>
                 </div>
               </CommandItem>

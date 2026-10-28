@@ -70,15 +70,13 @@ const DAY_NAMES = [
 function getRoleBadgeStyle(role?: string | null) {
   switch (role) {
     case "super_admin":
-      return "border-purple-500/35 bg-purple-500/10 text-purple-700 dark:text-purple-300";
     case "tech_head":
-      return "border-sky-500/35 bg-sky-500/10 text-sky-700 dark:text-sky-300";
+      return "status-mark status-mark--brand";
     case "tech_member":
-      return "border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
     case "member":
-      return "border-amber-500/35 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+      return "status-mark";
     default:
-      return "border-border bg-muted/60 text-muted-foreground";
+      return "status-mark";
   }
 }
 
@@ -393,11 +391,11 @@ export default function AdminClient({
   if (!initialData.authorized) {
     return (
       <div className="container max-w-2xl py-20">
-        <div className="rounded-2xl border border-destructive/30 bg-card p-10 text-center shadow-sm">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
+        <div className="panel border-destructive/40 p-10 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[var(--radius)] bg-destructive/10 text-destructive">
             <ShieldAlert className="h-6 w-6" />
           </div>
-          <h1 className="font-display text-2xl font-bold">
+          <h1 className="type-display text-2xl">
             Super Admin Access Required
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -405,10 +403,10 @@ export default function AdminClient({
             Super Admin (CSI ID #303).
           </p>
           <div className="mt-6 flex justify-center gap-3">
-            <Button variant="outline" className="rounded-xl" asChild>
+            <Button variant="outline" asChild>
               <Link href="/tech-weekly">Go to CSI Tech Weekly</Link>
             </Button>
-            <Button variant="ghost" className="rounded-xl" asChild>
+            <Button variant="ghost" asChild>
               <Link href="/">Home</Link>
             </Button>
           </div>
@@ -419,28 +417,34 @@ export default function AdminClient({
 
   return (
     <PageShell className="py-8 space-y-8 pb-24">
-        {/* Top Command Banner */}
-        <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-card p-6 sm:p-8 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-6">
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <Link
-                  href="/tech-weekly"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-muted/50 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                  Tech Weekly
-                </Link>
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  SUPER ADMIN · CSI #303
-                </span>
-              </div>
+        {/* Masthead */}
+        <header className="space-y-5 border-b border-hairline pb-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Link
+              href="/tech-weekly"
+              className="type-label link-u inline-flex items-center gap-1.5 text-muted-foreground"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Tech Weekly
+            </Link>
+            <span className="status-mark status-mark--brand">
+              SUPER ADMIN · CSI #303
+            </span>
+          </div>
 
-              <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+          <p
+            className="type-script text-[clamp(2.4rem,6vw,3.25rem)] leading-none text-[var(--brand-color)]"
+            aria-hidden="true"
+          >
+            Admin
+          </p>
+
+          <div className="flex flex-wrap items-end justify-between gap-6">
+            <div className="space-y-3 max-w-2xl">
+              <h1 className="type-display text-[clamp(1.75rem,4vw,2.75rem)] text-foreground">
                 Platform & Roster Command Console
               </h1>
-              <p className="text-sm text-muted-foreground max-w-2xl">
+              <p className="type-body text-muted-foreground">
                 Signed in as{" "}
                 <span className="font-semibold text-foreground">
                   {initialData.viewerProfile?.full_name ||
@@ -453,22 +457,13 @@ export default function AdminClient({
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 rounded-xl font-semibold"
-                asChild
-              >
+              <Button variant="outline" size="sm" asChild>
                 <Link href="/tech-weekly/review">
-                  <Award className="mr-1.5 h-4 w-4 text-primary" />
+                  <Award className="mr-1.5 h-4 w-4" />
                   Wednesday Review Queue
                 </Link>
               </Button>
-              <Button
-                size="sm"
-                className="h-9 rounded-xl font-semibold shadow-sm"
-                asChild
-              >
+              <Button size="sm" asChild>
                 <Link href="/tech-weekly/write">
                   <PenSquare className="mr-1.5 h-4 w-4" />
                   New Tech Weekly Dispatch
@@ -476,25 +471,25 @@ export default function AdminClient({
               </Button>
             </div>
           </div>
-        </div>
+        </header>
 
-        {/* 4 Modern Bento Telemetry Cards */}
+        {/* Telemetry */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm flex flex-col justify-between">
+          <div className="panel flex flex-col justify-between p-5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <span className="type-label text-muted-foreground">
                 Registered Accounts
               </span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius)] border border-[var(--fg-line)] text-[var(--brand-color)]">
                 <Users className="h-4 w-4" />
               </div>
             </div>
             <div className="mt-4">
-              <p className="font-sans text-3xl font-extrabold tracking-tight text-foreground tabular-nums">
+              <p className="type-display text-3xl tabular-nums text-foreground">
                 {initialData.users.length}
               </p>
               <div className="mt-2 flex items-center gap-2 text-xs">
-                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 font-medium text-emerald-700 dark:text-emerald-300">
+                <span className="status-mark status-mark--brand">
                   <UserCheck className="h-3 w-3" />
                   {initialData.users.filter((u) => Boolean(u.csi_id)).length}{" "}
                   verified
@@ -506,21 +501,21 @@ export default function AdminClient({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm flex flex-col justify-between">
+          <div className="panel flex flex-col justify-between p-5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <span className="type-label text-muted-foreground">
                 Seeded CSI Roster
               </span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius)] border border-[var(--fg-line)] text-[var(--brand-color)]">
                 <Database className="h-4 w-4" />
               </div>
             </div>
             <div className="mt-4">
-              <p className="font-sans text-3xl font-extrabold tracking-tight text-foreground tabular-nums">
+              <p className="type-display text-3xl tabular-nums text-foreground">
                 {initialData.roster.length}
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                <span className="inline-flex items-center rounded-md bg-emerald-500/10 px-2 py-0.5 font-medium text-emerald-700 dark:text-emerald-300">
+                <span className="status-mark status-mark--brand">
                   {techRosterCount} Tech Team
                 </span>
                 <span className="text-muted-foreground">
@@ -530,21 +525,21 @@ export default function AdminClient({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm flex flex-col justify-between">
+          <div className="panel flex flex-col justify-between p-5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <span className="type-label text-muted-foreground">
                 Tech Weekly Posts
               </span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400">
+              <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius)] border border-[var(--fg-line)] text-[var(--brand-color)]">
                 <Terminal className="h-4 w-4" />
               </div>
             </div>
             <div className="mt-4">
-              <p className="font-sans text-3xl font-extrabold tracking-tight text-foreground tabular-nums">
+              <p className="type-display text-3xl tabular-nums text-foreground">
                 {initialData.submissions.length}
               </p>
               <div className="mt-2 flex items-center gap-2 text-xs">
-                <span className="inline-flex items-center rounded-md bg-sky-500/10 px-2 py-0.5 font-medium text-sky-700 dark:text-sky-300">
+                <span className="status-mark status-mark--brand">
                   {
                     initialData.submissions.filter(
                       (s) => s.status === "selected"
@@ -564,17 +559,17 @@ export default function AdminClient({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm flex flex-col justify-between">
+          <div className="panel flex flex-col justify-between p-5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <span className="type-label text-muted-foreground">
                 Security & Audit
               </span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius)] border border-[var(--fg-line)] text-[var(--fg-muted)]">
                 <ShieldCheck className="h-4 w-4" />
               </div>
             </div>
             <div className="mt-4">
-              <p className="font-sans text-3xl font-extrabold tracking-tight text-foreground tabular-nums">
+              <p className="type-display text-3xl tabular-nums text-foreground">
                 {initialData.auditLogs.length}
               </p>
               <div className="mt-2 flex items-center gap-2 text-xs">
@@ -590,52 +585,52 @@ export default function AdminClient({
 
         {/* Command Navigation Tabs */}
         <Tabs defaultValue="roster-directory" className="space-y-6">
-          <TabsList className="flex flex-wrap h-auto gap-1.5 rounded-2xl border border-border/80 bg-card p-1.5 shadow-sm">
+          <TabsList className="flex flex-wrap h-auto gap-1.5 panel p-1.5">
             <TabsTrigger
               value="roster-directory"
-              className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="rounded-[var(--radius)] px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background"
             >
               <Database className="mr-1.5 h-3.5 w-3.5" />
               CSI Roster ({initialData.roster.length})
             </TabsTrigger>
             <TabsTrigger
               value="users"
-              className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="rounded-[var(--radius)] px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background"
             >
               <Users className="mr-1.5 h-3.5 w-3.5" />
               Users & Identity Linking ({initialData.users.length})
             </TabsTrigger>
             <TabsTrigger
               value="submissions"
-              className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="rounded-[var(--radius)] px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background"
             >
               <Award className="mr-1.5 h-3.5 w-3.5" />
               Tech Weekly ({initialData.submissions.length})
             </TabsTrigger>
             <TabsTrigger
               value="settings"
-              className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="rounded-[var(--radius)] px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background"
             >
               <Settings className="mr-1.5 h-3.5 w-3.5" />
               Schedule & Cutoff
             </TabsTrigger>
             <TabsTrigger
               value="moderation"
-              className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="rounded-[var(--radius)] px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background"
             >
               <ClipboardList className="mr-1.5 h-3.5 w-3.5" />
               Moderation ({initialData.reports.length})
             </TabsTrigger>
             <TabsTrigger
               value="audit"
-              className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="rounded-[var(--radius)] px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background"
             >
               <History className="mr-1.5 h-3.5 w-3.5" />
               Audit Log ({initialData.auditLogs.length})
             </TabsTrigger>
             <TabsTrigger
               value="legacy"
-              className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="rounded-[var(--radius)] px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background"
             >
               <FileText className="mr-1.5 h-3.5 w-3.5" />
               Open Blog ({initialData.legacyPosts.length})
@@ -645,7 +640,7 @@ export default function AdminClient({
           {/* TAB 1: CSI ROSTER DIRECTORY & ADD/EDIT ROSTER MEMBER */}
           <TabsContent value="roster-directory" className="space-y-6">
             {/* Add / Update Roster Member Bar */}
-            <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm space-y-4">
+            <div className="panel space-y-4 p-6">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
@@ -672,7 +667,7 @@ export default function AdminClient({
                     value={newRosterCsiId}
                     onChange={(e) => setNewRosterCsiId(e.target.value)}
                     placeholder="e.g. 241"
-                    className="h-9 rounded-xl text-xs font-mono"
+                    className="h-9 rounded-[var(--radius)] font-mono text-xs"
                   />
                 </div>
 
@@ -684,7 +679,7 @@ export default function AdminClient({
                     value={newRosterName}
                     onChange={(e) => setNewRosterName(e.target.value)}
                     placeholder="e.g. Darshan Nayak"
-                    className="h-9 rounded-xl text-xs"
+                    className="h-9 rounded-[var(--radius)] text-xs"
                   />
                 </div>
 
@@ -696,7 +691,7 @@ export default function AdminClient({
                     <select
                       value={newRosterDept}
                       onChange={(e) => setNewRosterDept(e.target.value)}
-                      className="h-9 flex-1 rounded-xl border border-input bg-background px-2.5 text-xs font-medium"
+                      className="h-9 flex-1 rounded-[var(--radius)] border border-input bg-background px-2.5 text-xs font-medium"
                     >
                       <option value="Tech">Tech</option>
                       <option value="Event">Event</option>
@@ -708,7 +703,7 @@ export default function AdminClient({
                     <select
                       value={newRosterYear}
                       onChange={(e) => setNewRosterYear(e.target.value)}
-                      className="h-9 w-16 rounded-xl border border-input bg-background px-2 text-xs font-medium"
+                      className="h-9 w-16 rounded-[var(--radius)] border border-input bg-background px-2 text-xs font-medium"
                     >
                       <option value="FY">FY</option>
                       <option value="SY">SY</option>
@@ -725,7 +720,7 @@ export default function AdminClient({
                     value={newRosterPrn}
                     onChange={(e) => setNewRosterPrn(e.target.value)}
                     placeholder="10-digit PRN"
-                    className="h-9 rounded-xl text-xs font-mono"
+                    className="h-9 rounded-[var(--radius)] font-mono text-xs"
                   />
                 </div>
 
@@ -733,7 +728,7 @@ export default function AdminClient({
                   type="button"
                   disabled={busyKey === "upsert-roster"}
                   onClick={handleUpsertRoster}
-                  className="h-9 rounded-xl text-xs font-semibold"
+                  className="h-9 rounded-[var(--radius)] text-xs font-semibold"
                 >
                   {busyKey === "upsert-roster" ? (
                     <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -746,7 +741,7 @@ export default function AdminClient({
             </div>
 
             {/* Roster Table Card */}
-            <div className="rounded-2xl border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="panel overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 p-5">
                 <div className="flex flex-wrap items-center gap-1.5">
                   {(
@@ -785,7 +780,7 @@ export default function AdminClient({
                     value={rosterSearch}
                     onChange={(e) => setRosterSearch(e.target.value)}
                     placeholder="Search CSI ID, name, dept..."
-                    className="h-9 rounded-xl pl-9 text-xs"
+                    className="h-9 rounded-[var(--radius)] pl-9 text-xs"
                   />
                 </div>
               </div>
@@ -831,26 +826,24 @@ export default function AdminClient({
                           </td>
                           <td className="py-3 px-4">
                             <span
-                              className={`inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase ${getRoleBadgeStyle(
-                                r.role
-                              )}`}
+                              className={getRoleBadgeStyle(r.role)}
                             >
                               {r.role}
                             </span>
                           </td>
                           <td className="py-3 px-4">
                             {r.prn_duplicate ? (
-                              <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+                              <span className="status-mark status-mark--warn">
                                 <AlertTriangle className="h-3 w-3" />
                                 Duplicate PRN (Manual Link)
                               </span>
                             ) : r.prn_missing ? (
-                              <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+                              <span className="status-mark status-mark--warn">
                                 <KeyRound className="h-3 w-3" />
                                 Missing PRN (Manual Link)
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+                              <span className="status-mark status-mark--brand">
                                 <CheckCircle2 className="h-3 w-3" />
                                 HMAC-SHA256 Ready
                               </span>
@@ -872,7 +865,7 @@ export default function AdminClient({
                                 </span>
                               </div>
                             ) : r.claimed_by ? (
-                              <span className="font-mono text-[11px] text-emerald-600 dark:text-emerald-400">
+                              <span className="font-mono text-[11px] text-[var(--brand-color)]">
                                 Claimed
                               </span>
                             ) : (
@@ -940,7 +933,7 @@ export default function AdminClient({
 
           {/* TAB 2: USERS & MANUAL IDENTITY LINKING */}
           <TabsContent value="users" className="space-y-6">
-            <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm space-y-4">
+            <div className="panel space-y-4 p-6">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
@@ -980,7 +973,7 @@ export default function AdminClient({
                   <select
                     value={selectedUserId}
                     onChange={(e) => setSelectedUserId(e.target.value)}
-                    className="w-full h-9 rounded-xl border border-input bg-background px-3 text-xs font-medium"
+                    className="h-9 w-full rounded-[var(--radius)] border border-input bg-background px-3 text-xs font-medium"
                   >
                     <option value="">Select user account...</option>
                     {initialData.users.map((u) => (
@@ -1000,7 +993,7 @@ export default function AdminClient({
                     value={manualCsiId}
                     onChange={(e) => setManualCsiId(e.target.value)}
                     placeholder="e.g. 241, 246, 303"
-                    className="h-9 rounded-xl text-xs font-mono"
+                    className="h-9 rounded-[var(--radius)] font-mono text-xs"
                   />
                 </div>
 
@@ -1013,7 +1006,7 @@ export default function AdminClient({
                     onChange={(e) =>
                       setManualRole(e.target.value as CsiRole | "auto")
                     }
-                    className="w-full h-9 rounded-xl border border-input bg-background px-3 text-xs font-medium"
+                    className="h-9 w-full rounded-[var(--radius)] border border-input bg-background px-3 text-xs font-medium"
                   >
                     <option value="auto">Auto from Roster CSI ID</option>
                     <option value="super_admin">super_admin (303)</option>
@@ -1028,7 +1021,7 @@ export default function AdminClient({
                   type="button"
                   disabled={busyKey === "manual-assign"}
                   onClick={handleManualAssign}
-                  className="h-9 rounded-xl text-xs font-semibold"
+                  className="h-9 rounded-[var(--radius)] text-xs font-semibold"
                 >
                   {busyKey === "manual-assign" && (
                     <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -1038,7 +1031,7 @@ export default function AdminClient({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border/80 bg-card shadow-sm overflow-hidden">
+            <div className="panel overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 p-5">
                 <div className="flex flex-wrap items-center gap-1.5">
                   {(
@@ -1081,7 +1074,7 @@ export default function AdminClient({
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search name, @user, CSI ID..."
-                    className="h-9 rounded-xl pl-9 text-xs"
+                    className="h-9 rounded-[var(--radius)] pl-9 text-xs"
                   />
                 </div>
               </div>
@@ -1108,14 +1101,12 @@ export default function AdminClient({
                             @{u.username}
                           </span>
                           <span
-                            className={`inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase ${getRoleBadgeStyle(
-                              u.role
-                            )}`}
+                            className={getRoleBadgeStyle(u.role)}
                           >
                             {u.role || "unverified"}
                           </span>
                           {u.csi_id && (
-                            <span className="inline-flex items-center rounded-md border border-emerald-500/35 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+                            <span className="status-mark status-mark--brand">
                               CSI #{u.csi_id}
                             </span>
                           )}
@@ -1141,7 +1132,7 @@ export default function AdminClient({
                         type="button"
                         size="sm"
                         variant="outline"
-                        className="h-8 rounded-xl text-xs"
+                        className="h-8 rounded-[var(--radius)] text-xs"
                         onClick={() => {
                           setSelectedUserId(u.id);
                           setManualCsiId(u.csi_id ? String(u.csi_id) : "");
@@ -1157,7 +1148,7 @@ export default function AdminClient({
                           type="button"
                           size="sm"
                           variant="outline"
-                          className="h-8 rounded-xl text-xs"
+                          className="h-8 rounded-[var(--radius)] text-xs"
                           disabled={busyKey === `unlink-${u.id}`}
                           onClick={() => handleUnlinkUser(u.id)}
                         >
@@ -1171,7 +1162,7 @@ export default function AdminClient({
                           type="button"
                           size="sm"
                           variant={u.is_suspended ? "outline" : "destructive"}
-                          className="h-8 rounded-xl text-xs"
+                          className="h-8 rounded-[var(--radius)] text-xs"
                           disabled={busyKey === `suspend-${u.id}`}
                           onClick={() =>
                             handleToggleSuspend(u.id, !u.is_suspended)
@@ -1191,7 +1182,7 @@ export default function AdminClient({
           {/* TAB 3: TECH WEEKLY SUBMISSIONS & PICK OVERRIDE */}
           <TabsContent value="submissions" className="space-y-4">
             {initialData.submissions.length === 0 ? (
-              <div className="rounded-2xl border border-border/80 bg-card p-12 text-center space-y-3">
+              <div className="panel space-y-3 p-12 text-center">
                 <Terminal className="mx-auto h-8 w-8 text-muted-foreground" />
                 <h3 className="font-display text-lg font-semibold">
                   No Tech Weekly dispatches submitted yet
@@ -1206,7 +1197,7 @@ export default function AdminClient({
               initialData.submissions.map((sub) => (
                 <div
                   key={sub.id}
-                  className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm flex flex-wrap items-center justify-between gap-4"
+                  className="panel flex flex-wrap items-center justify-between gap-4 p-5"
                 >
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
@@ -1259,7 +1250,7 @@ export default function AdminClient({
                       <Button
                         type="button"
                         size="sm"
-                        className="h-8 rounded-xl text-xs font-semibold"
+                        className="h-8 rounded-[var(--radius)] text-xs font-semibold"
                         disabled={busyKey === `pick-${sub.id}`}
                         onClick={() => handleOverridePick(sub.id, sub.title)}
                       >
@@ -1273,7 +1264,7 @@ export default function AdminClient({
                         type="button"
                         size="sm"
                         variant="outline"
-                        className="h-8 rounded-xl text-xs"
+                        className="h-8 rounded-[var(--radius)] text-xs"
                         onClick={async () => {
                           await reviewTechSubmissionAction({
                             submissionId: sub.id,
@@ -1283,7 +1274,7 @@ export default function AdminClient({
                           router.refresh();
                         }}
                       >
-                        <CheckCircle2 className="mr-1.5 h-3.5 w-3.5 text-emerald-500" />
+                        <CheckCircle2 className="mr-1.5 h-3.5 w-3.5 text-[var(--brand-color)]" />
                         Approve
                       </Button>
                     )}
@@ -1291,7 +1282,7 @@ export default function AdminClient({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-8 rounded-xl text-xs"
+                      className="h-8 rounded-[var(--radius)] text-xs"
                       asChild
                     >
                       <Link href={`/tech-weekly/write?id=${sub.id}`}>
@@ -1303,7 +1294,7 @@ export default function AdminClient({
                       type="button"
                       size="sm"
                       variant={sub.is_deleted ? "outline" : "destructive"}
-                      className="h-8 rounded-xl text-xs"
+                      className="h-8 rounded-[var(--radius)] text-xs"
                       disabled={busyKey === `sub-del-${sub.id}`}
                       onClick={() =>
                         handleSoftDeleteSubmission(sub.id, sub.is_deleted)
@@ -1329,7 +1320,7 @@ export default function AdminClient({
 
           {/* TAB 4: PLATFORM SETTINGS */}
           <TabsContent value="settings">
-            <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm space-y-6">
+            <div className="panel space-y-6 p-6">
               <div>
                 <h2 className="text-base font-semibold text-foreground">
                   CSI Tech Weekly Schedule & Cutoff Engine
@@ -1351,7 +1342,7 @@ export default function AdminClient({
                     onChange={(e) =>
                       setCutoffDay(Number.parseInt(e.target.value, 10))
                     }
-                    className="w-full h-10 rounded-xl border border-input bg-background px-3 text-xs font-medium"
+                    className="w-full h-10 rounded-[var(--radius)] border border-input bg-background px-3 text-xs font-medium"
                   >
                     {DAY_NAMES.map((label, idx) => (
                       <option key={label} value={idx}>
@@ -1373,7 +1364,7 @@ export default function AdminClient({
                     onChange={(e) =>
                       setCutoffHour(Number.parseInt(e.target.value || "0", 10))
                     }
-                    className="h-10 rounded-xl text-xs font-mono"
+                    className="h-10 rounded-[var(--radius)] font-mono text-xs"
                   />
                 </div>
 
@@ -1391,7 +1382,7 @@ export default function AdminClient({
                         Number.parseInt(e.target.value || "0", 10)
                       )
                     }
-                    className="h-10 rounded-xl text-xs font-mono"
+                    className="h-10 rounded-[var(--radius)] font-mono text-xs"
                   />
                 </div>
 
@@ -1406,7 +1397,7 @@ export default function AdminClient({
                         e.target.value as "auto" | "force_open" | "force_closed"
                       )
                     }
-                    className="w-full h-10 rounded-xl border border-input bg-background px-3 text-xs font-medium"
+                    className="w-full h-10 rounded-[var(--radius)] border border-input bg-background px-3 text-xs font-medium"
                   >
                     <option value="auto">
                       Auto (Open Fri 09:00 IST to Cutoff)
@@ -1434,7 +1425,7 @@ export default function AdminClient({
                         Number.parseInt(e.target.value || "1", 10)
                       )
                     }
-                    className="h-10 rounded-xl text-xs font-mono"
+                    className="h-10 rounded-[var(--radius)] font-mono text-xs"
                   />
                 </div>
 
@@ -1460,7 +1451,7 @@ export default function AdminClient({
                   type="button"
                   disabled={busyKey === "save-settings"}
                   onClick={handleSaveSettings}
-                  className="rounded-xl text-xs font-semibold"
+                  className="rounded-[var(--radius)] text-xs font-semibold"
                 >
                   {busyKey === "save-settings" && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -1473,7 +1464,7 @@ export default function AdminClient({
 
           {/* TAB 5: REPORTS & COMMENTS MODERATION */}
           <TabsContent value="moderation" className="space-y-6">
-            <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm space-y-4">
+            <div className="panel space-y-4 p-6">
               <div>
                 <h2 className="text-base font-semibold text-foreground">
                   User Reports ({initialData.reports.length})
@@ -1490,7 +1481,7 @@ export default function AdminClient({
                 initialData.reports.map((rep) => (
                   <div
                     key={rep.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 p-3.5"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-[var(--fg-line)] p-3.5"
                   >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
@@ -1513,7 +1504,7 @@ export default function AdminClient({
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-8 rounded-xl text-xs"
+                          className="h-8 rounded-[var(--radius)] text-xs"
                           onClick={async () => {
                             await adminResolveReportAction({
                               reportId: rep.id,
@@ -1528,7 +1519,7 @@ export default function AdminClient({
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-8 rounded-xl text-xs"
+                          className="h-8 rounded-[var(--radius)] text-xs"
                           onClick={async () => {
                             await adminResolveReportAction({
                               reportId: rep.id,
@@ -1547,7 +1538,7 @@ export default function AdminClient({
               )}
             </div>
 
-            <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm space-y-4">
+            <div className="panel space-y-4 p-6">
               <div>
                 <h2 className="text-base font-semibold text-foreground">
                   Recent Tech Weekly Comments ({initialData.comments.length})
@@ -1561,7 +1552,7 @@ export default function AdminClient({
                 initialData.comments.map((c) => (
                   <div
                     key={c.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 p-3.5"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-[var(--fg-line)] p-3.5"
                   >
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground">
@@ -1583,7 +1574,7 @@ export default function AdminClient({
                     <Button
                       size="sm"
                       variant={c.is_deleted ? "outline" : "destructive"}
-                      className="h-8 rounded-xl text-xs"
+                      className="h-8 rounded-[var(--radius)] text-xs"
                       onClick={async () => {
                         await adminSoftDeleteCommentAction({
                           commentId: c.id,
@@ -1607,7 +1598,7 @@ export default function AdminClient({
 
           {/* TAB 6: AUDIT LOG */}
           <TabsContent value="audit">
-            <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm space-y-4">
+            <div className="panel space-y-4 p-6">
               <div>
                 <h2 className="text-base font-semibold text-foreground">
                   Immutable Security & Curation Audit Log
@@ -1621,7 +1612,7 @@ export default function AdminClient({
                 {initialData.auditLogs.map((log) => (
                   <div
                     key={log.id}
-                    className="rounded-xl border border-border/70 bg-muted/20 p-3.5 text-xs space-y-1.5"
+                    className="rounded-[var(--radius)] border border-[var(--fg-line)] bg-[hsl(var(--surface))] p-3.5 text-xs space-y-1.5"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
@@ -1657,7 +1648,7 @@ export default function AdminClient({
             {initialData.legacyPosts.map((post) => (
               <div
                 key={post.id}
-                className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm flex flex-wrap items-center justify-between gap-3"
+                className="panel flex flex-wrap items-center justify-between gap-3 p-4"
               >
                 <div>
                   <Link
@@ -1675,7 +1666,7 @@ export default function AdminClient({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 rounded-xl text-xs"
+                    className="h-8 rounded-[var(--radius)] text-xs"
                     asChild
                   >
                     <Link href={`/write?edit=${post.id}`}>Edit</Link>
@@ -1683,7 +1674,7 @@ export default function AdminClient({
                   <Button
                     variant="destructive"
                     size="sm"
-                    className="h-8 rounded-xl text-xs"
+                    className="h-8 rounded-[var(--radius)] text-xs"
                     onClick={async () => {
                       const res = await deletePost(post.id);
                       if (res.error) {

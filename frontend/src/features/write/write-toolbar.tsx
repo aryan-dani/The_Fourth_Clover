@@ -11,7 +11,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import {
   Save,
   Send,
@@ -173,10 +172,6 @@ export function WriteToolbar({
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          <div className="md:hidden">
-            <ThemeToggle />
-          </div>
-
           <Sheet open={settingsOpen} onOpenChange={onSettingsOpenChange}>
             <SheetTrigger asChild>
               <Button

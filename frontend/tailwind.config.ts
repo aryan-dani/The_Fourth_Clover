@@ -19,7 +19,7 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: [
-          "var(--font-inter)",
+          "var(--font-sans)",
           "ui-sans-serif",
           "system-ui",
           "-apple-system",
@@ -29,19 +29,18 @@ const config: Config = {
           ...emojiFallback,
         ],
         serif: [
-          "var(--font-newsreader)",
-          "Newsreader",
+          "var(--font-display)",
           "Georgia",
           "serif",
           ...emojiFallback,
         ],
         display: [
-          "var(--font-newsreader)",
-          "Newsreader",
+          "var(--font-display)",
           "Georgia",
           "serif",
           ...emojiFallback,
         ],
+        script: ["var(--font-script)", "cursive", ...emojiFallback],
         mono: [
           "var(--font-mono)",
           "ui-monospace",
@@ -67,26 +66,28 @@ const config: Config = {
       fontSize: {
         "display-xl": [
           "3.5rem",
-          { lineHeight: "1.1", letterSpacing: "-0.03em", fontWeight: "600" },
+          { lineHeight: "0.92", letterSpacing: "-0.02em", fontWeight: "500" },
         ],
         "display-lg": [
           "2.75rem",
-          { lineHeight: "1.15", letterSpacing: "-0.025em", fontWeight: "600" },
+          { lineHeight: "0.95", letterSpacing: "-0.02em", fontWeight: "500" },
         ],
         "display-md": [
           "2rem",
-          { lineHeight: "1.2", letterSpacing: "-0.02em", fontWeight: "600" },
+          { lineHeight: "1.05", letterSpacing: "-0.015em", fontWeight: "500" },
         ],
         "display-sm": [
           "1.5rem",
-          { lineHeight: "1.25", letterSpacing: "-0.015em", fontWeight: "600" },
+          { lineHeight: "1.1", letterSpacing: "-0.01em", fontWeight: "500" },
         ],
       },
       transitionDuration: {
         editorial: "180ms",
+        expo: "700ms",
       },
       transitionTimingFunction: {
         editorial: "cubic-bezier(0.22, 1, 0.36, 1)",
+        expo: "cubic-bezier(0.16, 1, 0.3, 1)",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -136,6 +137,12 @@ const config: Config = {
           muted: "hsl(var(--surface-muted))",
         },
         hairline: "hsl(var(--hairline))",
+        paper: "#F2ECE0",
+        clover: "#2E7D57",
+        ink: "#17211A",
+        "ink-surface": "#2A352D",
+        "paper-line": "#D5CFC0",
+        "clover-bright": "#4FA37A",
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",

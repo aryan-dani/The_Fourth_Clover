@@ -35,43 +35,39 @@ export function PageShell({
   noPadding,
 }: PageShellProps) {
   const showHeader =
-    title ||
-    description ||
-    headerLead ||
-    headerActions ||
-    headerExtra;
+    title || description || headerLead || headerActions || headerExtra;
 
   return (
     <div
       className={cn(
-        !noPadding && "py-4 md:py-5",
+        !noPadding && "py-8 md:py-12",
         "mx-auto w-full px-5 sm:px-8 lg:px-10",
         maxWidth[variant],
-        className
+        className,
       )}
     >
       {showHeader && (
-        <header className="mb-4 border-b border-border/60 pb-4 md:mb-5 md:pb-5">
+        <header className="mb-8 border-b border-[var(--fg-line)] pb-6 md:mb-10 md:pb-8">
           {headerLead && (
-            <div className="mb-3 [&_a]:inline-flex">{headerLead}</div>
+            <div className="mb-4 [&_a]:inline-flex">{headerLead}</div>
           )}
 
           {(title || description || headerActions) && (
             <div
               className={cn(
-                "flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6",
-                !title && !description && headerActions && "sm:justify-end"
+                "flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6",
+                !title && !description && headerActions && "sm:justify-end",
               )}
             >
               {(title || description) && (
                 <div className="min-w-0 flex-1">
                   {title && (
-                    <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+                    <h1 className="type-display text-[clamp(2rem,5vw,3.25rem)] text-foreground">
                       {title}
                     </h1>
                   )}
                   {description && (
-                    <p className="mt-3 max-w-2xl font-sans text-base leading-relaxed text-muted-foreground md:text-lg">
+                    <p className="type-body mt-3 max-w-2xl text-base md:text-lg">
                       {description}
                     </p>
                   )}

@@ -270,10 +270,15 @@ export function PostPageClient({
     : "Back to Journal";
   const publishedOrCreatedDate = post.published_at || post.created_at;
   const sectionLabel = isCsiPost
-    ? publicationName || "Tech Weekly"
+    ? "Tech Weekly"
     : postFormat === "poetry"
       ? "Poetry"
       : "Journal";
+  const scriptKicker = isCsiPost
+    ? "Dispatch"
+    : postFormat === "poetry"
+      ? "Verse"
+      : "Essay";
 
   return (
     <div className="mx-auto max-w-content px-4 py-10 sm:px-6 lg:px-8">
@@ -420,6 +425,7 @@ export function PostPageClient({
       <ArticleLayout
         sectionLabel={sectionLabel}
         sectionHref={isCsiPost ? "/tech-weekly" : "/journal"}
+        scriptKicker={scriptKicker}
         title={post.title}
         dek={post.excerpt}
         author={{

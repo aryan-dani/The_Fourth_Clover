@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ArticleCard, SectionLabel, PageHeader } from "@/components/editorial";
-import { FeaturedTechWeeklyBanner } from "@/components/tech-weekly/FeaturedTechWeeklyBanner";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/features/auth/auth-context";
 import { getCapabilities } from "@/lib/roles";
 import type { HomeData } from "@/features/data/home-queries";
-import { useEffect, useState } from "react";
+import {
+  DrawLine,
+  Reveal,
+  RevealText,
+  ScriptWipe,
+} from "@/components/motion/Reveal";
+import { FeaturedTechWeeklyBanner } from "@/components/tech-weekly/FeaturedTechWeeklyBanner";
 
 function formatCountdown(targetIso: string | null | undefined) {
   if (!targetIso) return { expired: false, label: "—" };
@@ -22,6 +25,15 @@ function formatCountdown(targetIso: string | null | undefined) {
     expired: false,
     label: `${pad(days)}d ${pad(hours)}h ${pad(mins)}m`,
   };
+}
+
+function formatDate(iso: string | null | undefined) {
+  if (!iso) return "";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(iso));
 }
 
 export function HomePageClient({ data }: { data: HomeData }) {
@@ -44,202 +56,207 @@ export function HomePageClient({ data }: { data: HomeData }) {
   }).format(new Date());
 
   return (
-    <div className="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
-      {/* Masthead */}
-      <div className="border-b border-hairline py-3 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span suppressHydrationWarning>{dateline}</span>
-          <span className="hidden sm:inline">CSI MIT-WPU Technical Press</span>
-          <Link href="/about" className="hover:text-foreground">
-            About the publication
-          </Link>
-        </div>
-      </div>
-
-      <header className="border-b border-hairline py-12 sm:py-16">
-        <p className="meta-label mb-3">The Fourth Clover</p>
-        <h1 className="font-display text-display-lg sm:text-display-xl max-w-3xl text-foreground">
-          Writing, poetry &amp; engineering
-        </h1>
-        <p className="mt-4 max-w-2xl font-serif text-lg text-muted-foreground leading-relaxed">
-          An editorial publication from CSI MIT-WPU — essays and verse in the
-          Journal, systems thinking in Tech Weekly.
-        </p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Button asChild className="rounded-md">
-            <Link href="/journal">
-              Read the Journal
-              <ArrowRight className="ml-2 h-4 w-4" />
+    <div>
+      {/* Hero — paper */}
+      <section
+        className="wrap min-h-[70vh] pb-16 pt-10 md:pb-24 md:pt-16"
+      >
+        <Reveal trigger="intro" delay={0.05} y={12}>
+          <div className="type-label flex flex-wrap items-center justify-between gap-3 text-muted-foreground">
+            <span suppressHydrationWarning>{dateline}</span>
+            <span className="hidden sm:inline">CSI MIT-WPU Technical Press</span>
+            <Link href="/about" className="link-u">
+              About the publication
             </Link>
-          </Button>
-          <Button asChild variant="outline" className="rounded-md">
-            <Link href="/tech-weekly">CSI Tech Weekly</Link>
-          </Button>
-          {user ? (
-            <Button asChild variant="ghost" className="rounded-md">
-              <Link href={caps.canWriteJournal ? "/write" : "/auth/signin"}>
-                Start writing
+          </div>
+        </Reveal>
+
+        <DrawLine trigger="intro" delay={0.15} className="hairline-rule my-8" />
+
+        <h1 className="type-display mt-2 max-w-4xl text-[clamp(2.8rem,10vw,6.5rem)]">
+          <RevealText as="span" by="words" trigger="intro" className="block">
+            Writing, poetry
+          </RevealText>
+          <span className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <RevealText as="span" by="words" trigger="intro" delay={0.12}>
+              &amp;
+            </RevealText>
+            <ScriptWipe
+              as="span"
+              trigger="intro"
+              delay={0.35}
+              className="type-script text-[0.55em] normal-case tracking-normal text-[var(--brand-color)]"
+            >
+              engineering
+            </ScriptWipe>
+          </span>
+        </h1>
+
+        <Reveal trigger="intro" delay={0.25} className="mt-8 max-w-xl">
+          <p className="type-body text-lg">
+            An editorial publication from CSI MIT-WPU — essays and verse in the
+            Journal, systems thinking in Tech Weekly.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/journal" className="btn-editorial">
+              Read the Journal
+            </Link>
+            <Link href="/tech-weekly" className="btn-editorial">
+              Tech Weekly
+            </Link>
+            <Link
+              href={user && caps.canWriteJournal ? "/write" : "/auth/signin"}
+              className="type-label link-u self-center px-2"
+            >
+              {user ? "Start writing" : "Sign in to write"}
+            </Link>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* Tech Weekly — clover wash */}
+      <section className="border-y border-[var(--fg-line)] py-16 md:py-20">
+        <div className="wrap">
+          <Reveal y={20}>
+            <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="type-label text-muted-foreground">Tech Weekly</p>
+                <h2 className="type-display mt-3 text-[clamp(1.8rem,5vw,3rem)]">
+                  {data.weekTitle || "This week’s issue"}
+                </h2>
+                <p className="type-body mt-3 max-w-lg">
+                  {countdown.expired
+                    ? "Submission window closed — review in progress."
+                    : `Submission window closes in ${countdown.label}`}
+                </p>
+              </div>
+              <Link href="/tech-weekly" className="btn-editorial">
+                Open issue
               </Link>
-            </Button>
-          ) : (
-            <Button asChild variant="ghost" className="rounded-md">
-              <Link href="/auth/signin">Sign in to write</Link>
-            </Button>
-          )}
-        </div>
-      </header>
-
-      {/* Tech Weekly band */}
-      <section className="border-b border-hairline py-12">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-          <PageHeader
-            label="Tech Weekly"
-            title={data.weekTitle || "This week’s issue"}
-            description={
-              countdown.expired
-                ? "Submission window closed — review in progress."
-                : `Submission window closes in ${countdown.label}`
-            }
-          />
-          <Button asChild variant="outline" size="sm" className="rounded-md">
-            <Link href="/tech-weekly">Open issue</Link>
-          </Button>
-        </div>
-
-        {data.featuredPick && (
-          <div className="mb-8">
-            <FeaturedTechWeeklyBanner
-              submission={data.featuredPick}
-              canCopyLinkedIn={caps.canReview}
-            />
-          </div>
-        )}
-
-        {data.latestTech.length > 0 && (
-          <div className="grid gap-6 sm:grid-cols-3">
-            {data.latestTech.map((sub) => (
-              <ArticleCard
-                key={sub.id}
-                section="tech"
-                variant="compact"
-                title={sub.title}
-                slug={sub.slug}
-                excerpt={sub.summary}
-                coverImage={sub.cover_image}
-                author={sub.author}
-                publishedAt={sub.created_at}
-                readTime={sub.read_time}
-                tags={sub.tags}
-                reactionCount={sub.reaction_counts?.total}
-                commentCount={sub.comment_count}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Journal */}
-      <section className="border-b border-hairline py-12">
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <SectionLabel>Journal</SectionLabel>
-            <h2 className="mt-2 font-display text-display-md text-foreground">
-              From the Journal
-            </h2>
-          </div>
-          <Link
-            href="/journal"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            View all →
-          </Link>
-        </div>
-
-        <div className="grid gap-8 lg:grid-cols-12">
-          {data.journalLead && (
-            <div className="lg:col-span-7">
-              <ArticleCard
-                section="journal"
-                variant="lead"
-                title={data.journalLead.title}
-                slug={data.journalLead.slug}
-                excerpt={data.journalLead.excerpt}
-                coverImage={
-                  data.journalLead.cover_image ||
-                  data.journalLead.featured_image
-                }
-                author={data.journalLead.author}
-                publishedAt={
-                  data.journalLead.published_at || data.journalLead.created_at
-                }
-                readTime={data.journalLead.read_time}
-                tags={data.journalLead.tags}
-                format={
-                  (data.journalLead as { format?: "prose" | "poetry" }).format
-                }
-                reactionCount={data.journalLead.likes?.[0]?.count}
-                commentCount={data.journalLead.comments?.[0]?.count}
-              />
             </div>
-          )}
-          <div className="space-y-6 lg:col-span-5">
-            {data.journalLatest.slice(0, 4).map((post) => (
-              <ArticleCard
-                key={post.id}
-                section="journal"
-                variant="list"
-                title={post.title}
-                slug={post.slug}
-                excerpt={post.excerpt}
-                author={post.author}
-                publishedAt={post.published_at || post.created_at}
-                readTime={post.read_time}
-                format={(post as { format?: "prose" | "poetry" }).format}
+          </Reveal>
+
+          {data.featuredPick && (
+            <Reveal y={24} className="mb-10">
+              <FeaturedTechWeeklyBanner
+                submission={data.featuredPick}
+                canCopyLinkedIn={caps.canReview}
               />
-            ))}
-          </div>
+            </Reveal>
+          )}
+
+          {data.latestTech.length > 0 && (
+            <ul className="divide-y divide-[var(--fg-line)] border-t border-[var(--fg-line)]">
+              {data.latestTech.map((sub, i) => (
+                <Reveal key={sub.id} as="li" y={16} delay={i * 0.06}>
+                  <Link
+                    href={`/tech-weekly/${sub.slug}`}
+                    className="group flex flex-col gap-2 py-5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8"
+                  >
+                    <span className="type-display text-[clamp(1.1rem,2.5vw,1.55rem)] transition-opacity group-hover:opacity-70">
+                      {sub.title}
+                    </span>
+                    <span className="type-label shrink-0 opacity-70">
+                      {sub.author?.full_name ||
+                        sub.author?.username ||
+                        "Contributor"}
+                      {sub.created_at ? ` · ${formatDate(sub.created_at)}` : ""}
+                    </span>
+                  </Link>
+                </Reveal>
+              ))}
+            </ul>
+          )}
         </div>
       </section>
 
-      {/* Poetry strip */}
-      {data.poetry.length > 0 && (
-        <section className="border-b border-hairline py-12">
-          <SectionLabel className="mb-4">Poetry</SectionLabel>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {data.poetry.map((post) => (
-              <ArticleCard
-                key={post.id}
-                section="journal"
-                variant="compact"
-                title={post.title}
-                slug={post.slug}
-                excerpt={post.excerpt}
-                author={post.author}
-                publishedAt={post.published_at || post.created_at}
-                format="poetry"
-              />
-            ))}
+      {/* Journal — paper */}
+      <section className="wrap py-16 md:py-24">
+        <Reveal y={18}>
+          <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="type-label text-muted-foreground">Journal</p>
+              <h2 className="type-display mt-3 text-[clamp(1.8rem,5vw,3rem)]">
+                From the Journal
+              </h2>
+            </div>
+            <Link href="/journal" className="type-label link-u">
+              View all →
+            </Link>
           </div>
-        </section>
-      )}
+        </Reveal>
 
-      {/* Subscribe */}
-      <section className="py-14 text-center">
-        <p className="meta-label mb-3">Stay close</p>
-        <h2 className="font-display text-display-sm text-foreground">
-          Follow the feeds
-        </h2>
-        <p className="mx-auto mt-3 max-w-md font-serif text-muted-foreground">
-          Subscribe via RSS, or open Tech Weekly every Sunday for the next
-          engineering cycle.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Button asChild variant="outline" className="rounded-md">
-            <a href="/feed.xml">Journal RSS</a>
-          </Button>
-          <Button asChild variant="outline" className="rounded-md">
-            <Link href="/tech-weekly">This week’s Tech Weekly</Link>
-          </Button>
+        <DrawLine className="hairline-rule mb-2" />
+
+        <ul>
+          {data.journalLead && (
+            <Reveal as="li" y={18}>
+              <Link
+                href={`/post/${data.journalLead.slug}`}
+                className="group block border-b border-[var(--fg-line)] py-8"
+              >
+                <p className="type-label text-muted-foreground">
+                  Lead ·{" "}
+                  {formatDate(
+                    data.journalLead.published_at ||
+                      data.journalLead.created_at,
+                  )}
+                </p>
+                <h3 className="type-display mt-3 text-[clamp(1.6rem,4vw,2.75rem)] transition-opacity group-hover:opacity-70">
+                  {data.journalLead.title}
+                </h3>
+                {data.journalLead.excerpt && (
+                  <p className="type-body mt-3 max-w-2xl">
+                    {data.journalLead.excerpt}
+                  </p>
+                )}
+              </Link>
+            </Reveal>
+          )}
+          {data.journalLatest.slice(0, 5).map((post, i) => (
+            <Reveal key={post.id} as="li" y={14} delay={i * 0.05}>
+              <Link
+                href={`/post/${post.slug}`}
+                className="group flex flex-col gap-2 border-b border-[var(--fg-line)] py-5 sm:flex-row sm:items-baseline sm:justify-between"
+              >
+                <span className="text-lg tracking-tight transition-opacity group-hover:opacity-70 md:text-xl">
+                  {post.title}
+                </span>
+                <span className="type-label shrink-0 text-muted-foreground">
+                  {post.author?.full_name || post.author?.username || "Author"}
+                  {" · "}
+                  {formatDate(post.published_at || post.created_at)}
+                </span>
+              </Link>
+            </Reveal>
+          ))}
+        </ul>
+      </section>
+
+      {/* Closing — ink */}
+      <section className="border-t border-[var(--fg-line)] py-20 md:py-28">
+        <div className="wrap text-center">
+          <Reveal y={20}>
+            <p className="type-label text-muted-foreground">Stay close</p>
+            <h2 className="type-display mx-auto mt-4 max-w-3xl text-[clamp(2rem,6vw,3.75rem)]">
+              Follow the{" "}
+              <span className="type-script text-[0.7em] normal-case tracking-normal">
+                feeds
+              </span>
+            </h2>
+            <p className="type-body mx-auto mt-5 max-w-md">
+              Subscribe via RSS, or open Tech Weekly every Sunday for the next
+              engineering cycle.
+            </p>
+            <div className="mt-10 flex flex-wrap justify-center gap-4">
+              <a href="/feed.xml" className="btn-editorial">
+                Journal RSS
+              </a>
+              <Link href="/tech-weekly" className="btn-editorial">
+                This week’s Tech Weekly
+              </Link>
+            </div>
+          </Reveal>
         </div>
       </section>
     </div>

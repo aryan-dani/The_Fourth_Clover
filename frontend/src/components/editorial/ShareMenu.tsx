@@ -68,7 +68,7 @@ export function ShareMenu({ title, url, className }: ShareMenuProps) {
           type="button"
           variant="outline"
           size="sm"
-          className={cn("border-hairline gap-2", className)}
+          className={cn("gap-2 uppercase tracking-[0.14em]", className)}
           aria-label="Share"
         >
           <Share2 className="h-3.5 w-3.5" aria-hidden />

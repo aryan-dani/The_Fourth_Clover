@@ -13,6 +13,8 @@ export type ArticleHeading = {
 export type ArticleLayoutProps = {
   sectionLabel: string;
   sectionHref?: string;
+  /** Short script flourish only — never a full title (legibility). */
+  scriptKicker?: string;
   title: string;
   dek?: string | null;
   author?: BylineAuthor | null;
@@ -30,9 +32,19 @@ export type ArticleLayoutProps = {
   showProgress?: boolean;
 };
 
+function defaultKicker(sectionLabel: string): string {
+  const s = sectionLabel.toLowerCase();
+  if (s.includes("tech") || s.includes("csi") || s.includes("week")) {
+    return "Dispatch";
+  }
+  if (s.includes("poet")) return "Verse";
+  return "Essay";
+}
+
 export function ArticleLayout({
   sectionLabel,
   sectionHref,
+  scriptKicker,
   title,
   dek,
   author,
@@ -50,6 +62,7 @@ export function ArticleLayout({
   showProgress = true,
 }: ArticleLayoutProps) {
   const hasToc = Boolean(headings && headings.length > 0);
+  const kicker = (scriptKicker || defaultKicker(sectionLabel)).trim().slice(0, 24);
 
   return (
     <>
@@ -62,12 +75,19 @@ export function ArticleLayout({
             {actions}
           </div>
 
-          <h1 className="font-display text-display-md text-foreground md:text-display-lg">
+          <p
+            className="type-script text-[clamp(2.4rem,6vw,3.25rem)] leading-none text-[var(--brand-color)]"
+            aria-hidden="true"
+          >
+            {kicker}
+          </p>
+
+          <h1 className="type-display text-[clamp(2rem,5vw,3.25rem)] text-foreground">
             {title}
           </h1>
 
           {dek && (
-            <p className="font-serif text-lg leading-relaxed text-muted-foreground md:text-xl">
+            <p className="type-body text-lg md:text-xl">
               {dek}
             </p>
           )}
@@ -110,7 +130,7 @@ export function ArticleLayout({
                 >
                   <a
                     href={`#${heading.id}`}
-                    className="font-serif text-sm text-muted-foreground transition-colors duration-editorial hover:text-brand"
+                    className="text-sm text-muted-foreground transition-colors duration-expo hover:text-foreground"
                   >
                     {heading.text}
                   </a>

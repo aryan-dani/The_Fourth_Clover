@@ -16,13 +16,17 @@ type ToasterProps = ComponentProps<typeof Sonner>;
 
 export function AppToaster(props: ToasterProps) {
   const { resolvedTheme } = useTheme();
-  const sonnerTheme: ToasterProps["theme"] =
-    resolvedTheme === "dark" ? "dark" : "light";
+  const theme =
+    resolvedTheme === "dark"
+      ? "dark"
+      : resolvedTheme === "light"
+        ? "light"
+        : "system";
 
   return (
     <Sonner
       {...props}
-      theme={sonnerTheme}
+      theme={theme}
       position="bottom-right"
       closeButton
       offset={16}
@@ -31,41 +35,54 @@ export function AppToaster(props: ToasterProps) {
         duration: 4000,
         classNames: {
           toast:
-            "group font-sans !rounded-xl !border !p-4 !pr-12 !shadow-lg !gap-3 !items-center " +
-            "!bg-card !text-foreground !border-border",
-          title: "!text-sm !font-semibold !text-foreground !leading-snug",
+            "group font-sans !rounded-[var(--radius)] !border !py-3.5 !pl-4 !pr-12 !shadow-none !gap-3 !items-center " +
+            "!bg-[hsl(var(--card))] !text-[hsl(var(--foreground))] !border-[hsl(var(--border))]",
+          title:
+            "!text-sm !font-medium !text-[hsl(var(--foreground))] !leading-snug !tracking-tight",
           description:
             "!text-sm !text-muted-foreground !leading-relaxed !mt-0.5",
           content: "!gap-3",
           icon:
-            "!m-0 !size-9 !shrink-0 !flex !items-center !justify-center " +
-            "!rounded-lg !border !border-border/80 !bg-background/80 !shadow-none",
-          success: "!border-emerald-500/25 dark:!border-emerald-400/30",
+            "!m-0 !size-8 !shrink-0 !flex !items-center !justify-center " +
+            "!rounded-full !border !border-[hsl(var(--border))] !bg-transparent !shadow-none",
+          success: "!border-[var(--brand-color)]/35",
           error:
-            "!border-destructive/40 [&_[data-icon]]:!text-destructive [&_[data-icon]]:!border-destructive/25",
-          warning: "!border-amber-500/30 dark:!border-amber-400/35",
-          info: "!border-primary/25",
+            "!border-destructive/40 [&_[data-icon]]:!text-destructive",
+          warning: "!border-[hsl(var(--border))]",
+          info: "!border-[var(--brand-color)]/30",
           closeButton:
-            "!m-0 !border !border-border !rounded-lg !bg-background !text-foreground " +
-            "!opacity-90 hover:!opacity-100 !size-8 !inline-flex !items-center !justify-center !p-0 " +
-            "[&_svg]:!block [&_svg]:!shrink-0 hover:!bg-muted dark:!bg-card dark:hover:!bg-muted",
-        },
-        style: {
-          background: "hsl(var(--card))",
-          border: "1px solid hsl(var(--border))",
-          color: "hsl(var(--foreground))",
+            "!left-auto !right-2.5 !top-1/2 !-translate-y-1/2 !m-0 !border-0 " +
+            "!rounded-full !bg-transparent !text-muted-foreground " +
+            "!opacity-80 hover:!opacity-100 !size-7 !inline-flex !items-center !justify-center !p-0 " +
+            "hover:!bg-[hsl(var(--surface))] hover:!text-[hsl(var(--foreground))]",
         },
       }}
       icons={{
-        success: <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400" />,
-        error: <XCircle className="size-5 text-destructive" />,
-        info: <Info className="size-5 text-primary" />,
-        warning: <AlertTriangle className="size-5 text-amber-600 dark:text-amber-400" />,
+        success: (
+          <CheckCircle2
+            className="size-4 text-[var(--brand-color)]"
+            strokeWidth={1.75}
+          />
+        ),
+        error: <XCircle className="size-4 text-destructive" strokeWidth={1.75} />,
+        info: (
+          <Info className="size-4 text-[var(--brand-color)]" strokeWidth={1.75} />
+        ),
+        warning: (
+          <AlertTriangle
+            className="size-4 text-[hsl(var(--foreground))]"
+            strokeWidth={1.75}
+          />
+        ),
         loading: (
-          <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          <Loader2 className="size-4 animate-spin text-muted-foreground" />
         ),
         close: (
-          <X className="size-4 shrink-0 opacity-80 block" strokeWidth={2} aria-hidden />
+          <X
+            className="size-3.5 shrink-0 block"
+            strokeWidth={2}
+            aria-hidden
+          />
         ),
       }}
     />

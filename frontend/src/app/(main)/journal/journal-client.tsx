@@ -3,22 +3,26 @@
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertCircle, ArrowUpRight, PenTool, X } from "lucide-react";
 import {
-  ArticleCard,
-  EmptyState,
-  LoadMore,
-  PageHeader,
-} from "@/components/editorial";
+  AlertCircle,
+  ArrowUpRight,
+  LayoutGrid,
+  List,
+  PenTool,
+  X,
+} from "lucide-react";
+import { ArticleCard, EmptyState, LoadMore } from "@/components/editorial";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { loadMoreJournalPostsAction } from "@/features/data/server-actions";
-import { toTitleCase, cn } from "@/lib/utils";
+import { toTitleCase } from "@/lib/utils";
 import type { PostWithAuthor } from "@/types/database";
 import type {
   JournalFormatFilter,
   JournalSort,
 } from "@/features/data/server-queries";
+
+type JournalView = "cards" | "list";
 
 type JournalPageClientProps = {
   initialPosts: PostWithAuthor[];
@@ -44,7 +48,7 @@ function buildJournalHref(opts: {
   return qs ? `/journal?${qs}` : "/journal";
 }
 
-function TextToggle({
+function FilterChip({
   active,
   children,
   href,
@@ -56,12 +60,8 @@ function TextToggle({
   return (
     <Link
       href={href}
-      className={cn(
-        "text-sm transition-colors duration-editorial",
-        active
-          ? "font-medium text-foreground"
-          : "text-muted-foreground hover:text-foreground",
-      )}
+      data-active={active ? "true" : "false"}
+      className="btn-chip"
       aria-current={active ? "page" : undefined}
     >
       {children}
@@ -85,6 +85,7 @@ export function JournalPageClient({
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [loadError, setLoadError] = useState(initialLoadError);
   const [loadingMore, startLoadMore] = useTransition();
+  const [view, setView] = useState<JournalView>("cards");
 
   const sort = initialSort;
   const format = initialFormat;
@@ -133,112 +134,134 @@ export function JournalPageClient({
   const hasActiveFilters = format !== "all" || Boolean(selectedTag);
 
   return (
-    <div className="mx-auto max-w-content space-y-10 px-4 py-10 sm:px-6 lg:px-8">
-      <PageHeader
-        label="Journal"
-        title="The Journal"
-        description="Essays, verse, and community writing published on The Fourth Clover — open to every signed-in author."
-        actions={
+    <div className="wrap space-y-10 py-10 md:py-14">
+      <header className="border-b border-[var(--fg-line)] pb-8">
+        <p className="type-label text-muted-foreground">Journal</p>
+        <div className="mt-4 flex flex-wrap items-end justify-between gap-6">
+          <div className="max-w-2xl">
+            <h1 className="type-display text-[clamp(2.5rem,7vw,4.5rem)]">
+              The Journal
+            </h1>
+            <p className="type-body mt-4">
+              Essays, verse, and community writing — open to every signed-in
+              author.
+            </p>
+          </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button asChild variant="outline" size="sm" className="border-hairline">
-              <Link href="/tech-weekly">
-                Tech Weekly
-                <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" aria-hidden />
-              </Link>
-            </Button>
-            <Button asChild size="sm">
-              <Link href="/write">
-                <PenTool className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                Write
-              </Link>
-            </Button>
-          </div>
-        }
-      />
-
-      {/* Single quiet filter bar — no chip walls */}
-      <div className="space-y-3 border-b border-hairline pb-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <TextToggle active={sort === "latest"} href={hrefFor({ sort: "latest" })}>
-              Latest
-            </TextToggle>
-            <span className="text-muted-foreground/40" aria-hidden>
-              ·
-            </span>
-            <TextToggle
-              active={sort === "popular"}
-              href={hrefFor({ sort: "popular" })}
-            >
-              Popular
-            </TextToggle>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {(
-              [
-                { id: "all", label: "All" },
-                { id: "prose", label: "Prose" },
-                { id: "poetry", label: "Poetry" },
-              ] as const
-            ).map((item, i) => (
-              <span key={item.id} className="inline-flex items-center gap-3">
-                {i > 0 && (
-                  <span className="text-muted-foreground/40" aria-hidden>
-                    ·
-                  </span>
-                )}
-                <TextToggle
-                  active={format === item.id}
-                  href={hrefFor({ format: item.id })}
-                >
-                  {item.label}
-                </TextToggle>
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {featuredTags.length > 0 && (
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5 text-sm">
-            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-              Topics
-            </span>
-            {featuredTags.map((tag) => (
-              <Link
-                key={tag}
-                href={hrefFor({
-                  tag: selectedTag === tag ? "" : tag,
-                })}
-                className={cn(
-                  "transition-colors duration-editorial",
-                  selectedTag === tag
-                    ? "font-medium text-foreground underline decoration-brand/50 underline-offset-4"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {toTitleCase(tag)}
-              </Link>
-            ))}
-            <Link
-              href="/tags"
-              className="text-muted-foreground transition-colors duration-editorial hover:text-foreground"
-            >
-              All topics →
+            <Link href="/tech-weekly" className="btn-editorial !py-2.5 !px-4 text-[0.65rem]">
+              Tech Weekly
+              <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+            </Link>
+            <Link href="/write" className="btn-editorial !py-2.5 !px-4 text-[0.65rem]">
+              <PenTool className="h-3.5 w-3.5" aria-hidden />
+              Write
             </Link>
           </div>
-        )}
+        </div>
+      </header>
+
+      <div className="space-y-4 border-b border-[var(--fg-line)] pb-6">
+        <div className="panel space-y-4 p-4 sm:p-5" role="toolbar" aria-label="Journal filters">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2">
+              <span className="type-label text-muted-foreground">Sort</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <FilterChip active={sort === "latest"} href={hrefFor({ sort: "latest" })}>
+                  Latest
+                </FilterChip>
+                <FilterChip
+                  active={sort === "popular"}
+                  href={hrefFor({ sort: "popular" })}
+                >
+                  Popular
+                </FilterChip>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <span className="type-label text-muted-foreground">Format</span>
+              <div className="flex flex-wrap items-center gap-2">
+                {(
+                  [
+                    { id: "all", label: "All" },
+                    { id: "prose", label: "Prose" },
+                    { id: "poetry", label: "Poetry" },
+                  ] as const
+                ).map((item) => (
+                  <FilterChip
+                    key={item.id}
+                    active={format === item.id}
+                    href={hrefFor({ format: item.id })}
+                  >
+                    {item.label}
+                  </FilterChip>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <span className="type-label text-muted-foreground">Layout</span>
+              <div
+                className="inline-flex items-center gap-1"
+                role="group"
+                aria-label="Journal layout"
+              >
+                <button
+                  type="button"
+                  data-active={view === "cards" ? "true" : "false"}
+                  className="btn-chip !px-3 !py-2"
+                  aria-pressed={view === "cards"}
+                  onClick={() => setView("cards")}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
+                  <span className="sr-only sm:not-sr-only">Cards</span>
+                </button>
+                <button
+                  type="button"
+                  data-active={view === "list" ? "true" : "false"}
+                  className="btn-chip !px-3 !py-2"
+                  aria-pressed={view === "list"}
+                  onClick={() => setView("list")}
+                >
+                  <List className="h-3.5 w-3.5" aria-hidden />
+                  <span className="sr-only sm:not-sr-only">List</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {featuredTags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 border-t border-[var(--fg-line)] pt-4">
+              <span className="type-label mr-1 text-muted-foreground">Topics</span>
+              {featuredTags.map((tag) => (
+                <Link
+                  key={tag}
+                  href={hrefFor({
+                    tag: selectedTag === tag ? "" : tag,
+                  })}
+                  data-active={selectedTag === tag ? "true" : "false"}
+                  className="btn-chip !normal-case !tracking-normal !text-[0.78rem]"
+                >
+                  {toTitleCase(tag)}
+                </Link>
+              ))}
+              <Link href="/tags" className="type-label link-u ml-1 text-muted-foreground">
+                All topics →
+              </Link>
+            </div>
+          )}
+        </div>
 
         {hasActiveFilters && (
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <span className="text-xs text-muted-foreground">Showing</span>
             {format !== "all" && (
-              <span className="rounded-full bg-surface px-2.5 py-0.5 text-xs text-foreground">
+              <span className="rounded-full border border-[var(--fg-line)] px-2.5 py-0.5 text-xs text-foreground">
                 {format === "poetry" ? "Poetry" : "Prose"}
               </span>
             )}
             {selectedTag && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-surface px-2.5 py-0.5 text-xs text-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full border border-[var(--fg-line)] px-2.5 py-0.5 text-xs text-foreground">
                 {toTitleCase(selectedTag)}
                 <Link
                   href={hrefFor({ tag: "" })}
@@ -282,12 +305,12 @@ export function JournalPageClient({
           title="No matching entries"
           description="Try another format, topic, or clear filters to browse the full journal."
           action={
-            <Button asChild variant="outline" className="border-hairline">
-              <Link href="/journal">Clear filters</Link>
-            </Button>
+            <Link href="/journal" className="btn-editorial">
+              Clear filters
+            </Link>
           }
         />
-      ) : (
+      ) : view === "cards" ? (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {posts.map((post, index) => (
             <ArticleCard
@@ -309,6 +332,48 @@ export function JournalPageClient({
             />
           ))}
         </div>
+      ) : (
+        <ul className="divide-y divide-[var(--fg-line)] border-t border-[var(--fg-line)]">
+          {posts.map((post) => {
+            const author =
+              post.author?.full_name || post.author?.username || "Author";
+            const when = post.published_at || post.created_at;
+            const date = when
+              ? new Intl.DateTimeFormat("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                }).format(new Date(when))
+              : "";
+            return (
+              <li key={post.id}>
+                <Link
+                  href={`/post/${post.slug}`}
+                  className="group flex flex-col gap-2 py-6 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8"
+                >
+                  <div className="min-w-0">
+                    <p className="type-label text-muted-foreground">
+                      {post.format === "poetry" ? "Poetry" : "Prose"}
+                      {post.read_time ? ` · ${post.read_time} min` : ""}
+                    </p>
+                    <h2 className="type-display mt-2 text-[clamp(1.25rem,3vw,1.85rem)] transition-opacity group-hover:opacity-70">
+                      {post.title}
+                    </h2>
+                    {post.excerpt && (
+                      <p className="type-body mt-2 line-clamp-2 max-w-2xl text-sm">
+                        {post.excerpt}
+                      </p>
+                    )}
+                  </div>
+                  <span className="type-label shrink-0 text-muted-foreground">
+                    {author}
+                    {date ? ` · ${date}` : ""}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       )}
 
       {hasMore && posts.length > 0 && (
