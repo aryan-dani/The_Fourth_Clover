@@ -1,6 +1,10 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+function hasSupabaseAuthCookie(request: NextRequest): boolean {
+  return request.cookies.getAll().some((cookie) => cookie.name.startsWith("sb-"));
+}
+
 /**
  * Next.js 16 proxy — refreshes the Supabase auth session on each request
  * so Server Components / Server Actions see a valid cookie session.
@@ -13,6 +17,11 @@ export async function proxy(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
+    return supabaseResponse;
+  }
+
+  // Public traffic has no session to refresh — skip the auth round-trip.
+  if (!hasSupabaseAuthCookie(request)) {
     return supabaseResponse;
   }
 

@@ -1,8 +1,5 @@
 import { createSupabasePublicServerClient } from "@/lib/supabase/server";
-import {
-  fetchFeaturedTechWeeklyPost,
-  fetchTechWeeklyLandingData,
-} from "@/features/data/tech-weekly-actions";
+import { fetchTechWeeklyLandingData } from "@/features/data/tech-weekly-actions";
 import type { PostWithAuthor, TechSubmissionWithAuthor } from "@/types/database";
 
 export type HomeData = {
@@ -27,8 +24,7 @@ const POST_SELECT = `
 export async function fetchHomeData(): Promise<HomeData> {
   const supabase = createSupabasePublicServerClient();
 
-  const [featuredPick, techLanding, journalRes, poetryRes] = await Promise.all([
-    fetchFeaturedTechWeeklyPost(),
+  const [techSlice, journalRes, poetryRes] = await Promise.all([
     fetchTechWeeklyLandingData(),
     supabase
       .from("posts")
@@ -51,12 +47,12 @@ export async function fetchHomeData(): Promise<HomeData> {
   const poetry = (poetryRes.data || []) as unknown as PostWithAuthor[];
 
   return {
-    featuredPick,
-    latestTech: (techLanding.submissions || []).slice(0, 3),
+    featuredPick: techSlice.featuredPick,
+    latestTech: (techSlice.submissions || []).slice(0, 3),
     journalLead: journalPosts[0] || null,
     journalLatest: journalPosts.slice(1, 7),
     poetry,
-    cutoffAt: techLanding.currentWeek?.cutoff_at || null,
-    weekTitle: techLanding.currentWeek?.title || null,
+    cutoffAt: techSlice.currentWeek?.cutoff_at || null,
+    weekTitle: techSlice.currentWeek?.title || null,
   };
 }

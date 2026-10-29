@@ -92,17 +92,21 @@ function computeIsWindowOpen(
   return nowMs >= startsMs && nowMs <= cutoffMs;
 }
 
+/** Rows shown on the Tech Weekly landing / home slice (archive uses issues routes). */
+const LANDING_SUBMISSION_LIMIT = 8;
+const LANDING_WEEKS_LIMIT = 8;
+
 export async function fetchTechWeeklyLandingData(): Promise<TechWeeklyLandingPayload> {
   const supabase = createSupabasePublicServerClient();
 
-  const [currentWeekRpcRes, weeksRes, settingsRes, submissionsRes] =
+  const [currentWeekRpcRes, weeksRes, settingsRes, submissionsRes, featuredRes] =
     await Promise.all([
       supabase.rpc("get_or_create_current_tech_week"),
       supabase
         .from("tech_weeks")
         .select("*")
         .order("starts_at", { ascending: false })
-        .limit(26),
+        .limit(LANDING_WEEKS_LIMIT),
       supabase.from("platform_settings").select("*").eq("id", 1).maybeSingle(),
       supabase
         .from("tech_submissions")
@@ -118,7 +122,24 @@ export async function fetchTechWeeklyLandingData(): Promise<TechWeeklyLandingPay
         .eq("is_deleted", false)
         .in("status", ["submitted", "approved", "selected", "archived"])
         .order("created_at", { ascending: false })
-        .limit(120),
+        .limit(LANDING_SUBMISSION_LIMIT),
+      // Featured may sit outside the latest-N window — fetch it on its own.
+      supabase
+        .from("tech_submissions")
+        .select(
+          `
+          id, week_id, author_id, title, slug, summary, cover_image, tags, word_count,
+          status, selected_by, selected_at, reviewed_by, reviewed_at, review_note,
+          is_deleted, created_at, updated_at,
+          author:profiles!tech_submissions_author_id_fkey (${AUTHOR_BADGE_SELECT}),
+          week:tech_weeks!tech_submissions_week_id_fkey (*)
+        `
+        )
+        .eq("is_deleted", false)
+        .eq("status", "selected")
+        .order("selected_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
   const submissionIds = (submissionsRes.data || []).map((s) => s.id as string);
@@ -192,13 +213,17 @@ export async function fetchTechWeeklyLandingData(): Promise<TechWeeklyLandingPay
       comment_count: commentMap.get(s.id) || 0,
     }));
 
-  // Find featured pick (current week selected post, or latest selected post)
-  const featuredPick =
+  const featuredFromSlice =
     submissions.find(
       (s) => s.status === "selected" && currentWeek && s.week_id === currentWeek.id
     ) ||
     submissions.find((s) => s.status === "selected") ||
     null;
+  const featuredPick =
+    featuredFromSlice ||
+    (featuredRes.data
+      ? (featuredRes.data as unknown as TechSubmissionWithAuthor)
+      : null);
 
   // Compute Leaderboard
   const authorStatsMap = new Map<

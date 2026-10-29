@@ -562,7 +562,7 @@ export const fetchJournalInitialData = cache(
           .eq("status", "published")
           .is("publication_id", null)
           .not("tags", "is", null)
-          .limit(200),
+          .limit(60),
       ]);
 
       if (error) {
