@@ -97,7 +97,7 @@ export function ProfilePageClient({
           <div className="text-center mb-8">
               <div className="relative inline-block mb-4">
                 <Avatar className="h-28 w-28 mx-auto ring-4 ring-primary/25 ring-offset-4 ring-offset-background">
-                  <AvatarImage src={profile.avatar_url || ""} />
+                  <AvatarImage src={profile.avatar_url || undefined} />
                   <AvatarFallback className="text-3xl bg-gradient-to-br from-primary/30 to-primary/10">
                     {profile.full_name?.[0] || profile.username[0]}
                   </AvatarFallback>
@@ -302,66 +302,71 @@ export function ProfilePageClient({
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {posts.map((post) => (
-                      <Link key={post.id} href={`/post/${post.slug}`} className="block h-full">
-                        <Card className="group overflow-hidden hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 glass h-full border-2 hover:border-primary/30 hover:-translate-y-2 cursor-pointer">
-                          {post.cover_image && (
-                            <div className="aspect-video overflow-hidden relative bg-muted/30">
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
-                              <Image
-                                src={post.cover_image}
-                                alt={post.title}
-                                width={640}
-                                height={360}
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                sizes="(max-width: 768px) 100vw, 50vw"
-                              />
+                    <div key={post.id} className="relative h-full">
+                      <Link
+                        href={`/post/${post.slug}`}
+                        className="absolute inset-0 z-20 rounded-[inherit]"
+                        aria-label={post.title}
+                      />
+                      <Card className="group overflow-hidden hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 glass h-full border-2 hover:border-primary/30 hover:-translate-y-2">
+                        {post.cover_image && (
+                          <div className="aspect-video overflow-hidden relative bg-muted/30">
+                            <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                            <Image
+                              src={post.cover_image}
+                              alt={post.title}
+                              width={640}
+                              height={360}
+                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                              sizes="(max-width: 768px) 100vw, 50vw"
+                            />
+                          </div>
+                        )}
+                        <CardContent className="flex flex-1 flex-col p-6">
+                          <h3 className="mb-2 line-clamp-2 text-lg font-bold transition-colors duration-300 group-hover:text-primary">
+                            {post.title}
+                          </h3>
+
+                          <p className="mb-4 flex-1 line-clamp-3 text-sm text-muted-foreground">
+                            {post.excerpt}
+                          </p>
+
+                          {post.tags && post.tags.length > 0 && (
+                            <div className="mb-4 flex flex-wrap gap-2">
+                              {post.tags.slice(0, 3).map((tag) => (
+                                <Badge
+                                  key={tag}
+                                  variant="secondary"
+                                  className="text-xs transition-colors hover:bg-primary/20"
+                                >
+                                  {toTitleCase(tag)}
+                                </Badge>
+                              ))}
                             </div>
                           )}
-                          <CardContent className="p-6 flex flex-col flex-1">
-                            <h3 className="font-bold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors duration-300">
-                              {post.title}
-                            </h3>
 
-                            <p className="text-muted-foreground text-sm line-clamp-3 mb-4 flex-1">
-                              {post.excerpt}
-                            </p>
-
-                            {post.tags && post.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-2 mb-4">
-                                {post.tags.slice(0, 3).map((tag) => (
-                                  <Badge
-                                    key={tag}
-                                    variant="secondary"
-                                    className="text-xs hover:bg-primary/20 transition-colors"
-                                  >
-                                    {toTitleCase(tag)}
-                                  </Badge>
-                                ))}
+                          <div className="mt-auto flex items-center justify-between border-t border-primary/10 pt-4 text-xs text-muted-foreground">
+                            <div className="flex items-center space-x-4">
+                              <div className="flex items-center space-x-1 transition-colors hover:text-primary">
+                                <Clock className="h-3.5 w-3.5" />
+                                <span>{post.read_time}m read</span>
                               </div>
-                            )}
-
-                            <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto pt-4 border-t border-primary/10">
-                              <div className="flex items-center space-x-4">
-                                <div className="flex items-center space-x-1 hover:text-primary transition-colors">
-                                  <Clock className="w-3.5 h-3.5" />
-                                  <span>{post.read_time}m read</span>
-                                </div>
-                                <div className="flex items-center space-x-1 hover:text-red-500 transition-colors">
-                                  <Heart className="w-3.5 h-3.5" />
-                                  <span>{post.likes[0]?.count || 0}</span>
-                                </div>
-                                <div className="flex items-center space-x-1 hover:text-blue-500 transition-colors">
-                                  <MessageCircle className="w-3.5 h-3.5" />
-                                  <span>{post.comments[0]?.count || 0}</span>
-                                </div>
+                              <div className="flex items-center space-x-1 transition-colors hover:text-red-500">
+                                <Heart className="h-3.5 w-3.5" />
+                                <span>{post.likes[0]?.count || 0}</span>
                               </div>
-                              {post.published_at ? (
-                                <RelativeTime date={post.published_at} />
-                              ) : null}
+                              <div className="flex items-center space-x-1 transition-colors hover:text-blue-500">
+                                <MessageCircle className="h-3.5 w-3.5" />
+                                <span>{post.comments[0]?.count || 0}</span>
+                              </div>
                             </div>
-                          </CardContent>
-                        </Card>
-                      </Link>
+                            {post.published_at ? (
+                              <RelativeTime date={post.published_at} />
+                            ) : null}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
                   ))}
                 </div>
               )}

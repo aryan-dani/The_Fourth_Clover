@@ -179,22 +179,26 @@ export default function NotificationsPage() {
                   {notifications.map((notification) => {
                     const href = getNotificationHref(notification);
                     return (
+                      <div key={notification.id} className="relative">
                         <Link
-                          key={notification.id}
                           href={href}
+                          className="absolute inset-0 z-10 rounded-[inherit]"
+                          aria-label={stripTechSubmissionMarker(
+                            notification.message,
+                          )}
                           onClick={() => {
                             if (!notification.read) {
                               handleMarkAsRead(notification.id);
                             }
                           }}
+                        />
+                        <Card
+                          className={`transition-all hover:shadow-md ${
+                            !notification.read
+                              ? "bg-primary/5 border-primary/20"
+                              : "hover:bg-muted/50"
+                          }`}
                         >
-                          <Card
-                            className={`cursor-pointer transition-all hover:shadow-md ${
-                              !notification.read
-                                ? "bg-primary/5 border-primary/20"
-                                : "hover:bg-muted/50"
-                            }`}
-                          >
                             <CardContent className="p-4">
                               <div className="flex items-start gap-4">
                                 <div className="flex-shrink-0">
@@ -203,7 +207,7 @@ export default function NotificationsPage() {
                                       <AvatarImage
                                         src={
                                           notification.from_user.avatar_url ||
-                                          ""
+                                          undefined
                                         }
                                       />
                                       <AvatarFallback className="text-sm">
@@ -247,7 +251,7 @@ export default function NotificationsPage() {
                               </div>
                             </CardContent>
                           </Card>
-                        </Link>
+                      </div>
                     );
                   })}
                 </div>

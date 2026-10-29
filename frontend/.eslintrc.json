@@ -1,3 +1,26 @@
 {
-  "extends": "next/core-web-vitals"
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "gsap/SplitText",
+            "message": "SplitText rewrites the DOM and caused React #418 hydration failures. Animate whole nodes instead."
+          },
+          {
+            "name": "@gsap/react",
+            "message": "useGSAP uses useLayoutEffect and races React Flight streaming. Use useMotionEffect from @/lib/hooks."
+          }
+        ],
+        "patterns": [
+          {
+            "group": ["gsap/SplitText", "gsap/dist/SplitText"],
+            "message": "SplitText rewrites the DOM and caused React #418 hydration failures. Animate whole nodes instead."
+          }
+        ]
+      }
+    ]
+  }
 }

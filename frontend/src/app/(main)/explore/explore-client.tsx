@@ -340,7 +340,7 @@ export function ExplorePageClient({
                     className="flex items-center gap-2 hover:text-foreground truncate"
                   >
                     <Avatar className="h-5 w-5 rounded-sm border border-border">
-                      <AvatarImage src={post.author.avatar_url || ""} />
+                      <AvatarImage src={post.author.avatar_url || undefined} />
                       <AvatarFallback className="rounded-sm font-mono text-[10px]">
                         {post.author.full_name?.[0] || post.author.username[0]}
                       </AvatarFallback>

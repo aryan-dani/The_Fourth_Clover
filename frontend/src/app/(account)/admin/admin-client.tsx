@@ -854,7 +854,7 @@ export default function AdminClient({
                               <div className="flex items-center gap-2">
                                 <Avatar className="h-5 w-5">
                                   <AvatarImage
-                                    src={claimedUser.avatar_url || ""}
+                                    src={claimedUser.avatar_url || undefined}
                                   />
                                   <AvatarFallback className="text-[9px]">
                                     {claimedUser.username[0]?.toUpperCase()}
@@ -1087,7 +1087,7 @@ export default function AdminClient({
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <Avatar className="h-9 w-9 border border-border">
-                        <AvatarImage src={u.avatar_url || ""} />
+                        <AvatarImage src={u.avatar_url || undefined} />
                         <AvatarFallback className="text-xs font-semibold">
                           {(u.full_name || u.username)[0]?.toUpperCase()}
                         </AvatarFallback>

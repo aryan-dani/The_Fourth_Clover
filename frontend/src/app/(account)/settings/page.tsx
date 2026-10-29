@@ -45,7 +45,7 @@ export default function SettingsPage() {
         if (!loading && !user) {
             router.push("/auth/signin");
         }
-    }, [user?.id, loading, router]);
+    }, [user, loading, router]);
 
     useEffect(() => {
         if (profile) {
@@ -141,7 +141,7 @@ export default function SettingsPage() {
 
                                 <div className="flex items-center gap-6">
                                     <Avatar className="h-20 w-20 ring-1 ring-[var(--fg-line)]">
-                                        <AvatarImage src={profile?.avatar_url || ""} />
+                                        <AvatarImage src={profile?.avatar_url || undefined} />
                                         <AvatarFallback className="bg-[hsl(var(--surface))] text-2xl">
                                             {formData.full_name?.[0] || user.email?.[0]?.toUpperCase()}
                                         </AvatarFallback>
