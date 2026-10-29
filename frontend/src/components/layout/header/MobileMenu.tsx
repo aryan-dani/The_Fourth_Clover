@@ -2,8 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useRef, type RefObject } from "react";
-import { gsap, useGSAP } from "@/lib/gsap";
-import { prefersReducedMotionNow, useMediaQuery } from "@/lib/hooks";
+import { gsap } from "@/lib/gsap";
+import {
+  prefersReducedMotionNow,
+  useMediaQuery,
+  useMotionEffect,
+} from "@/lib/hooks";
 import { useSmoothScroll } from "@/components/motion/SmoothScroll";
 import type { UserCapabilities } from "@/lib/roles";
 
@@ -45,54 +49,51 @@ export function MobileMenu({
   unlockRef.current = unlock;
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
-  useGSAP(
-    () => {
-      const root = rootRef.current;
-      if (!root) return;
-      const items = root.querySelectorAll("[data-menu-item]");
-      const fades = root.querySelectorAll("[data-menu-fade]");
+  useMotionEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const items = root.querySelectorAll("[data-menu-item]");
+    const fades = root.querySelectorAll("[data-menu-fade]");
 
-      gsap.set(root, { yPercent: -100, visibility: "hidden" });
-      gsap.set(items, { yPercent: 115 });
-      gsap.set(fades, { autoAlpha: 0, y: 20 });
+    gsap.set(root, { yPercent: -100, visibility: "hidden" });
+    gsap.set(items, { yPercent: 115 });
+    gsap.set(fades, { autoAlpha: 0, y: 20 });
 
-      const releaseChrome = () => {
-        const content = document.getElementById("content");
-        if (content) content.inert = false;
-        if (lockedRef.current) {
-          lockedRef.current = false;
-          unlockRef.current();
-        }
-      };
+    const releaseChrome = () => {
+      const content = document.getElementById("content");
+      if (content) content.inert = false;
+      if (lockedRef.current) {
+        lockedRef.current = false;
+        unlockRef.current();
+      }
+    };
 
-      const tl = gsap.timeline({
-        paused: true,
-        onReverseComplete: () => {
-          gsap.set(root, { visibility: "hidden" });
-          releaseChrome();
-        },
-      });
-      tl.set(root, { visibility: "visible" })
-        .to(root, { yPercent: 0, duration: 0.95, ease: "expo.inOut" })
-        .to(
-          items,
-          { yPercent: 0, duration: 1.2, stagger: 0.08, ease: "expo.out" },
-          "-=0.5",
-        )
-        .to(
-          fades,
-          { autoAlpha: 1, y: 0, duration: 1, stagger: 0.07, ease: "expo.out" },
-          "-=0.9",
-        );
-      tlRef.current = tl;
+    const tl = gsap.timeline({
+      paused: true,
+      onReverseComplete: () => {
+        gsap.set(root, { visibility: "hidden" });
+        releaseChrome();
+      },
+    });
+    tl.set(root, { visibility: "visible" })
+      .to(root, { yPercent: 0, duration: 0.95, ease: "expo.inOut" })
+      .to(
+        items,
+        { yPercent: 0, duration: 1.2, stagger: 0.08, ease: "expo.out" },
+        "-=0.5",
+      )
+      .to(
+        fades,
+        { autoAlpha: 1, y: 0, duration: 1, stagger: 0.07, ease: "expo.out" },
+        "-=0.9",
+      );
+    tlRef.current = tl;
 
-      return () => {
-        tl.kill();
-        tlRef.current = null;
-      };
-    },
-    { scope: rootRef },
-  );
+    return () => {
+      tl.kill();
+      tlRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const tl = tlRef.current;

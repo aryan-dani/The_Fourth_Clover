@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { gsap, useGSAP } from "@/lib/gsap";
+import { gsap } from "@/lib/gsap";
 import { whenIntroRevealing } from "@/lib/intro";
-import { prefersReducedMotionNow } from "@/lib/hooks";
+import { prefersReducedMotionNow, useMotionEffect } from "@/lib/hooks";
 import { useSmoothScroll } from "@/components/motion/SmoothScroll";
 import { CloverMark } from "@/components/layout/CloverMark";
 import { HeaderNav } from "@/components/layout/header/HeaderNav";
@@ -47,30 +47,33 @@ export function SiteHeaderClient({
     });
   }, [subscribe]);
 
-  useGSAP(
-    () => {
-      const el = innerRef.current;
-      if (!el || prefersReducedMotionNow()) return;
-      const tween = gsap.fromTo(
-        el,
-        { opacity: 0, y: -18 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 1.3,
-          delay: 0.35,
-          paused: true,
-          onComplete: () => {
-            gsap.set(el, { clearProps: "transform,opacity" });
-            el.dataset.revealed = "true";
-          },
+  useMotionEffect(() => {
+    const el = innerRef.current;
+    if (!el || prefersReducedMotionNow()) {
+      if (el) el.dataset.revealed = "true";
+      return;
+    }
+    const tween = gsap.fromTo(
+      el,
+      { opacity: 0, y: -18 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 1.3,
+        delay: 0.35,
+        paused: true,
+        onComplete: () => {
+          gsap.set(el, { clearProps: "transform,opacity" });
+          el.dataset.revealed = "true";
         },
-      );
-      const disarm = whenIntroRevealing(() => tween.play());
-      return () => disarm();
-    },
-    { scope: innerRef },
-  );
+      },
+    );
+    const disarm = whenIntroRevealing(() => tween.play());
+    return () => {
+      disarm();
+      tween.kill();
+    };
+  }, []);
 
   const tucked = hidden && !menuOpen;
 

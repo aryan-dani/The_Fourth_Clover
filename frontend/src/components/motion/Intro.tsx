@@ -1,9 +1,9 @@
 "use client";
 
 import { useRef } from "react";
-import { gsap, useGSAP } from "@/lib/gsap";
+import { gsap } from "@/lib/gsap";
 import { setIntroState, fontsReady } from "@/lib/intro";
-import { prefersReducedMotionNow } from "@/lib/hooks";
+import { prefersReducedMotionNow, useMotionEffect } from "@/lib/hooks";
 import { useSmoothScroll } from "@/components/motion/SmoothScroll";
 import { CloverMark } from "@/components/layout/CloverMark";
 
@@ -19,92 +19,89 @@ export function Intro() {
   const titleRef = useRef<HTMLParagraphElement>(null);
   const { lock, unlock } = useSmoothScroll();
 
-  useGSAP(
-    () => {
-      const root = rootRef.current;
-      const path = pathRef.current;
-      const title = titleRef.current;
-      if (!root || !path || !title) return;
-      if (document.documentElement.dataset.intro !== "pending") return;
-      if (prefersReducedMotionNow()) {
-        setIntroState("done");
-        return;
+  useMotionEffect(() => {
+    const root = rootRef.current;
+    const path = pathRef.current;
+    const title = titleRef.current;
+    if (!root || !path || !title) return;
+    if (document.documentElement.dataset.intro !== "pending") return;
+    if (prefersReducedMotionNow()) {
+      setIntroState("done");
+      return;
+    }
+
+    const token = ++runToken;
+    let locked = true;
+    lock();
+
+    const finish = () => {
+      setIntroState("done");
+      if (locked) {
+        locked = false;
+        unlock();
       }
+    };
 
-      const token = ++runToken;
-      let locked = true;
-      lock();
+    const length = path.getTotalLength();
+    gsap.set(path, {
+      strokeDasharray: length,
+      strokeDashoffset: length,
+      visibility: "visible",
+    });
+    gsap.set(title, { y: 28, opacity: 0 });
 
-      const finish = () => {
-        setIntroState("done");
-        if (locked) {
-          locked = false;
-          unlock();
+    const tl = gsap.timeline({ paused: true, onComplete: finish });
+    tl.to(path, {
+      strokeDashoffset: 0,
+      duration: 1.15,
+      ease: "power2.inOut",
+    });
+    tl.to(
+      title,
+      { y: 0, opacity: 1, duration: 0.9, ease: "expo.out" },
+      "-=0.35",
+    );
+    tl.call(() => setIntroState("revealing"), undefined, "+=0.15");
+    tl.to(
+      root,
+      {
+        y: () => -window.innerHeight * 1.15,
+        duration: 0.95,
+        ease: "expo.inOut",
+      },
+      "+=0.05",
+    );
+
+    fontsReady().then(() => {
+      if (token !== runToken) return;
+      tl.play();
+    });
+
+    const skip = (e: KeyboardEvent) => {
+      if (e.key !== "Enter" && e.key !== " " && e.key !== "Escape") return;
+      e.preventDefault();
+      window.removeEventListener("keydown", skip);
+      tl.timeScale(5);
+    };
+    window.addEventListener("keydown", skip);
+
+    return () => {
+      window.removeEventListener("keydown", skip);
+      tl.kill();
+      if (locked) {
+        locked = false;
+        unlock();
+      }
+      window.setTimeout(() => {
+        if (
+          token === runToken &&
+          document.documentElement.dataset.intro !== "done"
+        ) {
+          setIntroState("done");
         }
-      };
-
-      const length = path.getTotalLength();
-      gsap.set(path, {
-        strokeDasharray: length,
-        strokeDashoffset: length,
-        visibility: "visible",
-      });
-      gsap.set(title, { y: 28, opacity: 0 });
-
-      const tl = gsap.timeline({ paused: true, onComplete: finish });
-      tl.to(path, {
-        strokeDashoffset: 0,
-        duration: 1.15,
-        ease: "power2.inOut",
-      });
-      tl.to(
-        title,
-        { y: 0, opacity: 1, duration: 0.9, ease: "expo.out" },
-        "-=0.35",
-      );
-      tl.call(() => setIntroState("revealing"), undefined, "+=0.15");
-      tl.to(
-        root,
-        {
-          y: () => -window.innerHeight * 1.15,
-          duration: 0.95,
-          ease: "expo.inOut",
-        },
-        "+=0.05",
-      );
-
-      fontsReady().then(() => {
-        if (token !== runToken) return;
-        tl.play();
-      });
-
-      const skip = (e: KeyboardEvent) => {
-        if (e.key !== "Enter" && e.key !== " " && e.key !== "Escape") return;
-        e.preventDefault();
-        window.removeEventListener("keydown", skip);
-        tl.timeScale(5);
-      };
-      window.addEventListener("keydown", skip);
-
-      return () => {
-        window.removeEventListener("keydown", skip);
-        tl.kill();
-        if (locked) {
-          locked = false;
-          unlock();
-        }
-        window.setTimeout(() => {
-          if (
-            token === runToken &&
-            document.documentElement.dataset.intro !== "done"
-          ) {
-            setIntroState("done");
-          }
-        }, 60);
-      };
-    },
-    { scope: rootRef },
-  );
+      }, 60);
+    };
+  }, [lock, unlock]);
 
   return (
     <div ref={rootRef} className="intro" aria-hidden="true">

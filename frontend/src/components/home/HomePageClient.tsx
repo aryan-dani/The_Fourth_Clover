@@ -33,6 +33,7 @@ function formatDate(iso: string | null | undefined) {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: "UTC",
   }).format(new Date(iso));
 }
 
@@ -48,12 +49,18 @@ export function HomePageClient({ data }: { data: HomeData }) {
     return () => window.clearInterval(id);
   }, [data.cutoffAt]);
 
-  const dateline = new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date());
+  const [dateline, setDateline] = useState("");
+
+  useEffect(() => {
+    setDateline(
+      new Intl.DateTimeFormat("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      }).format(new Date()),
+    );
+  }, []);
 
   return (
     <div>
@@ -63,7 +70,7 @@ export function HomePageClient({ data }: { data: HomeData }) {
       >
         <Reveal trigger="intro" delay={0.05} y={12}>
           <div className="type-label flex flex-wrap items-center justify-between gap-3 text-muted-foreground">
-            <span suppressHydrationWarning>{dateline}</span>
+            <span suppressHydrationWarning>{dateline || "\u00A0"}</span>
             <span className="hidden sm:inline">CSI MIT-WPU Technical Press</span>
             <Link href="/about" className="link-u">
               About the publication

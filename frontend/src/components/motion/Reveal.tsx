@@ -6,9 +6,9 @@ import {
   type ElementType,
   type ReactNode,
 } from "react";
-import { gsap, ScrollTrigger, SplitText, useGSAP, MOTION } from "@/lib/gsap";
+import { gsap, ScrollTrigger, SplitText, MOTION } from "@/lib/gsap";
 import { fontsReady, whenIntroRevealing } from "@/lib/intro";
-import { prefersReducedMotionNow } from "@/lib/hooks";
+import { prefersReducedMotionNow, useMotionEffect } from "@/lib/hooks";
 
 export type Trigger = "scroll" | "intro";
 
@@ -68,91 +68,87 @@ export function RevealText({
   const ref = useRef<HTMLElement>(null);
   const Tag = as as ElementType;
 
-  useGSAP(
-    () => {
-      const el = ref.current;
-      if (!el || prefersReducedMotionNow()) return;
+  useMotionEffect(() => {
+    const el = ref.current;
+    if (!el || prefersReducedMotionNow()) {
+      if (el) markRevealed(el);
+      return;
+    }
 
-      let disposed = false;
-      let fired = false;
-      let disarm: (() => void) | undefined;
-      let split: SplitText | undefined;
-      let activeTween: gsap.core.Tween | undefined;
+    let disposed = false;
+    let fired = false;
+    let disarm: (() => void) | undefined;
+    let split: SplitText | undefined;
+    let activeTween: gsap.core.Tween | undefined;
 
-      fontsReady().then(() => {
-        if (disposed) return;
-        try {
-          split = SplitText.create(el, {
-            type:
+    fontsReady().then(() => {
+      if (disposed) return;
+      try {
+        split = SplitText.create(el, {
+          type:
+            by === "chars"
+              ? "lines,words,chars"
+              : by === "words"
+                ? "lines,words"
+                : "lines",
+          mask: "lines",
+          autoSplit: true,
+          linesClass: "split-line",
+          aria: "none",
+          onSplit(self) {
+            activeTween?.kill();
+            activeTween = undefined;
+            disarm?.();
+            disarm = undefined;
+            const targets =
               by === "chars"
-                ? "lines,words,chars"
+                ? self.chars
                 : by === "words"
-                  ? "lines,words"
-                  : "lines",
-            mask: "lines",
-            autoSplit: true,
-            linesClass: "split-line",
-            aria: "none",
-            onSplit(self) {
-              activeTween?.kill();
-              activeTween = undefined;
-              disarm?.();
-              disarm = undefined;
-              const targets =
-                by === "chars"
-                  ? self.chars
-                  : by === "words"
-                    ? self.words
-                    : self.lines;
-              const tween = gsap.from(targets, {
-                yPercent: 112,
-                duration,
-                delay,
-                stagger:
-                  stagger ?? (by === "chars" ? 0.028 : MOTION.stagger),
-                paused: !fired,
-                onComplete: () => markRevealed(el),
-              });
-              activeTween = tween;
-              gsap.set(el, { opacity: 1 });
-              if (!fired) {
-                disarm = arm(el, trigger, start, () => {
-                  fired = true;
-                  tween.play();
-                });
-              }
-              return tween;
-            },
-          });
-        } catch {
-          const tween = gsap.fromTo(
-            el,
-            { opacity: 0, y: 24 },
-            {
-              opacity: 1,
-              y: 0,
+                  ? self.words
+                  : self.lines;
+            const tween = gsap.from(targets, {
+              yPercent: 112,
               duration,
               delay,
-              paused: true,
+              stagger: stagger ?? (by === "chars" ? 0.028 : MOTION.stagger),
+              paused: !fired,
               onComplete: () => markRevealed(el),
-            },
-          );
-          disarm = arm(el, trigger, start, () => tween.play());
-        }
-      });
+            });
+            activeTween = tween;
+            gsap.set(el, { opacity: 1 });
+            if (!fired) {
+              disarm = arm(el, trigger, start, () => {
+                fired = true;
+                tween.play();
+              });
+            }
+            return tween;
+          },
+        });
+      } catch {
+        const tween = gsap.fromTo(
+          el,
+          { opacity: 0, y: 24 },
+          {
+            opacity: 1,
+            y: 0,
+            duration,
+            delay,
+            paused: true,
+            onComplete: () => markRevealed(el),
+          },
+        );
+        disarm = arm(el, trigger, start, () => tween.play());
+      }
+    });
 
-      return () => {
-        disposed = true;
-        disarm?.();
-        activeTween?.kill();
-        split?.revert();
-      };
-    },
-    {
-      scope: ref,
-      dependencies: [by, delay, duration, stagger, trigger, start],
-    },
-  );
+    return () => {
+      disposed = true;
+      disarm?.();
+      activeTween?.kill();
+      split?.revert();
+    };
+  }, [by, delay, duration, stagger, trigger, start]);
 
   return (
     <Tag ref={ref} data-reveal="text" className={className} style={style}>
@@ -173,34 +169,37 @@ export function ScriptWipe({
   const ref = useRef<HTMLElement>(null);
   const Tag = as as ElementType;
 
-  useGSAP(
-    () => {
-      const el = ref.current;
-      if (!el || prefersReducedMotionNow()) return;
+  useMotionEffect(() => {
+    const el = ref.current;
+    if (!el || prefersReducedMotionNow()) {
+      if (el) markRevealed(el);
+      return;
+    }
 
-      const from = "inset(-45% 101% -45% -35%)";
-      const to = "inset(-45% -35% -45% -35%)";
-      const tween = gsap.fromTo(
-        el,
-        { clipPath: from },
-        {
-          clipPath: to,
-          duration: 1.9,
-          delay,
-          ease: "power2.inOut",
-          paused: true,
-          onComplete: () => {
-            gsap.set(el, { clearProps: "clipPath" });
-            markRevealed(el);
-          },
+    const from = "inset(-45% 101% -45% -35%)";
+    const to = "inset(-45% -35% -45% -35%)";
+    const tween = gsap.fromTo(
+      el,
+      { clipPath: from },
+      {
+        clipPath: to,
+        duration: 1.9,
+        delay,
+        ease: "power2.inOut",
+        paused: true,
+        onComplete: () => {
+          gsap.set(el, { clearProps: "clipPath" });
+          markRevealed(el);
         },
-      );
-      gsap.set(el, { opacity: 1 });
-      const disarm = arm(el, trigger, start, () => tween.play());
-      return () => disarm();
-    },
-    { scope: ref, dependencies: [delay, trigger, start] },
-  );
+      },
+    );
+    gsap.set(el, { opacity: 1 });
+    const disarm = arm(el, trigger, start, () => tween.play());
+    return () => {
+      disarm();
+      tween.kill();
+    };
+  }, [delay, trigger, start]);
 
   return (
     <Tag ref={ref} data-reveal="script" className={className} style={style}>
@@ -228,30 +227,33 @@ export function Reveal({
   const ref = useRef<HTMLElement>(null);
   const Tag = as as ElementType;
 
-  useGSAP(
-    () => {
-      const el = ref.current;
-      if (!el || prefersReducedMotionNow()) return;
-      const tween = gsap.fromTo(
-        el,
-        { opacity: 0, y },
-        {
-          opacity: 1,
-          y: 0,
-          duration,
-          delay,
-          paused: true,
-          onComplete: () => {
-            gsap.set(el, { clearProps: "transform,opacity" });
-            markRevealed(el);
-          },
+  useMotionEffect(() => {
+    const el = ref.current;
+    if (!el || prefersReducedMotionNow()) {
+      if (el) markRevealed(el);
+      return;
+    }
+    const tween = gsap.fromTo(
+      el,
+      { opacity: 0, y },
+      {
+        opacity: 1,
+        y: 0,
+        duration,
+        delay,
+        paused: true,
+        onComplete: () => {
+          gsap.set(el, { clearProps: "transform,opacity" });
+          markRevealed(el);
         },
-      );
-      const disarm = arm(el, trigger, start, () => tween.play());
-      return () => disarm();
-    },
-    { scope: ref, dependencies: [delay, y, duration, trigger, start] },
-  );
+      },
+    );
+    const disarm = arm(el, trigger, start, () => tween.play());
+    return () => {
+      disarm();
+      tween.kill();
+    };
+  }, [delay, y, duration, trigger, start]);
 
   return (
     <Tag ref={ref} data-reveal="fade" className={className} style={style}>
@@ -268,30 +270,33 @@ export function DrawLine({
 }: Omit<CommonProps, "as" | "children" | "style">) {
   const ref = useRef<HTMLDivElement>(null);
 
-  useGSAP(
-    () => {
-      const el = ref.current;
-      if (!el || prefersReducedMotionNow()) return;
-      const tween = gsap.fromTo(
-        el,
-        { scaleX: 0 },
-        {
-          scaleX: 1,
-          duration: 1.8,
-          delay,
-          paused: true,
-          onComplete: () => {
-            gsap.set(el, { clearProps: "transform" });
-            markRevealed(el);
-          },
+  useMotionEffect(() => {
+    const el = ref.current;
+    if (!el || prefersReducedMotionNow()) {
+      if (el) markRevealed(el);
+      return;
+    }
+    const tween = gsap.fromTo(
+      el,
+      { scaleX: 0 },
+      {
+        scaleX: 1,
+        duration: 1.8,
+        delay,
+        paused: true,
+        onComplete: () => {
+          gsap.set(el, { clearProps: "transform" });
+          markRevealed(el);
         },
-      );
-      gsap.set(el, { opacity: 1 });
-      const disarm = arm(el, trigger, start, () => tween.play());
-      return () => disarm();
-    },
-    { scope: ref, dependencies: [delay, trigger, start] },
-  );
+      },
+    );
+    gsap.set(el, { opacity: 1 });
+    const disarm = arm(el, trigger, start, () => tween.play());
+    return () => {
+      disarm();
+      tween.kill();
+    };
+  }, [delay, trigger, start]);
 
   return (
     <div
@@ -313,30 +318,30 @@ export function PageEnter({
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
-  useGSAP(
-    () => {
-      const el = ref.current;
-      if (!el || prefersReducedMotionNow()) {
-        if (el) el.dataset.revealed = "true";
-        return;
-      }
-      gsap.fromTo(
-        el,
-        { opacity: 0, y: 10 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.55,
-          ease: "expo.out",
-          onComplete: () => {
-            gsap.set(el, { clearProps: "transform,opacity" });
-            el.dataset.revealed = "true";
-          },
+  useMotionEffect(() => {
+    const el = ref.current;
+    if (!el || prefersReducedMotionNow()) {
+      if (el) el.dataset.revealed = "true";
+      return;
+    }
+    const tween = gsap.fromTo(
+      el,
+      { opacity: 0, y: 10 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.55,
+        ease: "expo.out",
+        onComplete: () => {
+          gsap.set(el, { clearProps: "transform,opacity" });
+          el.dataset.revealed = "true";
         },
-      );
-    },
-    { scope: ref },
-  );
+      },
+    );
+    return () => {
+      tween.kill();
+    };
+  }, []);
 
   return (
     <div ref={ref} data-reveal="fade" className={className}>

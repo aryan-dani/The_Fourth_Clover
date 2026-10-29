@@ -87,23 +87,23 @@ export default function RootLayout({
           <style>{`.intro{display:none!important}`}</style>
         </noscript>
       </head>
-      <body className="font-sans">
+      <body className="font-sans" suppressHydrationWarning>
         <a href="#main" className="skip-link">
           Skip to content
         </a>
         <ThemeProvider>
-        <ThemeColorMeta />
-        <TooltipProvider delayDuration={0}>
-          <AuthProvider>
-            <SiteProviders>
-              <Suspense fallback={null}>
-                <NavigationProgress />
-              </Suspense>
-              {children}
-              <AppToaster />
-            </SiteProviders>
-          </AuthProvider>
-        </TooltipProvider>
+          <ThemeColorMeta />
+          <TooltipProvider delayDuration={0}>
+            <AuthProvider>
+              <SiteProviders>
+                <Suspense fallback={null}>
+                  <NavigationProgress />
+                </Suspense>
+                {children}
+                <AppToaster />
+              </SiteProviders>
+            </AuthProvider>
+          </TooltipProvider>
         </ThemeProvider>
         <div className="grain" aria-hidden="true" />
       </body>
