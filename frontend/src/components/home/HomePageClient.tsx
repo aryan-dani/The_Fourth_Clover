@@ -202,20 +202,20 @@ export function HomePageClient({ data }: { data: HomeData }) {
                 href={`/post/${data.journalLead.slug}`}
                 className="group block border-b border-[var(--fg-line)] py-8"
               >
-                <p className="type-label text-muted-foreground">
+                <span className="type-label block text-muted-foreground">
                   Lead ·{" "}
                   {formatDate(
                     data.journalLead.published_at ||
                       data.journalLead.created_at,
                   )}
-                </p>
-                <h3 className="type-display mt-3 text-[clamp(1.6rem,4vw,2.75rem)] transition-opacity group-hover:opacity-70">
+                </span>
+                <span className="type-display mt-3 block text-[clamp(1.6rem,4vw,2.75rem)] transition-opacity group-hover:opacity-70">
                   {data.journalLead.title}
-                </h3>
+                </span>
                 {data.journalLead.excerpt && (
-                  <p className="type-body mt-3 max-w-2xl">
+                  <span className="type-body mt-3 block max-w-2xl">
                     {data.journalLead.excerpt}
-                  </p>
+                  </span>
                 )}
               </Link>
             </Reveal>

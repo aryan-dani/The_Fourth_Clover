@@ -23,13 +23,18 @@ Avatar.displayName = AvatarPrimitive.Root.displayName;
 const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Image
-    ref={ref}
-    className={cn('aspect-square h-full w-full', className)}
-    {...props}
-  />
-));
+>(({ className, src, ...props }, ref) => {
+  // Empty src makes Radix swap image/fallback differently on server vs client (#418).
+  if (!src) return null;
+  return (
+    <AvatarPrimitive.Image
+      ref={ref}
+      src={src}
+      className={cn('aspect-square h-full w-full', className)}
+      {...props}
+    />
+  );
+});
 AvatarImage.displayName = AvatarPrimitive.Image.displayName;
 
 const AvatarFallback = React.forwardRef<

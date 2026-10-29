@@ -2,6 +2,7 @@ import "sonner/dist/styles.css";
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
+import Script from "next/script";
 import {
   Jost,
   JetBrains_Mono,
@@ -81,13 +82,13 @@ export default function RootLayout({
       className={`${display.variable} ${script.variable} ${sans.variable} ${mono.variable}`}
       suppressHydrationWarning
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: BOOT_SCRIPT }} />
+      <body className="font-sans" suppressHydrationWarning>
+        <Script id="clover-boot" strategy="beforeInteractive">
+          {BOOT_SCRIPT}
+        </Script>
         <noscript>
           <style>{`.intro{display:none!important}`}</style>
         </noscript>
-      </head>
-      <body className="font-sans" suppressHydrationWarning>
         <a href="#main" className="skip-link">
           Skip to content
         </a>

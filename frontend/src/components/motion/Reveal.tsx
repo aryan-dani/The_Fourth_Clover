@@ -6,8 +6,8 @@ import {
   type ElementType,
   type ReactNode,
 } from "react";
-import { gsap, ScrollTrigger, SplitText, MOTION } from "@/lib/gsap";
-import { fontsReady, whenIntroRevealing } from "@/lib/intro";
+import { gsap, ScrollTrigger, MOTION } from "@/lib/gsap";
+import { whenIntroRevealing } from "@/lib/intro";
 import { prefersReducedMotionNow, useMotionEffect } from "@/lib/hooks";
 
 export type Trigger = "scroll" | "intro";
@@ -25,7 +25,6 @@ function arm(
     once: true,
     onEnter: play,
   });
-  // Above-the-fold elements can miss onEnter if ScrollTrigger arms after layout.
   requestAnimationFrame(() => {
     const top = (el as HTMLElement).getBoundingClientRect().top;
     if (top < window.innerHeight * 0.92) play();
@@ -48,20 +47,23 @@ type CommonProps = {
 };
 
 type RevealTextProps = CommonProps & {
+  /** Kept for API compat — animation no longer rewrites the DOM. */
   by?: "lines" | "words" | "chars";
   duration?: number;
   stagger?: number;
 };
 
+/**
+ * Text reveal without SplitText. SplitText rewrote nodes during/after hydrate
+ * and caused React #418 (HTML) + Flight $RS parentNode errors.
+ */
 export function RevealText({
   as = "div",
   className,
   style,
   children,
-  by = "lines",
   delay = 0,
   duration = MOTION.display,
-  stagger,
   trigger = "scroll",
   start = "top 88%",
 }: RevealTextProps) {
@@ -75,80 +77,28 @@ export function RevealText({
       return;
     }
 
-    let disposed = false;
-    let fired = false;
-    let disarm: (() => void) | undefined;
-    let split: SplitText | undefined;
-    let activeTween: gsap.core.Tween | undefined;
-
-    fontsReady().then(() => {
-      if (disposed) return;
-      try {
-        split = SplitText.create(el, {
-          type:
-            by === "chars"
-              ? "lines,words,chars"
-              : by === "words"
-                ? "lines,words"
-                : "lines",
-          mask: "lines",
-          autoSplit: true,
-          linesClass: "split-line",
-          aria: "none",
-          onSplit(self) {
-            activeTween?.kill();
-            activeTween = undefined;
-            disarm?.();
-            disarm = undefined;
-            const targets =
-              by === "chars"
-                ? self.chars
-                : by === "words"
-                  ? self.words
-                  : self.lines;
-            const tween = gsap.from(targets, {
-              yPercent: 112,
-              duration,
-              delay,
-              stagger: stagger ?? (by === "chars" ? 0.028 : MOTION.stagger),
-              paused: !fired,
-              onComplete: () => markRevealed(el),
-            });
-            activeTween = tween;
-            gsap.set(el, { opacity: 1 });
-            if (!fired) {
-              disarm = arm(el, trigger, start, () => {
-                fired = true;
-                tween.play();
-              });
-            }
-            return tween;
-          },
-        });
-      } catch {
-        const tween = gsap.fromTo(
-          el,
-          { opacity: 0, y: 24 },
-          {
-            opacity: 1,
-            y: 0,
-            duration,
-            delay,
-            paused: true,
-            onComplete: () => markRevealed(el),
-          },
-        );
-        disarm = arm(el, trigger, start, () => tween.play());
-      }
-    });
-
+    const tween = gsap.fromTo(
+      el,
+      { yPercent: 18, opacity: 0 },
+      {
+        yPercent: 0,
+        opacity: 1,
+        duration,
+        delay,
+        ease: "expo.out",
+        paused: true,
+        onComplete: () => {
+          gsap.set(el, { clearProps: "transform,opacity" });
+          markRevealed(el);
+        },
+      },
+    );
+    const disarm = arm(el, trigger, start, () => tween.play());
     return () => {
-      disposed = true;
-      disarm?.();
-      activeTween?.kill();
-      split?.revert();
+      disarm();
+      tween.kill();
     };
-  }, [by, delay, duration, stagger, trigger, start]);
+  }, [delay, duration, trigger, start]);
 
   return (
     <Tag ref={ref} data-reveal="text" className={className} style={style}>

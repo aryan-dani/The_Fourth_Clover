@@ -351,20 +351,20 @@ export function JournalPageClient({
                   href={`/post/${post.slug}`}
                   className="group flex flex-col gap-2 py-6 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8"
                 >
-                  <div className="min-w-0">
-                    <p className="type-label text-muted-foreground">
+                  <span className="min-w-0">
+                    <span className="type-label block text-muted-foreground">
                       {post.format === "poetry" ? "Poetry" : "Prose"}
                       {post.read_time ? ` · ${post.read_time} min` : ""}
-                    </p>
-                    <h2 className="type-display mt-2 text-[clamp(1.25rem,3vw,1.85rem)] transition-opacity group-hover:opacity-70">
+                    </span>
+                    <span className="type-display mt-2 block text-[clamp(1.25rem,3vw,1.85rem)] transition-opacity group-hover:opacity-70">
                       {post.title}
-                    </h2>
+                    </span>
                     {post.excerpt && (
-                      <p className="type-body mt-2 line-clamp-2 max-w-2xl text-sm">
+                      <span className="type-body mt-2 line-clamp-2 block max-w-2xl text-sm">
                         {post.excerpt}
-                      </p>
+                      </span>
                     )}
-                  </div>
+                  </span>
                   <span className="type-label shrink-0 text-muted-foreground">
                     {author}
                     {date ? ` · ${date}` : ""}

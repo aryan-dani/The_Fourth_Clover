@@ -228,20 +228,20 @@ export function TechWeeklyClient({
                       href={`/tech-weekly/${sub.slug}`}
                       className="group flex flex-col gap-2 py-6 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8"
                     >
-                      <div className="min-w-0">
-                        <p className="type-label text-muted-foreground">
+                      <span className="min-w-0">
+                        <span className="type-label block text-muted-foreground">
                           Dispatch
                           {sub.read_time ? ` · ${sub.read_time} min` : ""}
-                        </p>
-                        <h2 className="type-display mt-2 text-[clamp(1.2rem,3vw,1.75rem)] transition-opacity group-hover:opacity-70">
+                        </span>
+                        <span className="type-display mt-2 block text-[clamp(1.2rem,3vw,1.75rem)] transition-opacity group-hover:opacity-70">
                           {sub.title}
-                        </h2>
+                        </span>
                         {sub.summary && (
-                          <p className="type-body mt-2 line-clamp-2 max-w-2xl text-sm">
+                          <span className="type-body mt-2 line-clamp-2 block max-w-2xl text-sm">
                             {sub.summary}
-                          </p>
+                          </span>
                         )}
-                      </div>
+                      </span>
                       <span className="type-label shrink-0 text-muted-foreground">
                         {author}
                         {date ? ` · ${date}` : ""}

@@ -48,21 +48,21 @@ export default async function TechWeeklyIssuesPage() {
                   href={`/tech-weekly/issues/${week.id}`}
                   className="group flex flex-col gap-1 py-5 transition-colors duration-editorial sm:flex-row sm:items-baseline sm:justify-between sm:gap-6"
                 >
-                  <div className="min-w-0 space-y-1">
-                    <h2 className="font-display text-xl font-semibold tracking-tight text-foreground transition-colors group-hover:text-brand">
+                  <span className="min-w-0 space-y-1">
+                    <span className="font-display block text-xl font-semibold tracking-tight text-foreground transition-colors group-hover:text-brand">
                       {week.title}
-                    </h2>
+                    </span>
                     {week.prompt && (
-                      <p className="line-clamp-2 max-w-measure font-serif text-sm leading-relaxed text-muted-foreground">
+                      <span className="line-clamp-2 max-w-measure block font-serif text-sm leading-relaxed text-muted-foreground">
                         {week.prompt}
-                      </p>
+                      </span>
                     )}
-                  </div>
-                  <div className="shrink-0 font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
+                  </span>
+                  <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
                     <span className="tabular-nums">{week.week_key}</span>
                     <span className="mx-2 text-hairline">·</span>
                     <span>{formatRange(week.starts_at, week.ends_at)}</span>
-                  </div>
+                  </span>
                 </Link>
               </li>
             ))}
