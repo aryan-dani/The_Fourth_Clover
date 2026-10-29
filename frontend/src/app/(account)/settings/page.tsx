@@ -19,11 +19,11 @@ import {
     Loader2,
     Save,
     Globe,
-    Twitter,
-    Github,
+    X,
     Mail,
     ArrowLeft,
 } from "lucide-react";
+import { GitHubIcon } from "@/components/icons/BrandIcons";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
@@ -202,7 +202,7 @@ export default function SettingsPage() {
                                             />
                                         </div>
                                         <div className="relative">
-                                            <Twitter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                            <X className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                             <Input
                                                 value={formData.twitter}
                                                 onChange={(e) => setFormData({ ...formData, twitter: e.target.value })}
@@ -211,7 +211,7 @@ export default function SettingsPage() {
                                             />
                                         </div>
                                         <div className="relative">
-                                            <Github className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                            <GitHubIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                             <Input
                                                 value={formData.github}
                                                 onChange={(e) => setFormData({ ...formData, github: e.target.value })}

@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Github, Linkedin, Globe, ArrowUpRight } from "lucide-react";
+import { Globe, ArrowUpRight } from "lucide-react";
+import { GitHubIcon, LinkedInIcon } from "@/components/icons/BrandIcons";
 import { PageShell } from "@/components/layout/PageShell";
 import { CloverMark } from "@/components/layout/CloverMark";
 
@@ -129,7 +130,7 @@ export default function AboutPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <Github className="mr-1.5 h-3.5 w-3.5" />
+                    <GitHubIcon className="mr-1.5 h-3.5 w-3.5" />
                     GitHub
                     <ArrowUpRight className="ml-1 h-3 w-3 text-muted-foreground" />
                   </Link>
@@ -140,7 +141,7 @@ export default function AboutPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <Linkedin className="mr-1.5 h-3.5 w-3.5" />
+                    <LinkedInIcon className="mr-1.5 h-3.5 w-3.5" />
                     LinkedIn
                     <ArrowUpRight className="ml-1 h-3 w-3 text-muted-foreground" />
                   </Link>

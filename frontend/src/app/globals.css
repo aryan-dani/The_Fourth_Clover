@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
 
 /* ==========================================================================
    THE FOURTH CLOVER — Forest & Parchment
@@ -436,7 +435,13 @@
   }
 
   .meta-label {
-    @apply type-label text-muted-foreground;
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    line-height: 1.4;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
   }
 
   .panel {

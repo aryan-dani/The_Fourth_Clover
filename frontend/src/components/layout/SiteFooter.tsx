@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Github, Linkedin } from "lucide-react";
+import { GitHubIcon, LinkedInIcon } from "@/components/icons/BrandIcons";
 import { CloverMark } from "@/components/layout/CloverMark";
 
 const COLUMNS = [
@@ -70,7 +70,7 @@ export function SiteFooter() {
                 aria-label="GitHub"
                 className="flex h-8 w-8 items-center justify-center border border-[var(--fg-line)] text-muted-foreground transition-colors duration-expo hover:text-foreground"
               >
-                <Github className="h-3.5 w-3.5" />
+                <GitHubIcon className="h-3.5 w-3.5" />
               </a>
               <a
                 href="https://www.linkedin.com/company/csi-mitwpu/"
@@ -79,7 +79,7 @@ export function SiteFooter() {
                 aria-label="LinkedIn"
                 className="flex h-8 w-8 items-center justify-center border border-[var(--fg-line)] text-muted-foreground transition-colors duration-expo hover:text-foreground"
               >
-                <Linkedin className="h-3.5 w-3.5" />
+                <LinkedInIcon className="h-3.5 w-3.5" />
               </a>
             </div>
           </div>

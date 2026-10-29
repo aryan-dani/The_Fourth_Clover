@@ -15,8 +15,7 @@ import {
   MessageCircle,
   Clock,
   Globe,
-  Twitter,
-  Github,
+  X,
   FileText,
   Users,
   UserPlus,
@@ -26,6 +25,7 @@ import { Profile, Post } from "@/types/database";
 import { useAuth } from "@/features/auth/auth-context";
 import { followUser, unfollowUser } from "@/features/data/database-operations";
 import { notifyFollow } from "@/features/notifications/notifications";
+import { GitHubIcon } from "@/components/icons/BrandIcons";
 
 type PostWithCounts = Post & {
   likes: { count: number }[];
@@ -202,7 +202,7 @@ export function ProfilePageClient({
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <Twitter className="w-4 h-4 mr-2" />
+                      <X className="w-4 h-4 mr-2" />
                       Twitter
                     </a>
                   </Button>
@@ -219,7 +219,7 @@ export function ProfilePageClient({
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <Github className="w-4 h-4 mr-2" />
+                      <GitHubIcon className="w-4 h-4 mr-2" />
                       GitHub
                     </a>
                   </Button>
