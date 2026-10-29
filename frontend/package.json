@@ -4,7 +4,7 @@
   "private": true,
   "description": "Editorial publication — Journal writing & CSI Tech Weekly from CSI MIT-WPU",
   "engines": {
-    "node": ">=20.9.0",
+    "node": ">=22",
     "npm": ">=10"
   },
   "homepage": "https://fourthclover.bio",
