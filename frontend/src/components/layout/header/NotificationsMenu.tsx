@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell, Heart, MessageCircle, UserPlus } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
@@ -76,18 +75,16 @@ export function NotificationsMenu({ userId }: { userId?: string }) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
+        <button
           type="button"
-          variant="ghost"
-          size="icon"
-          className="nav-icon relative !h-9 !w-9 border-0 p-0 shadow-none hover:bg-transparent"
+          className="nav-icon relative"
           aria-label="Notifications"
         >
-          <Bell className="h-4 w-4" />
+          <Bell className="h-4 w-4" strokeWidth={1.75} />
           {unread > 0 && (
-            <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-brand" />
+            <span className="absolute right-1.5 top-1.5 z-[2] h-1.5 w-1.5 rounded-full bg-brand" />
           )}
-        </Button>
+        </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between border-b border-hairline px-3 py-2.5">

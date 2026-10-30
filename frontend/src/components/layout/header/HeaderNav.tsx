@@ -77,7 +77,7 @@ export function HeaderNav({
                 : "nav-link",
             )}
           >
-            {link.label}
+            <span>{link.label}</span>
           </Link>
         );
       })}

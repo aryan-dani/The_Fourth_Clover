@@ -545,19 +545,49 @@
     --nav-glass: color-mix(in srgb, var(--ink-surface) 62%, transparent);
   }
 
-  /* Nav pills — same bottom-up fill wipe as editorial buttons */
-  .nav-link {
+  /*
+   * Nav pills — bottom-up fill wipe.
+   * Clip with mask (not overflow:hidden) so rounded edges stay clean
+   * inside the glass dock’s backdrop-filter compositing layer.
+   */
+  .nav-link,
+  .nav-icon,
+  .nav-cta {
     position: relative;
     isolation: isolate;
     display: inline-flex;
     cursor: pointer;
     align-items: center;
     justify-content: center;
+    border-radius: 999px;
+    -webkit-mask-image: -webkit-radial-gradient(#fff, #000);
+    mask-image: radial-gradient(#fff, #000);
+  }
+  .nav-link::before,
+  .nav-icon::before,
+  .nav-cta::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    background: var(--fg);
+    transform: translateY(105%);
+    transition: transform 0.65s var(--ease-out);
+    pointer-events: none;
+    will-change: transform;
+  }
+  .nav-link > *,
+  .nav-icon > *,
+  .nav-cta > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .nav-link {
     min-height: 2.2rem;
     padding: 0.4rem 1rem;
-    overflow: hidden;
     border: 1px solid transparent;
-    border-radius: 999px;
     background: transparent;
     font-size: 0.8rem;
     font-weight: 500;
@@ -567,60 +597,31 @@
       color 0.55s var(--ease-out),
       border-color 0.55s var(--ease-out);
   }
-  .nav-link::before {
-    content: "";
-    position: absolute;
-    inset: -1px;
-    z-index: -1;
-    border-radius: 999px;
-    background: var(--fg);
-    transform: translateY(102%);
-    transition: transform 0.65s var(--ease-out);
-  }
   .nav-link:hover,
   .nav-link:focus-visible {
     color: var(--bg);
     border-color: var(--fg);
   }
   .nav-link:hover::before,
-  .nav-link:focus-visible::before {
+  .nav-link:focus-visible::before,
+  .nav-link[data-active="true"]::before {
     transform: translateY(0);
   }
   .nav-link[data-active="true"] {
     color: var(--bg);
     border-color: var(--fg);
   }
-  .nav-link[data-active="true"]::before {
-    transform: translateY(0);
-  }
 
   .nav-icon {
-    position: relative;
-    isolation: isolate;
-    display: inline-flex;
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
     height: 2.25rem;
     width: 2.25rem;
-    overflow: hidden;
+    flex-shrink: 0;
     border: 1px solid transparent;
-    border-radius: 999px;
     background: transparent;
     color: var(--fg-muted);
     transition:
       color 0.55s var(--ease-out),
       border-color 0.55s var(--ease-out);
-  }
-  .nav-icon::before {
-    content: "";
-    position: absolute;
-    inset: -1px;
-    z-index: -1;
-    border-radius: 999px;
-    background: var(--fg);
-    transform: translateY(102%);
-    transition: transform 0.65s var(--ease-out);
   }
   .nav-icon:hover,
   .nav-icon:focus-visible {
@@ -632,42 +633,30 @@
     transform: translateY(0);
   }
 
+  /* Primary CTA — solid ink pill; wipe to brand on hover / menu open */
   .nav-cta {
-    position: relative;
-    isolation: isolate;
-    display: inline-flex;
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
     gap: 0.4rem;
     min-height: 2.25rem;
     padding: 0.4rem 1rem;
-    overflow: hidden;
     border: 1px solid var(--fg);
-    border-radius: 999px;
-    background: transparent;
+    background: var(--fg);
     font-size: 0.75rem;
     font-weight: 500;
     letter-spacing: 0.02em;
-    color: var(--fg);
+    color: var(--bg);
     transition: color 0.55s var(--ease-out);
   }
   .nav-cta::before {
-    content: "";
-    position: absolute;
-    inset: -1px;
-    z-index: -1;
-    border-radius: 999px;
-    background: var(--fg);
-    transform: translateY(102%);
-    transition: transform 0.65s var(--ease-out);
+    background: var(--brand-color);
   }
   .nav-cta:hover,
-  .nav-cta:focus-visible {
-    color: var(--bg);
+  .nav-cta:focus-visible,
+  .nav-cta[data-state="open"] {
+    color: var(--paper);
   }
   .nav-cta:hover::before,
-  .nav-cta:focus-visible::before {
+  .nav-cta:focus-visible::before,
+  .nav-cta[data-state="open"]::before {
     transform: translateY(0);
   }
 

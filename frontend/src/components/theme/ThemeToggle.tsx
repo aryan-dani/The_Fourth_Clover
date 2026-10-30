@@ -3,23 +3,13 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { Moon, Sun } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import {
-  NAV_ICON_BOX,
-  NAV_ICON_CLASS,
-  NAV_STROKE,
-} from "@/components/layout/nav-metrics";
-
-const iconBtn = cn(
-  NAV_ICON_BOX,
-  "nav-icon !h-9 !w-9 shrink-0 border-0 bg-transparent p-0 shadow-none hover:bg-transparent",
-);
+import { NAV_ICON_CLASS, NAV_STROKE } from "@/components/layout/nav-metrics";
 
 export function ThemeToggle({ className }: { className?: string }) {
   const { setTheme, resolvedTheme } = useTheme();
@@ -31,15 +21,14 @@ export function ThemeToggle({ className }: { className?: string }) {
 
   if (!mounted) {
     return (
-      <Button
-        variant="ghost"
-        size="icon"
-        className={cn(iconBtn, className)}
+      <button
+        type="button"
+        className={cn("nav-icon", className)}
         disabled
         aria-hidden
       >
         <Sun className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
-      </Button>
+      </button>
     );
   }
 
@@ -48,11 +37,9 @@ export function ThemeToggle({ className }: { className?: string }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button
+        <button
           type="button"
-          variant="ghost"
-          size="icon"
-          className={cn(iconBtn, className)}
+          className={cn("nav-icon", className)}
           onClick={() => setTheme(isDark ? "light" : "dark")}
           aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
         >
@@ -61,7 +48,7 @@ export function ThemeToggle({ className }: { className?: string }) {
           ) : (
             <Moon className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
           )}
-        </Button>
+        </button>
       </TooltipTrigger>
       <TooltipContent side="bottom" sideOffset={8}>
         <p className="text-xs font-medium">
