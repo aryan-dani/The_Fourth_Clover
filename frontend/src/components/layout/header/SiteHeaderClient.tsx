@@ -88,7 +88,7 @@ export function SiteHeaderClient({
           data-reveal="header"
           data-raised={raised ? "true" : "false"}
           className={cn(
-            "nav-dock pointer-events-auto mx-auto flex h-14 max-w-content items-center gap-2 px-2 sm:h-[3.75rem] sm:gap-3 sm:px-3",
+            "nav-dock pointer-events-auto mx-auto flex h-14 max-w-content items-center gap-3 px-3 sm:h-16 sm:gap-5 sm:px-4",
             tucked
               ? "-translate-y-[140%] opacity-0"
               : "translate-y-0 opacity-100",
@@ -97,7 +97,7 @@ export function SiteHeaderClient({
           <Link
             href="/"
             aria-label="The Fourth Clover, home"
-            className="group flex items-center gap-2.5"
+            className="group flex shrink-0 items-center gap-2.5"
             onClick={() => setMenuOpen(false)}
           >
             <CloverMark size="md" className="text-[var(--brand-color)] group-hover:opacity-90" />
@@ -112,10 +112,10 @@ export function SiteHeaderClient({
           <HeaderNav
             signedIn={signedIn}
             variant="bar"
-            className="hidden flex-1 justify-center md:flex"
+            className="hidden flex-1 justify-center md:inline-flex"
           />
 
-          <div className="hidden items-center gap-1 md:flex">
+          <div className="ml-auto hidden shrink-0 items-center md:flex">
             <HeaderActions
               signedIn={signedIn}
               profile={profile}
@@ -130,7 +130,7 @@ export function SiteHeaderClient({
             aria-expanded={menuOpen}
             aria-controls="mobile-menu"
             onClick={() => setMenuOpen((v) => !v)}
-            className="type-label -mr-1 px-1 py-2 md:hidden"
+            className="type-label ml-auto rounded-full px-3 py-2 md:hidden"
           >
             {menuOpen ? "Close" : "Menu"}
           </button>

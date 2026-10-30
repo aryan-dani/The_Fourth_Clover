@@ -333,6 +333,7 @@
     position: relative;
     isolation: isolate;
     display: inline-flex;
+    cursor: pointer;
     align-items: center;
     gap: 0.9rem;
     padding: 0.95rem 1.5rem 0.95rem 1.75rem;
@@ -383,6 +384,7 @@
     position: relative;
     isolation: isolate;
     display: inline-flex;
+    cursor: pointer;
     align-items: center;
     justify-content: center;
     gap: 0.4rem;
@@ -498,22 +500,187 @@
   }
 
   .nav-dock {
-    border-radius: var(--radius);
-    border: 1px solid var(--fg-line);
-    background: color-mix(in srgb, var(--bg) 78%, transparent);
-    backdrop-filter: blur(18px) saturate(1.35);
+    --nav-glass: color-mix(in srgb, var(--paper) 28%, transparent);
+    --nav-glass-edge: color-mix(in srgb, white 62%, transparent);
+    --nav-glass-border: color-mix(in srgb, var(--ink) 14%, transparent);
+    --nav-glass-shadow: color-mix(in srgb, var(--ink) 12%, transparent);
+    border-radius: calc(var(--radius) + 0.35rem);
+    border: 1px solid var(--nav-glass-border);
+    background:
+      linear-gradient(
+        165deg,
+        color-mix(in srgb, white 48%, transparent) 0%,
+        transparent 48%
+      ),
+      var(--nav-glass);
+    -webkit-backdrop-filter: blur(32px) saturate(1.65) brightness(1.08);
+    backdrop-filter: blur(32px) saturate(1.65) brightness(1.08);
     box-shadow:
-      0 1px 0 color-mix(in srgb, white 35%, transparent) inset,
-      0 14px 40px color-mix(in srgb, var(--ink) 10%, transparent);
+      0 1px 0 var(--nav-glass-edge) inset,
+      0 -1px 0 color-mix(in srgb, var(--ink) 6%, transparent) inset,
+      0 10px 30px var(--nav-glass-shadow),
+      0 2px 8px color-mix(in srgb, var(--ink) 6%, transparent);
     transition:
       transform 0.7s var(--ease-out),
       opacity 0.45s var(--ease-out),
-      box-shadow 0.5s var(--ease-out);
+      box-shadow 0.5s var(--ease-out),
+      background 0.5s var(--ease-out),
+      border-color 0.5s var(--ease-out);
+  }
+  .dark .nav-dock {
+    --nav-glass: color-mix(in srgb, var(--ink-surface) 34%, transparent);
+    --nav-glass-edge: color-mix(in srgb, white 16%, transparent);
+    --nav-glass-border: color-mix(in srgb, white 16%, transparent);
+    --nav-glass-shadow: color-mix(in srgb, black 45%, transparent);
   }
   .nav-dock[data-raised="true"] {
+    --nav-glass: color-mix(in srgb, var(--paper) 40%, transparent);
     box-shadow:
-      0 1px 0 color-mix(in srgb, white 28%, transparent) inset,
-      0 22px 50px color-mix(in srgb, var(--ink) 18%, transparent);
+      0 1px 0 var(--nav-glass-edge) inset,
+      0 -1px 0 color-mix(in srgb, var(--ink) 8%, transparent) inset,
+      0 18px 48px color-mix(in srgb, var(--ink) 16%, transparent),
+      0 4px 14px color-mix(in srgb, var(--ink) 8%, transparent);
+  }
+  .dark .nav-dock[data-raised="true"] {
+    --nav-glass: color-mix(in srgb, var(--ink-surface) 62%, transparent);
+  }
+
+  /* Nav pills — same bottom-up fill wipe as editorial buttons */
+  .nav-link {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.2rem;
+    padding: 0.4rem 1rem;
+    overflow: hidden;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--fg-muted);
+    transition:
+      color 0.55s var(--ease-out),
+      border-color 0.55s var(--ease-out);
+  }
+  .nav-link::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: 999px;
+    background: var(--fg);
+    transform: translateY(102%);
+    transition: transform 0.65s var(--ease-out);
+  }
+  .nav-link:hover,
+  .nav-link:focus-visible {
+    color: var(--bg);
+    border-color: var(--fg);
+  }
+  .nav-link:hover::before,
+  .nav-link:focus-visible::before {
+    transform: translateY(0);
+  }
+  .nav-link[data-active="true"] {
+    color: var(--bg);
+    border-color: var(--fg);
+  }
+  .nav-link[data-active="true"]::before {
+    transform: translateY(0);
+  }
+
+  .nav-icon {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    height: 2.25rem;
+    width: 2.25rem;
+    overflow: hidden;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--fg-muted);
+    transition:
+      color 0.55s var(--ease-out),
+      border-color 0.55s var(--ease-out);
+  }
+  .nav-icon::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: 999px;
+    background: var(--fg);
+    transform: translateY(102%);
+    transition: transform 0.65s var(--ease-out);
+  }
+  .nav-icon:hover,
+  .nav-icon:focus-visible {
+    color: var(--bg);
+    border-color: var(--fg);
+  }
+  .nav-icon:hover::before,
+  .nav-icon:focus-visible::before {
+    transform: translateY(0);
+  }
+
+  .nav-cta {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 2.25rem;
+    padding: 0.4rem 1rem;
+    overflow: hidden;
+    border: 1px solid var(--fg);
+    border-radius: 999px;
+    background: transparent;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--fg);
+    transition: color 0.55s var(--ease-out);
+  }
+  .nav-cta::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: 999px;
+    background: var(--fg);
+    transform: translateY(102%);
+    transition: transform 0.65s var(--ease-out);
+  }
+  .nav-cta:hover,
+  .nav-cta:focus-visible {
+    color: var(--bg);
+  }
+  .nav-cta:hover::before,
+  .nav-cta:focus-visible::before {
+    transform: translateY(0);
+  }
+
+  .nav-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .nav-actions-divider {
+    width: 1px;
+    height: 1.2rem;
+    margin: 0 0.15rem;
+    background: color-mix(in srgb, var(--fg) 16%, transparent);
   }
 
   .skip-link {
@@ -649,6 +816,13 @@ html[data-intro="revealing"] {
 .hljs-attr,
 .hljs-attribute,
 .hljs-property { color: hsl(var(--hljs-attr)); }
+
+/* Tailwind v4 preflight no longer sets pointer on buttons — restore it. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+summary {
+  cursor: pointer;
+}
 
 button:focus-visible,
 input:focus-visible,

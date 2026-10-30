@@ -160,113 +160,136 @@ export function JournalPageClient({
         </div>
       </header>
 
-      <div className="space-y-4 border-b border-[var(--fg-line)] pb-6">
-        <div className="panel space-y-4 p-4 sm:p-5" role="toolbar" aria-label="Journal filters">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-2">
-              <span className="type-label text-muted-foreground">Sort</span>
-              <div className="flex flex-wrap items-center gap-2">
-                <FilterChip active={sort === "latest"} href={hrefFor({ sort: "latest" })}>
-                  Latest
-                </FilterChip>
-                <FilterChip
-                  active={sort === "popular"}
-                  href={hrefFor({ sort: "popular" })}
-                >
-                  Popular
-                </FilterChip>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <span className="type-label text-muted-foreground">Format</span>
-              <div className="flex flex-wrap items-center gap-2">
-                {(
-                  [
-                    { id: "all", label: "All" },
-                    { id: "prose", label: "Prose" },
-                    { id: "poetry", label: "Poetry" },
-                  ] as const
-                ).map((item) => (
-                  <FilterChip
-                    key={item.id}
-                    active={format === item.id}
-                    href={hrefFor({ format: item.id })}
-                  >
-                    {item.label}
-                  </FilterChip>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <span className="type-label text-muted-foreground">Layout</span>
-              <div
-                className="inline-flex items-center gap-1"
-                role="group"
-                aria-label="Journal layout"
+      <div className="space-y-5 border-b border-[var(--fg-line)] pb-6">
+        <div
+          className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between"
+          role="toolbar"
+          aria-label="Journal filters"
+        >
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
+            <div
+              className="inline-flex items-center gap-1.5"
+              role="group"
+              aria-label="Sort"
+            >
+              <FilterChip active={sort === "latest"} href={hrefFor({ sort: "latest" })}>
+                Latest
+              </FilterChip>
+              <FilterChip
+                active={sort === "popular"}
+                href={hrefFor({ sort: "popular" })}
               >
-                <button
-                  type="button"
-                  data-active={view === "cards" ? "true" : "false"}
-                  className="btn-chip !px-3 !py-2"
-                  aria-pressed={view === "cards"}
-                  onClick={() => setView("cards")}
+                Popular
+              </FilterChip>
+            </div>
+
+            <span
+              className="hidden h-5 w-px bg-[var(--fg-line)] sm:block"
+              aria-hidden
+            />
+
+            <div
+              className="inline-flex items-center gap-1.5"
+              role="group"
+              aria-label="Format"
+            >
+              {(
+                [
+                  { id: "all", label: "All" },
+                  { id: "prose", label: "Prose" },
+                  { id: "poetry", label: "Poetry" },
+                ] as const
+              ).map((item) => (
+                <FilterChip
+                  key={item.id}
+                  active={format === item.id}
+                  href={hrefFor({ format: item.id })}
                 >
-                  <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
-                  <span className="sr-only sm:not-sr-only">Cards</span>
-                </button>
-                <button
-                  type="button"
-                  data-active={view === "list" ? "true" : "false"}
-                  className="btn-chip !px-3 !py-2"
-                  aria-pressed={view === "list"}
-                  onClick={() => setView("list")}
-                >
-                  <List className="h-3.5 w-3.5" aria-hidden />
-                  <span className="sr-only sm:not-sr-only">List</span>
-                </button>
-              </div>
+                  {item.label}
+                </FilterChip>
+              ))}
             </div>
           </div>
 
-          {featuredTags.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 border-t border-[var(--fg-line)] pt-4">
-              <span className="type-label mr-1 text-muted-foreground">Topics</span>
-              {featuredTags.map((tag) => (
-                <Link
-                  key={tag}
-                  href={hrefFor({
-                    tag: selectedTag === tag ? "" : tag,
-                  })}
-                  data-active={selectedTag === tag ? "true" : "false"}
-                  className="btn-chip !normal-case !tracking-normal !text-[0.78rem]"
-                >
-                  {toTitleCase(tag)}
-                </Link>
-              ))}
-              <Link href="/tags" className="type-label link-u ml-1 text-muted-foreground">
-                All topics →
-              </Link>
-            </div>
-          )}
+          <div
+            className="inline-flex items-center gap-1 self-start sm:self-auto"
+            role="group"
+            aria-label="Journal layout"
+          >
+            <button
+              type="button"
+              data-active={view === "cards" ? "true" : "false"}
+              className="btn-chip !px-2.5 !py-2"
+              aria-pressed={view === "cards"}
+              aria-label="Cards layout"
+              onClick={() => setView("cards")}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
+            </button>
+            <button
+              type="button"
+              data-active={view === "list" ? "true" : "false"}
+              className="btn-chip !px-2.5 !py-2"
+              aria-pressed={view === "list"}
+              aria-label="List layout"
+              onClick={() => setView("list")}
+            >
+              <List className="h-3.5 w-3.5" aria-hidden />
+            </button>
+          </div>
         </div>
 
+        {featuredTags.length > 0 && (
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+            <span className="type-label shrink-0 text-muted-foreground">
+              Topics
+            </span>
+            <nav
+              aria-label="Featured topics"
+              className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-4 gap-y-2"
+            >
+              {featuredTags.map((tag) => {
+                const active = selectedTag === tag;
+                return (
+                  <Link
+                    key={tag}
+                    href={hrefFor({ tag: active ? "" : tag })}
+                    aria-current={active ? "page" : undefined}
+                    className={
+                      active
+                        ? "type-body text-sm text-foreground underline decoration-[var(--brand-color)] underline-offset-[0.35em]"
+                        : "type-body text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    }
+                  >
+                    {toTitleCase(tag)}
+                  </Link>
+                );
+              })}
+              <Link
+                href="/tags"
+                className="type-label shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                All topics →
+              </Link>
+            </nav>
+          </div>
+        )}
+
         {hasActiveFilters && (
-          <div className="flex flex-wrap items-center gap-2 pt-1">
-            <span className="text-xs text-muted-foreground">Showing</span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="type-label text-muted-foreground">Showing</span>
             {format !== "all" && (
-              <span className="rounded-full border border-[var(--fg-line)] px-2.5 py-0.5 text-xs text-foreground">
+              <span className="type-body text-sm text-foreground">
                 {format === "poetry" ? "Poetry" : "Prose"}
               </span>
             )}
             {selectedTag && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-[var(--fg-line)] px-2.5 py-0.5 text-xs text-foreground">
+              <span className="inline-flex items-center gap-1.5 type-body text-sm text-foreground">
                 {toTitleCase(selectedTag)}
                 <Link
                   href={hrefFor({ tag: "" })}
                   aria-label={`Clear topic ${selectedTag}`}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground transition-colors hover:text-foreground"
                 >
                   <X className="h-3 w-3" />
                 </Link>
@@ -274,7 +297,7 @@ export function JournalPageClient({
             )}
             <Link
               href="/journal"
-              className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              className="type-label text-muted-foreground transition-colors hover:text-foreground"
             >
               Clear
             </Link>

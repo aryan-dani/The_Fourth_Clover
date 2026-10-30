@@ -44,7 +44,9 @@ export function HeaderNav({
   return (
     <nav
       className={cn(
-        isStack ? "flex flex-col items-stretch gap-0.5" : "items-center gap-8",
+        isStack
+          ? "flex flex-col items-stretch gap-0.5"
+          : "inline-flex items-center gap-1",
         className,
       )}
       aria-label="Primary"
@@ -65,20 +67,14 @@ export function HeaderNav({
             href={link.href}
             data-active={active ? "true" : "false"}
             className={cn(
-              "transition-colors duration-expo",
               isStack
                 ? cn(
-                    "rounded-sm px-3 py-2.5 text-sm",
+                    "rounded-sm px-3 py-2.5 text-sm transition-colors duration-expo",
                     active
                       ? "bg-surface font-medium text-foreground"
                       : "text-muted-foreground hover:bg-surface/70 hover:text-foreground",
                   )
-                : cn(
-                    "rounded-[var(--radius)] px-3 py-1.5 text-[13px] tracking-tight transition-colors duration-expo",
-                    active
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:bg-[var(--fg-faint)] hover:text-foreground",
-                  ),
+                : "nav-link",
             )}
           >
             {link.label}

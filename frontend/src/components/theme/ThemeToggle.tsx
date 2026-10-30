@@ -18,8 +18,7 @@ import {
 
 const iconBtn = cn(
   NAV_ICON_BOX,
-  "!h-10 !w-10 shrink-0 border-0 bg-transparent p-0 shadow-none",
-  "text-foreground/85 hover:text-foreground hover:bg-muted/90 active:bg-muted"
+  "nav-icon !h-9 !w-9 shrink-0 border-0 bg-transparent p-0 shadow-none hover:bg-transparent",
 );
 
 export function ThemeToggle({ className }: { className?: string }) {

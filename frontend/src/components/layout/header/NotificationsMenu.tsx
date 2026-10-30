@@ -80,7 +80,7 @@ export function NotificationsMenu({ userId }: { userId?: string }) {
           type="button"
           variant="ghost"
           size="icon"
-          className="relative h-8 w-8 rounded-full text-muted-foreground hover:bg-surface hover:text-foreground"
+          className="nav-icon relative !h-9 !w-9 border-0 p-0 shadow-none hover:bg-transparent"
           aria-label="Notifications"
         >
           <Bell className="h-4 w-4" />
