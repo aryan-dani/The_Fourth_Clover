@@ -25,6 +25,14 @@ const display = Noto_Serif_Display({
   display: "swap",
 });
 
+const displayItalic = Noto_Serif_Display({
+  variable: "--font-display-italic",
+  subsets: ["latin"],
+  style: "italic",
+  axes: ["wdth"],
+  display: "swap",
+});
+
 const script = Monsieur_La_Doulaise({
   variable: "--font-script",
   subsets: ["latin"],
@@ -79,7 +87,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${display.variable} ${script.variable} ${sans.variable} ${mono.variable}`}
+      className={`${display.variable} ${displayItalic.variable} ${script.variable} ${sans.variable} ${mono.variable}`}
       suppressHydrationWarning
     >
       <body className="font-sans" suppressHydrationWarning>

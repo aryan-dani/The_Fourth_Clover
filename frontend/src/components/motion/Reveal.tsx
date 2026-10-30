@@ -258,7 +258,7 @@ export function DrawLine({
   );
 }
 
-/** Quiet page-enter for tool surfaces (write, admin, dashboard). */
+/** Soft page enter — remount with a key on route change for navigation fades. */
 export function PageEnter({
   children,
   className,
@@ -276,11 +276,11 @@ export function PageEnter({
     }
     const tween = gsap.fromTo(
       el,
-      { opacity: 0, y: 10 },
+      { opacity: 0, y: 14 },
       {
         opacity: 1,
         y: 0,
-        duration: 0.55,
+        duration: 0.7,
         ease: "expo.out",
         onComplete: () => {
           gsap.set(el, { clearProps: "transform,opacity" });

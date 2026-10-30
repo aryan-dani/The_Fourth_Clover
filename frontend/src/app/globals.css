@@ -164,6 +164,8 @@
     text-rendering: optimizeLegibility;
     font-synthesis: none;
     scroll-padding-top: 6rem;
+    /* Keep layout stable when Radix menus/dialogs lock body scroll */
+    scrollbar-gutter: stable;
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--fg) 32%, transparent) transparent;
   }
@@ -233,12 +235,33 @@
     letter-spacing: -0.012em;
   }
 
+  /* Same condensed display family — italic cut for accent words in headlines */
+  .type-display-italic {
+    font-family: var(--font-display-italic), var(--font-display), Georgia, serif;
+    font-style: italic;
+    font-stretch: 62.5%;
+    font-weight: 500;
+    font-kerning: normal;
+    text-transform: none;
+    letter-spacing: -0.01em;
+    line-height: 0.95;
+  }
+
   .type-script {
     font-family: var(--font-script), cursive;
     font-weight: 400;
     text-transform: none;
     letter-spacing: 0;
     line-height: 1;
+  }
+
+  /* Display serif for names — no uppercase / condensed stretch */
+  .type-person {
+    font-family: var(--font-display), Georgia, serif;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    text-transform: none;
+    line-height: 1.15;
   }
 
   .type-label {
@@ -422,11 +445,17 @@
   .btn-chip:focus-visible::before {
     transform: translateY(0);
   }
-  .btn-chip[data-active="true"] {
+  .btn-chip[data-active="true"],
+  .btn-chip[data-state="active"] {
     color: var(--bg);
     border-color: var(--fg);
   }
-  .btn-chip[data-active="true"]::before {
+  .btn-chip:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+  .btn-chip[data-active="true"]::before,
+  .btn-chip[data-state="active"]::before {
     transform: translateY(0);
   }
 
@@ -520,12 +549,20 @@
       0 -1px 0 color-mix(in srgb, var(--ink) 6%, transparent) inset,
       0 10px 30px var(--nav-glass-shadow),
       0 2px 8px color-mix(in srgb, var(--ink) 6%, transparent);
+    /* Include `translate` — Tailwind v4 utilities set that, not `transform`. */
     transition:
-      transform 0.7s var(--ease-out),
-      opacity 0.45s var(--ease-out),
+      translate 0.75s var(--ease-out),
+      transform 0.75s var(--ease-out),
+      opacity 0.55s var(--ease-out),
       box-shadow 0.5s var(--ease-out),
       background 0.5s var(--ease-out),
       border-color 0.5s var(--ease-out);
+    translate: 0 0;
+    opacity: 1;
+  }
+  .nav-dock[data-tucked="true"] {
+    translate: 0 -140%;
+    opacity: 0;
   }
   .dark .nav-dock {
     --nav-glass: color-mix(in srgb, var(--ink-surface) 34%, transparent);
@@ -543,6 +580,34 @@
   }
   .dark .nav-dock[data-raised="true"] {
     --nav-glass: color-mix(in srgb, var(--ink-surface) 62%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav-dock {
+      transition: none;
+    }
+  }
+
+  /* Soft leave before the next route paints */
+  .page-transition-shell {
+    transition:
+      opacity 0.28s var(--ease-out),
+      translate 0.28s var(--ease-out);
+  }
+  html[data-nav="leaving"] .page-transition-shell {
+    opacity: 0.28;
+    translate: 0 10px;
+    pointer-events: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .page-transition-shell {
+      transition: none;
+    }
+    html[data-nav="leaving"] .page-transition-shell {
+      opacity: 1;
+      translate: none;
+      pointer-events: auto;
+    }
   }
 
   /*
@@ -778,6 +843,7 @@ html[data-intro="revealing"] {
 }
 
 .prose-editorial {
+  width: 100%;
   font-family: var(--font-sans);
   font-size: clamp(1.05rem, 1rem + 0.25vw, 1.2rem);
   line-height: 1.75;

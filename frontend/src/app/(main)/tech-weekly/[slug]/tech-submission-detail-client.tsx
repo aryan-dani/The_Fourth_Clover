@@ -361,7 +361,7 @@ export function TechSubmissionDetailClient({
     "CSI Member";
 
   return (
-    <div className="mx-auto max-w-content space-y-8 px-4 py-10 sm:px-6">
+    <div className="mx-auto w-full max-w-article space-y-8 px-4 py-10 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline pb-4">
         <Link
           href="/tech-weekly"

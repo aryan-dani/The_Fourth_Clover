@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/features/auth/auth-context";
 import {
@@ -20,11 +19,15 @@ export function WriterHubShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const active: HubSection =
-    pathname === "/profile" ? "profile" : "posts";
+    pathname === "/profile" ||
+    pathname === "/settings" ||
+    pathname.startsWith("/settings/")
+      ? "profile"
+      : "posts";
 
   const publicHref = profile?.username
     ? `/profile/${encodeURIComponent(profile.username)}`
-    : "/profile";
+    : "/settings";
 
   const displayName =
     profile?.full_name?.trim() ||
@@ -42,28 +45,28 @@ export function WriterHubShell({ children }: { children: React.ReactNode }) {
 
   const navClass = (section: HubSection) =>
     cn(
-      "w-full justify-start rounded-sm gap-2 font-medium",
+      "flex h-10 w-full items-center gap-2 border border-transparent px-3 text-sm font-medium transition-colors",
       active === section
-        ? "bg-surface text-foreground ring-1 ring-[var(--fg-line)]"
-        : "text-muted-foreground hover:text-foreground hover:bg-surface/70",
+        ? "border-[var(--fg-line)] bg-transparent text-foreground"
+        : "text-muted-foreground hover:border-[var(--fg-line)] hover:text-foreground",
     );
 
   return (
-    <div className="wrap pt-6 pb-12" data-lenis-prevent>
-      <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-        <aside className="w-full shrink-0 lg:sticky lg:top-28 lg:w-72 xl:w-80">
-          <div className="space-y-6 border border-[var(--fg-line)] bg-[var(--bg)] p-6">
+    <div className="wrap pb-12 pt-6" data-lenis-prevent>
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
+        <aside className="w-full shrink-0 lg:sticky lg:top-28 lg:w-64 xl:w-72">
+          <div className="space-y-5 border border-[var(--fg-line)] p-5">
             <div className="flex flex-col items-center gap-3 text-center">
-              <Avatar className="h-20 w-20 ring-1 ring-[var(--fg-line)]">
+              <Avatar className="h-16 w-16 ring-1 ring-[var(--fg-line)]">
                 <AvatarImage
                   src={profile?.avatar_url || user?.user_metadata?.avatar_url}
                 />
-                <AvatarFallback className="bg-surface text-2xl font-medium">
+                <AvatarFallback className="bg-surface text-xl font-medium">
                   {displayName[0] || "?"}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="type-display text-lg leading-tight">
+                <p className="type-person text-lg text-foreground">
                   {displayName}
                 </p>
                 <p className="mt-0.5 text-sm text-muted-foreground">{handle}</p>
@@ -73,34 +76,36 @@ export function WriterHubShell({ children }: { children: React.ReactNode }) {
               </p>
             </div>
 
-            <nav className="flex flex-col gap-1.5">
-              <Button variant="ghost" className={cn(navClass("posts"), "h-10")} asChild>
-                <Link href="/dashboard">
-                  <LayoutDashboard className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
-                  My Posts
-                </Link>
-              </Button>
-              <Button variant="ghost" className={cn(navClass("profile"), "h-10")} asChild>
-                <Link href="/profile">
-                  <UserRound className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
-                  Profile &amp; Links
-                </Link>
-              </Button>
-              <Button
-                variant="ghost"
-                className="h-10 w-full justify-start gap-2 rounded-sm font-medium text-muted-foreground hover:bg-surface/70 hover:text-foreground"
-                asChild
+            <nav className="flex flex-col gap-1" aria-label="Studio">
+              <Link href="/dashboard" className={navClass("posts")}>
+                <LayoutDashboard
+                  className={NAV_ICON_CLASS}
+                  strokeWidth={NAV_STROKE}
+                />
+                My Posts
+              </Link>
+              <Link href="/settings" className={navClass("profile")}>
+                <UserRound
+                  className={NAV_ICON_CLASS}
+                  strokeWidth={NAV_STROKE}
+                />
+                Profile &amp; Links
+              </Link>
+              <Link
+                href={publicHref}
+                className="flex h-10 w-full items-center gap-2 border border-transparent px-3 text-sm font-medium text-muted-foreground transition-colors hover:border-[var(--fg-line)] hover:text-foreground"
               >
-                <Link href={publicHref}>
-                  <ExternalLink className={NAV_ICON_CLASS} strokeWidth={NAV_STROKE} />
-                  Public Profile
-                </Link>
-              </Button>
+                <ExternalLink
+                  className={NAV_ICON_CLASS}
+                  strokeWidth={NAV_STROKE}
+                />
+                Public Profile
+              </Link>
             </nav>
           </div>
         </aside>
 
-        <div className="min-w-0 flex-1 space-y-6">{children}</div>
+        <div className="min-w-0 flex-1 space-y-8">{children}</div>
       </div>
     </div>
   );

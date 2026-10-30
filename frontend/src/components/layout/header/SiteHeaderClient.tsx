@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { gsap } from "@/lib/gsap";
 import { whenIntroRevealing } from "@/lib/intro";
 import { prefersReducedMotionNow, useMotionEffect } from "@/lib/hooks";
@@ -12,6 +13,9 @@ import { HeaderActions } from "@/components/layout/header/HeaderActions";
 import { MobileMenu } from "@/components/layout/header/MobileMenu";
 import type { UserCapabilities } from "@/lib/roles";
 import { cn } from "@/lib/utils";
+
+const IDLE_HIDE_MS = 2000;
+const TOP_SHOW_Y = 48;
 
 type ProfileSummary = {
   id: string;
@@ -33,19 +37,66 @@ export function SiteHeaderClient({
   profile: ProfileSummary;
   capabilities: UserCapabilities;
 }) {
+  const pathname = usePathname();
   const { subscribe } = useSmoothScroll();
   const [menuOpen, setMenuOpen] = useState(false);
   const [raised, setRaised] = useState(false);
   const [hidden, setHidden] = useState(false);
   const innerRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const idleTimerRef = useRef<number | null>(null);
+  const scrollYRef = useRef(0);
 
   useEffect(() => {
-    return subscribe(({ y, direction }) => {
+    const clearIdle = () => {
+      if (idleTimerRef.current != null) {
+        window.clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = null;
+      }
+    };
+
+    const armIdleHide = () => {
+      clearIdle();
+      if (scrollYRef.current <= TOP_SHOW_Y) return;
+      idleTimerRef.current = window.setTimeout(() => {
+        setHidden(true);
+      }, IDLE_HIDE_MS);
+    };
+
+    const unsub = subscribe(({ y }) => {
+      scrollYRef.current = y;
       setRaised(y > 16);
-      setHidden(y > 140 && direction === 1);
+      // Any scroll activity brings the dock back; hide only after stillness.
+      setHidden(false);
+      armIdleHide();
     });
+
+    return () => {
+      clearIdle();
+      unsub();
+    };
   }, [subscribe]);
+
+  // Fresh route: show dock and re-arm idle if already mid-page.
+  useEffect(() => {
+    setHidden(false);
+    setMenuOpen(false);
+    if (idleTimerRef.current != null) {
+      window.clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = null;
+    }
+    if (scrollYRef.current > TOP_SHOW_Y) {
+      idleTimerRef.current = window.setTimeout(() => {
+        setHidden(true);
+      }, IDLE_HIDE_MS);
+    }
+    return () => {
+      if (idleTimerRef.current != null) {
+        window.clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = null;
+      }
+    };
+  }, [pathname]);
 
   useMotionEffect(() => {
     const el = innerRef.current;
@@ -87,11 +138,10 @@ export function SiteHeaderClient({
           ref={innerRef}
           data-reveal="header"
           data-raised={raised ? "true" : "false"}
+          data-tucked={tucked ? "true" : "false"}
           className={cn(
             "nav-dock pointer-events-auto mx-auto flex h-14 max-w-content items-center gap-3 px-3 sm:h-16 sm:gap-5 sm:px-4",
-            tucked
-              ? "-translate-y-[140%] opacity-0"
-              : "translate-y-0 opacity-100",
+            tucked && "pointer-events-none",
           )}
         >
           <Link
@@ -100,7 +150,10 @@ export function SiteHeaderClient({
             className="group flex shrink-0 items-center gap-2.5"
             onClick={() => setMenuOpen(false)}
           >
-            <CloverMark size="md" className="text-[var(--brand-color)] group-hover:opacity-90" />
+            <CloverMark
+              size="md"
+              className="text-[var(--brand-color)] group-hover:opacity-90"
+            />
             <span className="type-display hidden text-[0.95rem] tracking-tight sm:inline">
               The Fourth{" "}
               <span className="type-script text-[1.35em] normal-case tracking-normal text-[var(--brand-color)]">

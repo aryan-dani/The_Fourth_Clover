@@ -49,7 +49,7 @@ export function ReadingProgress({
   return (
     <div
       className={cn(
-        "pointer-events-none fixed inset-x-0 top-16 z-40 h-0.5 bg-transparent",
+        "pointer-events-none fixed inset-x-0 top-0 z-[60] h-0.5 bg-transparent",
         className,
       )}
       role="progressbar"

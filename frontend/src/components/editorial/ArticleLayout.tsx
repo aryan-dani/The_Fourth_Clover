@@ -13,8 +13,6 @@ export type ArticleHeading = {
 export type ArticleLayoutProps = {
   sectionLabel: string;
   sectionHref?: string;
-  /** Short script flourish only — never a full title (legibility). */
-  scriptKicker?: string;
   title: string;
   dek?: string | null;
   author?: BylineAuthor | null;
@@ -32,19 +30,9 @@ export type ArticleLayoutProps = {
   showProgress?: boolean;
 };
 
-function defaultKicker(sectionLabel: string): string {
-  const s = sectionLabel.toLowerCase();
-  if (s.includes("tech") || s.includes("csi") || s.includes("week")) {
-    return "Dispatch";
-  }
-  if (s.includes("poet")) return "Verse";
-  return "Essay";
-}
-
 export function ArticleLayout({
   sectionLabel,
   sectionHref,
-  scriptKicker,
   title,
   dek,
   author,
@@ -62,35 +50,23 @@ export function ArticleLayout({
   showProgress = true,
 }: ArticleLayoutProps) {
   const hasToc = Boolean(headings && headings.length > 0);
-  const kicker = (scriptKicker || defaultKicker(sectionLabel)).trim().slice(0, 24);
 
   return (
     <>
       {showProgress && <ReadingProgress targetSelector="#article-body" />}
 
-      <article className={cn("mx-auto w-full max-w-reading", className)}>
+      <article className={cn("mx-auto w-full max-w-article", className)}>
         <header className="space-y-5 border-b border-hairline pb-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <SectionLabel href={sectionHref}>{sectionLabel}</SectionLabel>
             {actions}
           </div>
 
-          <p
-            className="type-script text-[clamp(2.4rem,6vw,3.25rem)] leading-none text-[var(--brand-color)]"
-            aria-hidden="true"
-          >
-            {kicker}
-          </p>
-
-          <h1 className="type-display text-[clamp(2rem,5vw,3.25rem)] text-foreground">
+          <h1 className="type-display text-[clamp(2.5rem,6vw,4.25rem)] text-foreground">
             {title}
           </h1>
 
-          {dek && (
-            <p className="type-body text-lg md:text-xl">
-              {dek}
-            </p>
-          )}
+          {dek && <p className="type-body text-lg md:text-xl">{dek}</p>}
 
           {author && (
             <Byline
@@ -109,7 +85,7 @@ export function ArticleLayout({
                 alt={coverAlt || title}
                 fill
                 priority
-                sizes="(max-width: 768px) 100vw, 42rem"
+                sizes="(max-width: 768px) 100vw, 56rem"
                 className="object-cover"
               />
             </div>

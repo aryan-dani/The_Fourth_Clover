@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/features/auth/auth-context";
@@ -11,19 +10,11 @@ import { RelativeTime } from "@/components/time/RelativeTime";
 import { WriterHubShell } from "@/components/layout/WriterHubShell";
 import { toast } from "sonner";
 import {
-  PenTool,
-  Eye,
-  Heart,
-  MessageCircle,
   Edit3,
   Trash2,
   Calendar,
   Clock,
-  FileText,
   MoreHorizontal,
-  Send,
-  ShieldCheck,
-  Terminal,
 } from "lucide-react";
 import Link from "next/link";
 import { Post, PublicationRole } from "@/types/database";
@@ -44,30 +35,24 @@ import type {
   DashboardPostRow,
   DashboardStatsSnapshot,
 } from "@/features/data/server-queries";
+import { cn } from "@/lib/utils";
 
-function StatCard({
+function StatFigure({
   title,
   value,
-  icon: Icon,
-  color = "text-muted-foreground",
+  className,
 }: {
   title: string;
   value: number;
-  icon: React.ElementType;
-  color?: string;
+  className?: string;
 }) {
   return (
-    <Card className="glass border-border/60 rounded-3xl border">
-      <CardContent className="p-4 md:p-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-muted-foreground text-sm">{title}</p>
-            <p className="text-2xl font-bold">{value}</p>
-          </div>
-          <Icon className={`h-8 w-8 ${color}`} />
-        </div>
-      </CardContent>
-    </Card>
+    <div className={cn("min-w-0 px-4 py-4 sm:px-5", className)}>
+      <p className="type-display text-[clamp(1.75rem,4vw,2.35rem)] tabular-nums leading-none text-foreground">
+        {value}
+      </p>
+      <p className="type-label mt-2 text-muted-foreground">{title}</p>
+    </div>
   );
 }
 
@@ -364,210 +349,188 @@ export function DashboardClient({
   if (loading || authLoading) {
     return (
       <WriterHubShell>
-        <div className="animate-pulse space-y-6">
-          <div className="bg-muted ml-auto h-10 max-w-md rounded-2xl" />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="animate-pulse space-y-8">
+          <div className="space-y-3">
+            <div className="bg-muted h-3 w-20" />
+            <div className="bg-muted h-10 w-56" />
+            <div className="bg-muted h-4 max-w-md" />
+          </div>
+          <div className="grid grid-cols-2 gap-px bg-[var(--fg-line)] xl:grid-cols-4">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-muted h-28 rounded-3xl" />
+              <div key={i} className="bg-background h-24" />
             ))}
           </div>
-          <div className="bg-muted h-96 rounded-3xl" />
+          <div className="bg-muted h-80 border border-[var(--fg-line)]" />
         </div>
       </WriterHubShell>
     );
   }
 
+  const tabTriggerClass =
+    "btn-chip !h-auto !rounded-[var(--radius)] data-[state=active]:!bg-transparent data-[state=active]:border-[var(--fg)] data-[state=active]:text-[var(--bg)]";
+
   return (
     <WriterHubShell>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="font-display text-2xl font-semibold tracking-tight md:text-3xl">
-              Your Writing
-            </h1>
-            <p className="text-muted-foreground mt-1 max-w-xl text-sm">
-              Manage drafts, CSI submissions, publishing, and how readers see
-              your work.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {csiRole === "editor" && (
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="shrink-0 gap-2 rounded-2xl"
-              >
-                <Link href="/csi/review">
-                  <ShieldCheck className="h-4 w-4" aria-hidden />
-                  CSI Review Queue
-                </Link>
-              </Button>
-            )}
-            {csiRole && (
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="shrink-0 gap-2 rounded-2xl"
-              >
-                <Link href="/csi/write">
-                  <Terminal className="h-4 w-4" aria-hidden />
-                  Write for CSI
-                </Link>
-              </Button>
-            )}
-            <Button asChild size="lg" className="shrink-0 rounded-2xl shadow-md">
-              <Link href="/write">
-                <PenTool className="mr-2 h-5 w-5" />
-                New Post
-              </Link>
-            </Button>
-          </div>
+      <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0 max-w-xl">
+          <p className="type-label text-muted-foreground">Studio</p>
+          <h1 className="type-display mt-2 text-[clamp(2rem,5vw,3rem)]">
+            Your writing
+          </h1>
+          <p className="type-body mt-3 text-sm md:text-base">
+            Manage drafts, CSI submissions, publishing, and how readers see your
+            work.
+          </p>
         </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            title="Total Posts"
-            value={stats.totalPosts}
-            icon={FileText}
-          />
-          <StatCard title="Published" value={stats.publishedPosts} icon={Eye} />
-          <StatCard title="Total Likes" value={stats.totalLikes} icon={Heart} />
-          <StatCard
-            title="Comments"
-            value={stats.totalComments}
-            icon={MessageCircle}
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          {csiRole === "editor" && (
+            <Link href="/csi/review" className="btn-chip">
+              CSI Review Queue
+            </Link>
+          )}
+          {csiRole && (
+            <Link href="/csi/write" className="btn-chip">
+              Write for CSI
+            </Link>
+          )}
+          <Link href="/write" className="btn-editorial btn-editorial--solid">
+            New post
+          </Link>
         </div>
+      </header>
 
-          <Card className="border-border/70 glass overflow-hidden rounded-3xl border shadow-lg">
-            <CardContent className="p-4 sm:p-6">
-              <Tabs defaultValue="all" className="w-full">
-                <TabsList className="bg-muted/50 grid h-auto w-full grid-cols-2 gap-2 rounded-2xl p-1 sm:grid-cols-5">
-                  <TabsTrigger value="all" className="rounded-xl">
-                    All ({posts.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="published" className="rounded-xl">
-                    Published ({published.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="in_review" className="gap-1 rounded-xl">
-                    <Send className="h-3 w-3" aria-hidden />
-                    In Review ({inReview.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="drafts" className="rounded-xl">
-                    Drafts ({drafts.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="scheduled" className="gap-1 rounded-xl">
-                    <Clock className="h-3 w-3" aria-hidden />
-                    Scheduled ({scheduled.length})
-                  </TabsTrigger>
-                </TabsList>
+      <div className="grid grid-cols-2 border border-[var(--fg-line)] xl:grid-cols-4">
+        <StatFigure
+          title="Total posts"
+          value={stats.totalPosts}
+          className="border-b border-r border-[var(--fg-line)] xl:border-b-0"
+        />
+        <StatFigure
+          title="Published"
+          value={stats.publishedPosts}
+          className="border-b border-[var(--fg-line)] xl:border-b-0 xl:border-r"
+        />
+        <StatFigure
+          title="Total likes"
+          value={stats.totalLikes}
+          className="border-r border-[var(--fg-line)]"
+        />
+        <StatFigure title="Comments" value={stats.totalComments} />
+      </div>
 
-                <TabsContent value="all" className="mt-6">
-                  <DataTable columns={columns} data={posts} />
-                </TabsContent>
-                <TabsContent value="published" className="mt-6">
-                  <DataTable columns={columns} data={published} />
-                </TabsContent>
-                <TabsContent value="in_review" className="mt-6">
-                  <DataTable columns={columns} data={inReview} />
-                </TabsContent>
-                <TabsContent value="drafts" className="mt-6">
-                  <DataTable columns={columns} data={drafts} />
-                </TabsContent>
-                <TabsContent value="scheduled" className="mt-6">
-                  {scheduled.length === 0 ? (
-                    <div className="border-border/80 rounded-2xl border border-dashed p-12 text-center">
-                      <Clock className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-                      <h3 className="mb-2 text-lg font-semibold">
-                        No scheduled posts
-                      </h3>
-                      <p className="text-muted-foreground mx-auto mb-4 max-w-md text-sm">
-                        Schedule posts to be published at a specific date and
-                        time.
-                      </p>
-                      <Button asChild className="rounded-2xl">
-                        <Link href="/write">Schedule a post</Link>
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {scheduled.map((post) => {
-                        const isCsi = Boolean(
-                          post.publication_id ||
-                            post.publication?.slug === "csi",
-                        );
-                        const editHref = `/write?edit=${post.id}`;
-                        return (
-                          <Card key={post.id} className="glass rounded-2xl">
-                            <CardContent className="p-4">
-                              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <Link
-                                      href={editHref}
-                                      className="hover:text-primary font-medium transition-colors"
-                                    >
-                                      {post.title}
-                                    </Link>
-                                    {isCsi && (
-                                      <Badge
-                                        variant="outline"
-                                        className="border-primary/35 bg-primary/10 text-primary rounded-full px-2 py-0 text-[10px]"
-                                      >
-                                        CSI
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <div className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
-                                    <Clock className="h-3 w-3 shrink-0" />
-                                    <span>
-                                      Scheduled for{" "}
-                                      {new Date(
-                                        post.scheduled_at!,
-                                      ).toLocaleString()}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <Badge
-                                    variant="secondary"
-                                    className="rounded-lg"
-                                  >
-                                    <Calendar className="mr-1 h-3 w-3" />
-                                    <RelativeTime date={post.scheduled_at!} />
-                                  </Badge>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="rounded-xl"
-                                    asChild
-                                  >
-                                    <Link href={editHref}>
-                                      <Edit3 className="mr-1 h-3 w-3" />
-                                      Edit
-                                    </Link>
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDeletePost(post.id)}
-                                    className="text-destructive hover:text-destructive rounded-xl"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-      </WriterHubShell>
+      <section className="border border-[var(--fg-line)] p-4 sm:p-6">
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList className="flex h-auto w-full flex-wrap justify-start gap-2 rounded-none border-0 bg-transparent p-0">
+            <TabsTrigger value="all" className={tabTriggerClass}>
+              All ({posts.length})
+            </TabsTrigger>
+            <TabsTrigger value="published" className={tabTriggerClass}>
+              Published ({published.length})
+            </TabsTrigger>
+            <TabsTrigger value="in_review" className={tabTriggerClass}>
+              In Review ({inReview.length})
+            </TabsTrigger>
+            <TabsTrigger value="drafts" className={tabTriggerClass}>
+              Drafts ({drafts.length})
+            </TabsTrigger>
+            <TabsTrigger value="scheduled" className={tabTriggerClass}>
+              Scheduled ({scheduled.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="all" className="mt-5">
+            <DataTable columns={columns} data={posts} />
+          </TabsContent>
+          <TabsContent value="published" className="mt-5">
+            <DataTable columns={columns} data={published} />
+          </TabsContent>
+          <TabsContent value="in_review" className="mt-5">
+            <DataTable columns={columns} data={inReview} />
+          </TabsContent>
+          <TabsContent value="drafts" className="mt-5">
+            <DataTable columns={columns} data={drafts} />
+          </TabsContent>
+          <TabsContent value="scheduled" className="mt-5">
+            {scheduled.length === 0 ? (
+              <div className="border border-dashed border-[var(--fg-line)] px-6 py-12 text-center">
+                <p className="type-label text-muted-foreground">Scheduled</p>
+                <h3 className="type-display mt-3 text-xl">No scheduled posts</h3>
+                <p className="type-body mx-auto mt-3 max-w-md text-sm">
+                  Schedule posts to publish at a specific date and time.
+                </p>
+                <Link
+                  href="/write"
+                  className="btn-editorial btn-editorial--solid mt-6 inline-flex"
+                >
+                  Schedule a post
+                </Link>
+              </div>
+            ) : (
+              <ul className="divide-y divide-[var(--fg-line)] border border-[var(--fg-line)]">
+                {scheduled.map((post) => {
+                  const isCsi = Boolean(
+                    post.publication_id || post.publication?.slug === "csi",
+                  );
+                  const editHref = `/write?edit=${post.id}`;
+                  return (
+                    <li
+                      key={post.id}
+                      className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Link
+                            href={editHref}
+                            className="font-medium transition-opacity hover:opacity-70"
+                          >
+                            {post.title}
+                          </Link>
+                          {isCsi && (
+                            <Badge
+                              variant="outline"
+                              className="rounded-none border-[var(--fg-line)] px-2 py-0 text-[10px] uppercase"
+                            >
+                              CSI
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+                          <Clock className="h-3 w-3 shrink-0" />
+                          <span>
+                            Scheduled for{" "}
+                            {new Date(post.scheduled_at!).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge
+                          variant="secondary"
+                          className="rounded-none gap-1"
+                        >
+                          <Calendar className="h-3 w-3" />
+                          <RelativeTime date={post.scheduled_at!} />
+                        </Badge>
+                        <Link href={editHref} className="btn-chip gap-1">
+                          <Edit3 className="h-3 w-3" />
+                          Edit
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePost(post.id)}
+                          className="btn-chip text-destructive"
+                          aria-label={`Delete ${post.title}`}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </TabsContent>
+        </Tabs>
+      </section>
+    </WriterHubShell>
   );
 }

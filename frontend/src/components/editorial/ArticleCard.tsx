@@ -42,6 +42,9 @@ function sectionMeta(section: ArticleCardSection, format?: ArticleFormat) {
   return { label: "Journal", href: "/journal" as const };
 }
 
+/** Nested controls stay clickable above the stretched card link. */
+const nest = "relative z-10";
+
 export function ArticleCard({
   section,
   variant = "standard",
@@ -70,15 +73,17 @@ export function ArticleCard({
     return (
       <article
         className={cn(
-          "group flex gap-4 border-b border-hairline py-4 last:border-b-0",
+          "group relative flex gap-4 border-b border-hairline py-4 last:border-b-0",
           className,
         )}
       >
+        <Link
+          href={href}
+          className="absolute inset-0 z-0"
+          aria-label={title}
+        />
         {coverImage && (
-          <Link
-            href={href}
-            className="relative hidden h-20 w-28 shrink-0 overflow-hidden border border-hairline bg-muted sm:block"
-          >
+          <div className="relative hidden h-20 w-28 shrink-0 overflow-hidden border border-hairline bg-muted sm:block">
             <Image
               src={coverImage}
               alt=""
@@ -86,17 +91,14 @@ export function ArticleCard({
               sizes="112px"
               className="object-cover transition-transform duration-editorial group-hover:scale-[1.02]"
             />
-          </Link>
+          </div>
         )}
         <div className="min-w-0 flex-1 space-y-1.5">
-          <SectionLabel href={meta.href}>{meta.label}</SectionLabel>
-          <h3 className="font-display text-lg font-semibold leading-snug tracking-tight text-foreground">
-            <Link
-              href={href}
-              className="transition-colors duration-editorial hover:text-brand"
-            >
-              {title}
-            </Link>
+          <SectionLabel href={meta.href} className={nest}>
+            {meta.label}
+          </SectionLabel>
+          <h3 className="font-display text-lg font-semibold leading-snug tracking-tight text-foreground transition-colors duration-editorial group-hover:text-brand">
+            {title}
           </h3>
           {author && (
             <Byline
@@ -104,6 +106,7 @@ export function ArticleCard({
               publishedAt={publishedAt}
               readTime={readTime}
               size="sm"
+              className={nest}
             />
           )}
         </div>
@@ -113,15 +116,17 @@ export function ArticleCard({
 
   if (variant === "compact") {
     return (
-      <article className={cn("group space-y-2", className)}>
-        <SectionLabel href={meta.href}>{meta.label}</SectionLabel>
-        <h3 className="font-display text-base font-semibold leading-snug tracking-tight text-foreground sm:text-lg">
-          <Link
-            href={href}
-            className="transition-colors duration-editorial hover:text-brand"
-          >
-            {title}
-          </Link>
+      <article className={cn("group relative space-y-2", className)}>
+        <Link
+          href={href}
+          className="absolute inset-0 z-0"
+          aria-label={title}
+        />
+        <SectionLabel href={meta.href} className={nest}>
+          {meta.label}
+        </SectionLabel>
+        <h3 className="font-display text-base font-semibold leading-snug tracking-tight text-foreground transition-colors duration-editorial group-hover:text-brand sm:text-lg">
+          {title}
         </h3>
         {excerpt && (
           <p className="line-clamp-2 font-serif text-sm leading-relaxed text-muted-foreground">
@@ -152,14 +157,15 @@ export function ArticleCard({
   return (
     <article
       className={cn(
-        "group flex flex-col overflow-hidden border border-hairline bg-background transition-colors duration-editorial hover:border-brand/35",
+        "group relative flex flex-col overflow-hidden border border-hairline bg-background transition-colors duration-editorial hover:border-brand/35",
         isLead && "md:grid md:grid-cols-2 md:items-stretch",
         className,
       )}
     >
+      <Link href={href} className="absolute inset-0 z-0" aria-label={title} />
+
       {coverImage && (
-        <Link
-          href={href}
+        <div
           className={cn(
             "relative block w-full overflow-hidden bg-muted",
             isLead
@@ -179,7 +185,7 @@ export function ArticleCard({
             }
             className="object-cover transition-transform duration-editorial group-hover:scale-[1.02]"
           />
-        </Link>
+        </div>
       )}
 
       <div
@@ -189,7 +195,9 @@ export function ArticleCard({
         )}
       >
         <div className="flex flex-wrap items-center gap-2">
-          <SectionLabel href={meta.href}>{meta.label}</SectionLabel>
+          <SectionLabel href={meta.href} className={nest}>
+            {meta.label}
+          </SectionLabel>
           {format === "poetry" && section === "journal" && (
             <span className="meta-label">Verse</span>
           )}
@@ -197,25 +205,22 @@ export function ArticleCard({
 
         <h2
           className={cn(
-            "font-display font-semibold tracking-tight text-foreground",
+            "font-display font-semibold tracking-tight text-foreground transition-colors duration-editorial group-hover:text-brand",
             isLead
               ? "text-display-sm md:text-display-md"
               : "text-xl leading-snug",
           )}
         >
-          <Link
-            href={href}
-            className="transition-colors duration-editorial hover:text-brand"
-          >
-            {title}
-          </Link>
+          {title}
         </h2>
 
         {excerpt && (
           <p
             className={cn(
               "font-serif leading-relaxed text-muted-foreground",
-              isLead ? "line-clamp-4 text-base md:text-lg" : "line-clamp-3 text-sm",
+              isLead
+                ? "line-clamp-4 text-base md:text-lg"
+                : "line-clamp-3 text-sm",
             )}
           >
             {excerpt}
@@ -223,7 +228,7 @@ export function ArticleCard({
         )}
 
         {visibleTags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
+          <div className={cn("flex flex-wrap gap-1.5", nest)}>
             {visibleTags.map((tag) => (
               <TagChip key={tag} tag={tag} />
             ))}
@@ -237,6 +242,7 @@ export function ArticleCard({
               publishedAt={publishedAt}
               readTime={readTime}
               size="sm"
+              className={nest}
             />
           ) : (
             <div className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">

@@ -433,7 +433,7 @@ export default function AdminClient({
           </div>
 
           <p
-            className="type-script text-[clamp(2.4rem,6vw,3.25rem)] leading-none text-[var(--brand-color)]"
+            className="type-display-italic text-[clamp(1.85rem,4.5vw,2.75rem)] leading-none text-[var(--brand-color)]"
             aria-hidden="true"
           >
             Admin

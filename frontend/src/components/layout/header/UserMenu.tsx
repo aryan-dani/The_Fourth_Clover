@@ -46,7 +46,7 @@ export function UserMenu({
   const initial = name.charAt(0).toUpperCase();
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"

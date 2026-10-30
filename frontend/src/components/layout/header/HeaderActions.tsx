@@ -54,7 +54,7 @@ export function HeaderActions({
 
         {signedIn ? (
           <>
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <button type="button" className="nav-cta hidden sm:inline-flex">
                   <PenSquare className="h-3.5 w-3.5" strokeWidth={1.75} />

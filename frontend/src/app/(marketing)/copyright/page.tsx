@@ -8,6 +8,7 @@ import {
   RevealText,
   ScriptWipe,
 } from "@/components/motion/Reveal";
+import { HeroClover } from "@/components/home/HeroClover";
 
 const PERMITTED = [
   "Sharing direct links to published Journal pieces or Tech Weekly dispatches",
@@ -120,28 +121,34 @@ export default function CopyrightPage() {
         </Link>
       </Reveal>
 
-      <div className="legal__hero mt-10">
-        <h1 className="type-display text-[clamp(2.5rem,8vw,4.5rem)]">
-          <RevealText as="span" by="words" className="block">
-            Copyright
-          </RevealText>
-          <span className="mt-2 flex flex-wrap items-baseline gap-3">
-            <span className="type-display text-[0.55em] opacity-50">&amp;</span>
-            <ScriptWipe
-              as="span"
-              delay={0.35}
-              className="type-script text-[0.55em] normal-case tracking-normal text-[var(--brand-color)]"
-            >
-              IP
-            </ScriptWipe>
-          </span>
-        </h1>
-        <Reveal delay={0.15} className="mt-8 max-w-2xl">
-          <p className="type-body text-lg">
-            A plain-language charter for authors, readers, and anyone who wants
-            to reuse work from The Fourth Clover.
-          </p>
-        </Reveal>
+      <div className="legal__hero mt-10 grid items-center gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-12">
+        <div className="order-2 min-w-0 lg:order-1">
+          <h1 className="type-display text-[clamp(2.5rem,8vw,4.5rem)]">
+            <RevealText as="span" by="words" className="block">
+              Copyright
+            </RevealText>
+            <span className="mt-2 flex flex-wrap items-baseline gap-3">
+              <span className="type-display text-[0.55em] opacity-50">&amp;</span>
+              <ScriptWipe
+                as="span"
+                delay={0.35}
+                className="type-display-italic text-[0.72em] text-[var(--brand-color)]"
+              >
+                IP
+              </ScriptWipe>
+            </span>
+          </h1>
+          <Reveal delay={0.15} className="mt-8 max-w-2xl">
+            <p className="type-body text-lg">
+              A plain-language charter for authors, readers, and anyone who
+              wants to reuse work from The Fourth Clover.
+            </p>
+          </Reveal>
+        </div>
+
+        <div className="order-1 flex justify-start lg:order-2 lg:min-h-[14rem] lg:items-center lg:justify-center xl:min-h-[18rem]">
+          <HeroClover className="h-24 w-24 sm:h-28 sm:w-28 lg:h-[min(40vw,18rem)] lg:w-[min(40vw,18rem)] xl:h-[20rem] xl:w-[20rem]" />
+        </div>
       </div>
 
       <div className="mt-14 grid gap-10 md:grid-cols-2">

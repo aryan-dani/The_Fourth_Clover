@@ -11,6 +11,7 @@ import {
   RevealText,
   ScriptWipe,
 } from "@/components/motion/Reveal";
+import { HeroClover } from "@/components/home/HeroClover";
 import { FeaturedTechWeeklyBanner } from "@/components/tech-weekly/FeaturedTechWeeklyBanner";
 
 function formatCountdown(targetIso: string | null | undefined) {
@@ -64,10 +65,8 @@ export function HomePageClient({ data }: { data: HomeData }) {
 
   return (
     <div>
-      {/* Hero — paper */}
-      <section
-        className="wrap min-h-[70vh] pb-16 pt-10 md:pb-24 md:pt-16"
-      >
+      {/* Hero — paper + clover lockup */}
+      <section className="wrap pb-12 pt-8 md:pb-16 md:pt-12">
         <Reveal trigger="intro" delay={0.05} y={12}>
           <div className="type-label flex flex-wrap items-center justify-between gap-3 text-muted-foreground">
             <span suppressHydrationWarning>{dateline || "\u00A0"}</span>
@@ -78,47 +77,55 @@ export function HomePageClient({ data }: { data: HomeData }) {
           </div>
         </Reveal>
 
-        <DrawLine trigger="intro" delay={0.15} className="hairline-rule my-8" />
+        <DrawLine trigger="intro" delay={0.15} className="hairline-rule my-5 md:my-6" />
 
-        <h1 className="type-display mt-2 max-w-4xl text-[clamp(2.8rem,10vw,6.5rem)]">
-          <RevealText as="span" by="words" trigger="intro" className="block">
-            Writing, poetry
-          </RevealText>
-          <span className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <RevealText as="span" by="words" trigger="intro" delay={0.12}>
-              &amp;
-            </RevealText>
-            <ScriptWipe
-              as="span"
-              trigger="intro"
-              delay={0.35}
-              className="type-script text-[0.55em] normal-case tracking-normal text-[var(--brand-color)]"
-            >
-              engineering
-            </ScriptWipe>
-          </span>
-        </h1>
+        <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-12 xl:gap-16">
+          <div className="order-2 min-w-0 lg:order-1">
+            <h1 className="type-display max-w-4xl text-[clamp(2.6rem,8.5vw,5.75rem)]">
+              <RevealText as="span" by="words" trigger="intro" className="block">
+                Writing, poetry
+              </RevealText>
+              <span className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-0">
+                <RevealText as="span" by="words" trigger="intro" delay={0.12}>
+                  &amp;
+                </RevealText>
+                <ScriptWipe
+                  as="span"
+                  trigger="intro"
+                  delay={0.3}
+                  className="type-display-italic text-[0.72em] text-[var(--brand-color)]"
+                >
+                  engineering
+                </ScriptWipe>
+              </span>
+            </h1>
 
-        <Reveal trigger="intro" delay={0.25} className="mt-8 max-w-xl">
-          <p className="type-body text-lg">
-            An editorial publication from CSI MIT-WPU — essays and verse in the
-            Journal, systems thinking in Tech Weekly.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/journal" className="btn-editorial">
-              Read the Journal
-            </Link>
-            <Link href="/tech-weekly" className="btn-editorial">
-              Tech Weekly
-            </Link>
-            <Link
-              href={user && caps.canWriteJournal ? "/write" : "/auth/signin"}
-              className="type-label link-u self-center px-2"
-            >
-              {user ? "Start writing" : "Sign in to write"}
-            </Link>
+            <Reveal trigger="intro" delay={0.25} className="mt-5 max-w-xl md:mt-6">
+              <p className="type-body text-lg">
+                An editorial publication from CSI MIT-WPU — essays and verse in
+                the Journal, systems thinking in Tech Weekly.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-3 md:mt-6">
+                <Link href="/journal" className="btn-editorial">
+                  Read the Journal
+                </Link>
+                <Link href="/tech-weekly" className="btn-editorial">
+                  Tech Weekly
+                </Link>
+                <Link
+                  href={user && caps.canWriteJournal ? "/write" : "/auth/signin"}
+                  className="type-label link-u self-center px-2"
+                >
+                  {user ? "Start writing" : "Sign in to write"}
+                </Link>
+              </div>
+            </Reveal>
           </div>
-        </Reveal>
+
+          <div className="order-1 flex justify-start lg:order-2 lg:min-h-[16rem] lg:items-center lg:justify-center xl:min-h-[20rem]">
+            <HeroClover className="h-24 w-24 sm:h-28 sm:w-28 lg:h-[min(52vw,22rem)] lg:w-[min(52vw,22rem)] xl:h-[24rem] xl:w-[24rem]" />
+          </div>
+        </div>
       </section>
 
       {/* Tech Weekly — clover wash */}
@@ -247,7 +254,7 @@ export function HomePageClient({ data }: { data: HomeData }) {
             <p className="type-label text-muted-foreground">Stay close</p>
             <h2 className="type-display mx-auto mt-4 max-w-3xl text-[clamp(2rem,6vw,3.75rem)]">
               Follow the{" "}
-              <span className="type-script text-[0.7em] normal-case tracking-normal">
+              <span className="type-display-italic text-[0.72em] text-[var(--brand-color)]">
                 feeds
               </span>
             </h2>

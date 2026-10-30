@@ -55,6 +55,8 @@ const config: Config = {
       maxWidth: {
         measure: "40rem",
         reading: "42rem",
+        /** Centered article column — wider than classic measure, tighter than content */
+        article: "56rem",
         content: "72rem",
         wide: "90rem",
       },
