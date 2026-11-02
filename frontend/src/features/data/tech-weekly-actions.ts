@@ -1040,12 +1040,16 @@ export async function fetchTechWeeklyWriteContext(
       ? ("super_admin" as CsiRole)
       : ((profile?.role as CsiRole) || "unverified");
   const csiId = profile?.csi_id ?? null;
+  const rosterRoles: CsiRole[] = [
+    "member",
+    "tech_member",
+    "tech_head",
+    "super_admin",
+  ];
   const canWrite =
     !profile?.is_suspended &&
-    (role === "tech_member" ||
-      role === "tech_head" ||
-      role === "super_admin" ||
-      Boolean(profile?.is_admin));
+    (Boolean(profile?.is_admin) ||
+      (Boolean(csiId) && rosterRoles.includes(role)));
 
   const settings = (settingsRow as PlatformSettings | null) || DEFAULT_SETTINGS;
   const resolvedWeek = (currentWeek as TechWeek | null) ?? null;

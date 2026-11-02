@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/features/auth/auth-context";
+import { getCapabilities } from "@/lib/roles";
 import { supabase } from "@/lib/supabase";
 import {
   addTechCommentAction,
@@ -74,15 +75,17 @@ export function TechSubmissionDetailClient({
   submission: initialSubmission,
   initialComments,
   initialViewerReactions,
-  allowMemberComments,
+  allowMemberComments: _allowMemberComments,
 }: {
   submission: TechSubmissionWithAuthor;
   initialComments: TechCommentWithAuthor[];
   initialViewerReactions: TechReactionType[];
+  /** Kept for call-site compatibility; comments are open to every verified CSI member. */
   allowMemberComments: boolean;
 }) {
   const router = useRouter();
   const { user, profile } = useAuth();
+  void _allowMemberComments;
 
   const [submission, setSubmission] = useState(initialSubmission);
   const [viewerReactions, setViewerReactions] = useState<TechReactionType[]>(
@@ -105,22 +108,11 @@ export function TechSubmissionDetailClient({
     null,
   );
 
-  const role = profile?.role || "unverified";
-  const isSuperAdmin =
-    role === "super_admin" ||
-    profile?.csi_id === 303 ||
-    Boolean(profile?.is_admin);
-  const isTechHeadOrAdmin =
-    isSuperAdmin ||
-    role === "tech_head" ||
-    profile?.csi_id === 241 ||
-    profile?.csi_id === 246;
-  const isTechMember =
-    isTechHeadOrAdmin || (role === "tech_member" && Boolean(profile?.csi_id));
-  const isVerifiedRoster =
-    isTechMember || (role === "member" && Boolean(profile?.csi_id));
-  const canComment =
-    isTechMember || (isVerifiedRoster && allowMemberComments);
+  const caps = getCapabilities(profile);
+  const role = caps.role;
+  const isSuperAdmin = caps.isAdmin;
+  const isTechHeadOrAdmin = caps.canReview;
+  const canComment = caps.canCommentTech;
   const isAuthor = Boolean(user?.id && user.id === submission.author_id);
 
   const counts = submission.reaction_counts || {
@@ -137,10 +129,8 @@ export function TechSubmissionDetailClient({
       toast.error("Sign in with Google to endorse dispatches.");
       return;
     }
-    if (reactionType !== "like" && !isTechMember) {
-      toast.error(
-        "Verify your CSI Technical ID to add Insightful and Rigorous endorsements.",
-      );
+    if (!caps.isVerified) {
+      toast.error("Verify your CSI ID to endorse dispatches.");
       return;
     }
 
@@ -568,10 +558,10 @@ export function TechSubmissionDetailClient({
             <div className="flex flex-wrap items-center justify-between gap-3 border border-hairline px-4 py-4 font-serif text-sm text-muted-foreground">
               <span>
                 {!user
-                  ? "Sign in with Google and verify your CSI Technical ID to join the discussion."
+                  ? "Sign in with Google and verify your CSI ID to join the discussion."
                   : role === "unverified"
                     ? "Verify your CSI ID and PRN to participate."
-                    : "Commentary is restricted to verified CSI Technical Wing members."}
+                    : "Commentary is open to verified CSI members."}
               </span>
               {!user ? (
                 <Button asChild size="sm" variant="outline" className="border-hairline">

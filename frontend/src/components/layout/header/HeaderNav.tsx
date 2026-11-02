@@ -46,7 +46,7 @@ export function HeaderNav({
       className={cn(
         isStack
           ? "flex flex-col items-stretch gap-0.5"
-          : "inline-flex items-center gap-1",
+          : "inline-flex items-center gap-0.5",
         className,
       )}
       aria-label="Primary"

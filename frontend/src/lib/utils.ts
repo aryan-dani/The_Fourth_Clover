@@ -112,7 +112,7 @@ export function toTitleCase(str: string): string {
 
 /**
  * Returns the ISO week identifier (e.g. "2026-W42") used to lock the
- * single Weekly LinkedIn Pick for the Sunday-to-Wednesday CSI cycle.
+ * single Weekly LinkedIn Pick for the Friday-to-Wednesday CSI cycle.
  */
 export function getCurrentWeekKey(referenceDate: Date = new Date()): string {
   const d = new Date(

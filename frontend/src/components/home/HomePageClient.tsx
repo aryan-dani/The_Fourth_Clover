@@ -259,7 +259,7 @@ export function HomePageClient({ data }: { data: HomeData }) {
               </span>
             </h2>
             <p className="type-body mx-auto mt-5 max-w-md">
-              Subscribe via RSS, or open Tech Weekly every Sunday for the next
+              Subscribe via RSS, or open Tech Weekly every Friday for the next
               engineering cycle.
             </p>
             <div className="mt-10 flex flex-wrap justify-center gap-4">

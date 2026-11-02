@@ -140,23 +140,25 @@ export function SiteHeaderClient({
           data-raised={raised ? "true" : "false"}
           data-tucked={tucked ? "true" : "false"}
           className={cn(
-            "nav-dock pointer-events-auto mx-auto flex h-14 max-w-content items-center gap-3 px-3 sm:h-16 sm:gap-5 sm:px-4",
+            "nav-dock pointer-events-auto mx-auto grid h-[3.4rem] max-w-content grid-cols-[auto_1fr_auto] items-center gap-4 px-3.5 sm:h-[3.65rem] sm:gap-6 sm:px-5",
             tucked && "pointer-events-none",
           )}
         >
           <Link
             href="/"
             aria-label="The Fourth Clover, home"
-            className="group flex shrink-0 items-center gap-2.5"
+            className="group flex min-w-0 shrink-0 items-center gap-2.5"
             onClick={() => setMenuOpen(false)}
           >
             <CloverMark
               size="md"
-              className="text-[var(--brand-color)] group-hover:opacity-90"
+              className="text-[var(--brand-color)] transition-opacity group-hover:opacity-80"
             />
-            <span className="type-display hidden text-[0.95rem] tracking-tight sm:inline">
-              The Fourth{" "}
-              <span className="type-script text-[1.35em] normal-case tracking-normal text-[var(--brand-color)]">
+            <span className="hidden min-w-0 items-baseline gap-1.5 sm:inline-flex">
+              <span className="type-display text-[0.92rem] leading-none tracking-[-0.02em] text-foreground">
+                The Fourth
+              </span>
+              <span className="type-script text-[1.45rem] leading-none text-[var(--brand-color)]">
                 Clover
               </span>
             </span>
@@ -165,28 +167,29 @@ export function SiteHeaderClient({
           <HeaderNav
             signedIn={signedIn}
             variant="bar"
-            className="hidden flex-1 justify-center md:inline-flex"
+            className="hidden justify-self-center md:inline-flex"
           />
 
-          <div className="ml-auto hidden shrink-0 items-center md:flex">
-            <HeaderActions
-              signedIn={signedIn}
-              profile={profile}
-              capabilities={capabilities}
-              variant="bar"
-            />
+          <div className="justify-self-end">
+            <div className="hidden md:block">
+              <HeaderActions
+                signedIn={signedIn}
+                profile={profile}
+                capabilities={capabilities}
+                variant="bar"
+              />
+            </div>
+            <button
+              ref={toggleRef}
+              type="button"
+              aria-expanded={menuOpen}
+              aria-controls="mobile-menu"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="type-label rounded-md px-3 py-2 text-foreground md:hidden"
+            >
+              {menuOpen ? "Close" : "Menu"}
+            </button>
           </div>
-
-          <button
-            ref={toggleRef}
-            type="button"
-            aria-expanded={menuOpen}
-            aria-controls="mobile-menu"
-            onClick={() => setMenuOpen((v) => !v)}
-            className="type-label ml-auto rounded-full px-3 py-2 md:hidden"
-          >
-            {menuOpen ? "Close" : "Menu"}
-          </button>
         </div>
       </header>
 

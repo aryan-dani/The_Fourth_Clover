@@ -116,7 +116,7 @@ export function FeaturedTechWeeklyBanner({
     "CSI Member";
   const authorBadge = submission.author?.dept
     ? `CSI ${submission.author.dept}${submission.author.year ? ` · ${submission.author.year}` : ""}`
-    : "CSI Technical Wing";
+    : "CSI Member";
 
   const excerpt =
     submission.summary?.trim() ||

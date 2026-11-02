@@ -11,12 +11,29 @@ import type { CsiRole } from "@/types/database";
 const DEFAULT_PRN_HMAC_SECRET =
   "csi-mitwpu-fourth-clover-hmac-secret-2026";
 
+function parseCsiIdInput(val: unknown): number | null {
+  if (typeof val === "number" && Number.isFinite(val)) return Math.trunc(val);
+  const digits = String(val ?? "").replace(/[^0-9]/g, "");
+  if (!digits) return null;
+  const n = Number(digits);
+  return Number.isFinite(n) ? n : null;
+}
+
 const verifyCsiSchema = z.object({
-  csiId: z.coerce
-    .number()
-    .int("CSI ID must be a whole number.")
-    .min(1, "Please enter a valid CSI ID.")
-    .max(999999, "Please enter a valid CSI ID."),
+  // Accept "332", "332(D)", etc. — digits only after strip.
+  csiId: z
+    .union([z.string(), z.number()])
+    .transform((val, ctx) => {
+      const n = parseCsiIdInput(val);
+      if (n == null || !Number.isInteger(n) || n < 1 || n > 999999) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Please enter a valid CSI ID.",
+        });
+        return z.NEVER;
+      }
+      return n;
+    }),
   prn: z
     .string()
     .trim()

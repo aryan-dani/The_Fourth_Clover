@@ -1188,7 +1188,7 @@ export default function AdminClient({
                   No Tech Weekly dispatches submitted yet
                 </h3>
                 <p className="text-xs text-muted-foreground max-w-md mx-auto">
-                  Once CSI Technical members submit their Sunday-to-Wednesday
+                  Once CSI members submit their Friday-to-Wednesday
                   articles, they will appear here for curation and LinkedIn pick
                   selection.
                 </p>

@@ -78,7 +78,7 @@ export function HeaderActions({
                 )}
                 {!capabilities.canWriteTech && (
                   <DropdownMenuItem asChild>
-                    <Link href="/verify-csi">Verify CSI for Tech Weekly</Link>
+                    <Link href="/verify-csi">Verify CSI ID</Link>
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>

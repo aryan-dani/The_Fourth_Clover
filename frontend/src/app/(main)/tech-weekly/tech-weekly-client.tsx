@@ -12,7 +12,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { FeaturedTechWeeklyBanner } from "@/components/tech-weekly/FeaturedTechWeeklyBanner";
+import { TechWeeklyGuide } from "@/components/tech-weekly/TechWeeklyGuide";
 import type { TechWeeklyLandingPayload } from "@/features/data/tech-weekly-actions";
+import { getCapabilities } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 
 function formatCountdown(targetIso: string | undefined): {
@@ -57,19 +59,10 @@ export function TechWeeklyClient({
     return () => clearInterval(timer);
   }, [initialData.currentWeek?.cutoff_at]);
 
-  const role = profile?.role || "unverified";
-  const isTechMember =
-    role === "tech_member" ||
-    role === "tech_head" ||
-    role === "super_admin" ||
-    Boolean(profile?.is_admin);
-  const isTechHeadOrAdmin =
-    role === "tech_head" ||
-    role === "super_admin" ||
-    profile?.csi_id === 241 ||
-    profile?.csi_id === 246 ||
-    profile?.csi_id === 303 ||
-    Boolean(profile?.is_admin);
+  const caps = getCapabilities(profile);
+  const canWrite = caps.canWriteTech;
+  const isTechHeadOrAdmin = caps.canReview;
+  const role = caps.role;
 
   const filteredSubmissions = useMemo(() => {
     if (selectedWeekId === "all") return initialData.submissions;
@@ -113,11 +106,11 @@ export function TechWeeklyClient({
             </h1>
             <p className="type-body mt-4">
               {activeWeekObj?.prompt ||
-                "Weekly engineering dispatches from the CSI MIT-WPU Technical Wing."}
+                "Weekly engineering dispatches from verified CSI MIT-WPU members across every department."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {isTechMember ? (
+            {canWrite ? (
               <Button asChild size="sm">
                 <Link href="/tech-weekly/write">
                   <PenTool className="mr-1.5 h-3.5 w-3.5" aria-hidden />
@@ -126,15 +119,15 @@ export function TechWeeklyClient({
                     : "Manage drafts"}
                 </Link>
               </Button>
-            ) : user && role === "unverified" ? (
+            ) : user ? (
               <Button asChild size="sm">
                 <Link href="/verify-csi">Verify CSI Identity</Link>
               </Button>
-            ) : !user ? (
+            ) : (
               <Button asChild size="sm">
                 <Link href="/auth/signin">Sign in to contribute</Link>
               </Button>
-            ) : null}
+            )}
 
             {isTechHeadOrAdmin && (
               <Button asChild variant="outline" size="sm">
@@ -199,9 +192,9 @@ export function TechWeeklyClient({
           {filteredSubmissions.length === 0 ? (
             <EmptyState
               title="No dispatches filed for this cycle yet"
-              description="Verified CSI Technical Wing engineers can submit anytime while the window is open. Cycles open Friday 09:00 IST."
+              description="Any verified CSI member can submit while the window is open. Cycles open Friday 09:00 IST."
               action={
-                isTechMember ? (
+                canWrite ? (
                   <Button asChild size="sm">
                     <Link href="/tech-weekly/write">File the first dispatch</Link>
                   </Button>
@@ -311,23 +304,7 @@ export function TechWeeklyClient({
             </div>
           </div>
 
-          <div className="space-y-3 border border-hairline p-5">
-            <SectionLabel>Editorial standards</SectionLabel>
-            <ul className="space-y-2 font-serif text-sm leading-relaxed text-muted-foreground">
-              <li>
-                1. Cycles open Friday 09:00 IST — submit anytime while the window is open
-                IST.
-              </li>
-              <li>
-                2. Aim for 150–300 words for LinkedIn syndication (max 2,000 for
-                deep tutorials).
-              </li>
-              <li>
-                3. Technical Heads select one featured dispatch every Wednesday
-                morning.
-              </li>
-            </ul>
-          </div>
+          <TechWeeklyGuide compact />
         </aside>
       </div>
     </div>

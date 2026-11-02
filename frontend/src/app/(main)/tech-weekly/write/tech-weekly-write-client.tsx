@@ -353,8 +353,8 @@ export default function TechWeeklyWriteClient({
             Sign in with Google to Access the Writing Studio
           </h1>
           <p className="mx-auto max-w-md text-sm text-muted-foreground">
-            Publishing on CSI Tech Weekly is restricted to verified members of
-            the CSI MIT-WPU Technical Wing.
+            Publishing on CSI Tech Weekly is open to every verified CSI MIT-WPU
+            member after you sign in and claim your roster ID.
           </p>
           <div className="flex justify-center gap-3 pt-2">
             <Button asChild className="rounded-md">
@@ -400,15 +400,19 @@ export default function TechWeeklyWriteClient({
         <div className="space-y-4 border border-border bg-card p-10 text-center">
           <AlertCircle className="mx-auto h-8 w-8 text-foreground" />
           <h1 className="font-display text-2xl font-semibold text-foreground">
-            Technical Wing Publishing Only
+            Verify to publish
           </h1>
           <p className="mx-auto max-w-md text-sm text-muted-foreground">
-            Your account is verified as CSI #{initialContext.csiId} (
-            {initialContext.dept || "Member"}). While reading, endorsements, and
-            following are open to all roster members, weekly dispatch publishing
-            is reserved for the Technical department.
+            Tech Weekly writing is open to every verified CSI member. Link your
+            CSI ID and PRN to unlock the writing studio
+            {initialContext.csiId
+              ? ` (currently CSI #${initialContext.csiId}).`
+              : "."}
           </p>
-          <div className="flex justify-center pt-2">
+          <div className="flex justify-center gap-3 pt-2">
+            <Button asChild className="rounded-md">
+              <Link href="/verify-csi">Verify CSI Identity</Link>
+            </Button>
             <Button variant="outline" asChild className="rounded-md">
               <Link href="/tech-weekly">Return to Tech Weekly</Link>
             </Button>

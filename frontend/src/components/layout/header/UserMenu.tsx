@@ -53,9 +53,13 @@ export function UserMenu({
           className="rounded-full outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
           aria-label="Account menu"
         >
-          <Avatar className="h-8 w-8 ring-1 ring-hairline">
-            <AvatarImage src={profile?.avatar_url || undefined} alt="" />
-            <AvatarFallback className="bg-surface font-mono text-[11px]">
+          <Avatar className="h-8 w-8 rounded-md ring-1 ring-[color-mix(in_srgb,var(--fg)_12%,transparent)]">
+            <AvatarImage
+              src={profile?.avatar_url || undefined}
+              alt=""
+              className="rounded-md object-cover"
+            />
+            <AvatarFallback className="rounded-md bg-[color-mix(in_srgb,var(--fg)_6%,transparent)] font-mono text-[11px]">
               {initial}
             </AvatarFallback>
           </Avatar>

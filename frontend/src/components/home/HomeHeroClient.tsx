@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
 import { FeaturedTechWeeklyBanner } from "@/components/tech-weekly/FeaturedTechWeeklyBanner";
+import { getCapabilities } from "@/lib/roles";
 import type { TechSubmissionWithAuthor } from "@/types/database";
 
 export function HomeHeroClient({
@@ -13,24 +14,13 @@ export function HomeHeroClient({
   featuredPick: TechSubmissionWithAuthor | null;
 }) {
   const { user, profile } = useAuth();
-
-  const isTechMember =
-    profile?.role === "tech_member" ||
-    profile?.role === "tech_head" ||
-    profile?.role === "super_admin" ||
-    Boolean(profile?.is_admin);
-
-  const canCopyLinkedIn =
-    profile?.role === "tech_head" ||
-    profile?.role === "super_admin" ||
-    profile?.csi_id === 241 ||
-    profile?.csi_id === 246 ||
-    profile?.csi_id === 303 ||
-    Boolean(profile?.is_admin);
+  const caps = getCapabilities(profile);
+  const canWrite = caps.canWriteTech;
+  const canCopyLinkedIn = caps.canReview;
 
   const primaryWriteHref = !user
     ? "/auth/signin"
-    : isTechMember
+    : canWrite
       ? "/tech-weekly/write"
       : "/verify-csi";
 
@@ -40,7 +30,7 @@ export function HomeHeroClient({
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border py-3.5 font-mono text-[11px] uppercase tracking-[0.15em] text-muted-foreground">
           <span>VOL. IV · CSI MIT-WPU ENGINEERING PRESS</span>
           <span className="hidden sm:inline">
-            WEEKLY CYCLE: SUNDAY 00:00 TO WEDNESDAY 09:00 IST
+            WEEKLY CYCLE: FRIDAY 09:00 TO WEDNESDAY 09:00 IST
           </span>
           <Link
             href="/tech-weekly"
@@ -65,7 +55,7 @@ export function HomeHeroClient({
             </div>
 
             <p className="max-w-xl font-serif text-lg sm:text-xl leading-relaxed text-muted-foreground">
-              Each week, verified engineers of the CSI MIT-WPU Technical Wing
+              Each week, verified CSI MIT-WPU members across every department
               publish architectural deep-dives, systems postmortems, and
               implementation guides. Every Wednesday morning, one dispatch is
               selected as the chapter&apos;s official LinkedIn feature.
@@ -91,7 +81,7 @@ export function HomeHeroClient({
               >
                 <Link href={primaryWriteHref}>
                   {user
-                    ? isTechMember
+                    ? canWrite
                       ? "Write Weekly Dispatch"
                       : "Verify CSI Identity"
                     : "Sign in to Contribute"}
@@ -143,7 +133,7 @@ export function HomeHeroClient({
                     Author Eligibility
                   </dt>
                   <dd className="font-mono text-right text-foreground">
-                    Verified CSI Technical Wing
+                    Verified CSI members
                   </dd>
                 </div>
                 <div className="py-3.5 flex items-baseline justify-between gap-4">
@@ -187,12 +177,12 @@ export function HomeHeroClient({
               01 / DISPATCH
             </span>
             <h2 className="font-display text-xl font-semibold text-foreground">
-              Sunday to Wednesday Window
+              Friday to Wednesday Window
             </h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Verified Technical Wing members draft and submit concise technical
-              articles, complete with syntax-highlighted code and architectural
-              diagrams, before Wednesday at 09:00 IST.
+              Verified CSI members draft and submit concise technical articles,
+              complete with syntax-highlighted code and architectural diagrams,
+              from Friday 09:00 IST through Wednesday 09:00 IST.
             </p>
           </div>
 

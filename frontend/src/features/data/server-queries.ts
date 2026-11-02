@@ -48,7 +48,7 @@ const FALLBACK_CSI_PUBLICATION: Publication = {
   slug: "csi",
   name: "CSI Tech Blog",
   description:
-    "Technical deep-dives, tutorials, and engineering explainers written by CSI MIT-WPU technical members.",
+    "Technical deep-dives, tutorials, and engineering explainers written by verified CSI MIT-WPU members.",
   cover_image: null,
   created_at: new Date(0).toISOString(),
 };

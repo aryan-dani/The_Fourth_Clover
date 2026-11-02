@@ -37,8 +37,8 @@ export default function SignInPage() {
                   Sign in to The Fourth Clover
                 </h1>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Authenticate with Google. Verified members of the CSI MIT-WPU
-                  Technical Wing can file weekly engineering dispatches.
+                  Authenticate with Google. Verified CSI MIT-WPU members from
+                  every department can file weekly engineering dispatches.
                 </p>
               </div>
 

@@ -26,18 +26,15 @@ type ProfileLike = Partial<
 /**
  * Single source of truth for UI + server capability checks.
  * Prefer profile.role / is_admin over hardcoded CSI IDs.
+ *
+ * Verified CSI roster members (any department) can write Tech Weekly,
+ * comment, and react. Technical Heads / Super Admin still curate.
  */
-export function getCapabilities(
-  profile: ProfileLike,
-  options?: { allowMemberComments?: boolean },
-): UserCapabilities {
+export function getCapabilities(profile: ProfileLike): UserCapabilities {
   const role = (profile?.role ?? "unverified") as AppRole;
   const isSuspended = Boolean(profile?.is_suspended);
   const isAdmin = role === "super_admin" || Boolean(profile?.is_admin);
   const isTechHead = role === "tech_head" || isAdmin;
-  const isTechMember =
-    !isSuspended &&
-    (isTechHead || (role === "tech_member" && Boolean(profile?.csi_id)));
   const rosterRoles: AppRole[] = [
     "member",
     "tech_member",
@@ -49,13 +46,10 @@ export function getCapabilities(
     (isAdmin || (Boolean(profile?.csi_id) && rosterRoles.includes(role)));
 
   return {
-    // Any signed-in non-suspended user can write Journal pieces.
     canWriteJournal: Boolean(profile) && !isSuspended,
-    canWriteTech: isTechMember,
+    canWriteTech: isVerified,
     canReview: isTechHead,
-    canCommentTech:
-      isTechMember ||
-      (Boolean(options?.allowMemberComments) && isVerified),
+    canCommentTech: isVerified,
     isAdmin,
     isSuspended,
     isVerified,

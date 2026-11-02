@@ -31,10 +31,10 @@ export default function AboutPage() {
             </p>
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
               Every week, verified members of the Computer Society of India
-              (MIT-WPU Student Chapter) Technical Department submit essays from
-              Sunday through Wednesday morning. Our Technical Heads review the
-              cohort and curate one standout dispatch for the official CSI
-              LinkedIn feed.
+              (MIT-WPU Student Chapter) — across every department — submit
+              essays from Friday 09:00 IST through Wednesday morning. Our
+              Technical Heads review the cohort and curate one standout dispatch
+              for the official CSI LinkedIn feed.
             </p>
           </div>
 
@@ -68,7 +68,7 @@ export default function AboutPage() {
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Identity Verification</dt>
                   <dd className="font-mono font-medium text-foreground">
-                    CSI ID + HMAC PRN 2FA
+                    CSI ID + University PRN
                   </dd>
                 </div>
               </dl>
