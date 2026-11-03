@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { EmptyState, SectionLabel } from "@/components/editorial";
 import {
   PenTool,
@@ -111,31 +110,39 @@ export function TechWeeklyClient({
           </div>
           <div className="flex flex-wrap gap-2">
             {canWrite ? (
-              <Button asChild size="sm">
-                <Link href="/tech-weekly/write">
-                  <PenTool className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                  {initialData.isWindowOpen || role === "super_admin"
-                    ? "Write dispatch"
-                    : "Manage drafts"}
-                </Link>
-              </Button>
+              <Link
+                href="/tech-weekly/write"
+                className="btn-editorial btn-editorial--solid inline-flex !px-4 !py-2.5 text-[0.68rem]"
+              >
+                <PenTool className="h-3.5 w-3.5" aria-hidden />
+                {initialData.isWindowOpen || role === "super_admin"
+                  ? "Write dispatch"
+                  : "Manage drafts"}
+              </Link>
             ) : user ? (
-              <Button asChild size="sm">
-                <Link href="/verify-csi">Verify CSI Identity</Link>
-              </Button>
+              <Link
+                href="/verify-csi"
+                className="btn-editorial btn-editorial--solid inline-flex !px-4 !py-2.5 text-[0.68rem]"
+              >
+                Verify CSI Identity
+              </Link>
             ) : (
-              <Button asChild size="sm">
-                <Link href="/auth/signin">Sign in to contribute</Link>
-              </Button>
+              <Link
+                href="/auth/signin"
+                className="btn-editorial btn-editorial--solid inline-flex !px-4 !py-2.5 text-[0.68rem]"
+              >
+                Sign in to contribute
+              </Link>
             )}
 
             {isTechHeadOrAdmin && (
-              <Button asChild variant="outline" size="sm">
-                <Link href="/tech-weekly/review">
-                  <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                  Curation desk
-                </Link>
-              </Button>
+              <Link
+                href="/tech-weekly/review"
+                className="btn-editorial inline-flex !px-4 !py-2.5 text-[0.68rem]"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden />
+                Curation desk
+              </Link>
             )}
           </div>
         </div>
@@ -195,9 +202,12 @@ export function TechWeeklyClient({
               description="Any verified CSI member can submit while the window is open. Cycles open Friday 09:00 IST."
               action={
                 canWrite ? (
-                  <Button asChild size="sm">
-                    <Link href="/tech-weekly/write">File the first dispatch</Link>
-                  </Button>
+                  <Link
+                    href="/tech-weekly/write"
+                    className="btn-editorial btn-editorial--solid inline-flex !px-4 !py-2.5 text-[0.68rem]"
+                  >
+                    File the first dispatch
+                  </Link>
                 ) : undefined
               }
             />

@@ -4,13 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Copy, Check, ArrowUpRight, Clock } from "lucide-react";
+import { Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import type { TechSubmissionWithAuthor } from "@/types/database";
 
 export function formatLinkedInPostText(
-  submission: TechSubmissionWithAuthor
+  submission: TechSubmissionWithAuthor,
 ): string {
   const authorName =
     submission.author?.full_name?.trim() ||
@@ -22,7 +21,7 @@ export function formatLinkedInPostText(
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1 ($2)")
     .replace(/^#{1,6}\s+/gm, "")
     .replace(/```[\s\S]*?```/g, (match) =>
-      match.replace(/```\w*\n?/g, "").trim()
+      match.replace(/```\w*\n?/g, "").trim(),
     )
     .replace(/\*\*([^*]+)\*\*/g, "$1")
     .replace(/\*([^*]+)\*/g, "$1")
@@ -41,7 +40,7 @@ export function formatLinkedInPostText(
     "#SystemsDesign",
   ];
   const allHashtags = Array.from(
-    new Set([...customTags, ...defaultHashtags])
+    new Set([...customTags, ...defaultHashtags]),
   ).join(" ");
 
   return [
@@ -84,12 +83,12 @@ export function CopyForLinkedInButton({
       size={size}
       variant={variant}
       onClick={() => void handleCopy()}
-      className="rounded-md gap-2 font-mono text-xs uppercase tracking-wider"
+      className="gap-2 font-mono text-xs uppercase tracking-wider"
     >
       {copied ? (
         <>
           <Check className="h-3.5 w-3.5" />
-          Copied LinkedIn Copy
+          Copied
         </>
       ) : (
         <>
@@ -114,9 +113,14 @@ export function FeaturedTechWeeklyBanner({
     submission.author?.full_name ||
     submission.author?.username ||
     "CSI Member";
-  const authorBadge = submission.author?.dept
-    ? `CSI ${submission.author.dept}${submission.author.year ? ` · ${submission.author.year}` : ""}`
-    : "CSI Member";
+  const authorMeta = [
+    submission.author?.dept ? `CSI ${submission.author.dept}` : null,
+    submission.author?.year || null,
+    submission.author?.csi_id ? `#${submission.author.csi_id}` : null,
+    submission.read_time ? `${submission.read_time} min` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   const excerpt =
     submission.summary?.trim() ||
@@ -127,92 +131,72 @@ export function FeaturedTechWeeklyBanner({
       .slice(0, 240) + "...";
 
   return (
-    <section className="overflow-hidden rounded-lg border border-border bg-card">
-      {/* Top Issue Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/40 px-6 py-3">
-        <div className="flex items-center gap-3">
-          <span className="inline-block h-2 w-2 rounded-full bg-foreground" />
-          <span className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-foreground">
-            Weekly Featured Selection · Official CSI LinkedIn Dispatch
-          </span>
-        </div>
+    <section className="panel overflow-hidden">
+      <div className="panel-header">
+        <p className="type-label text-foreground">
+          Weekly featured · CSI LinkedIn
+        </p>
         {submission.week?.title && (
-          <span className="font-mono text-[11px] text-muted-foreground">
+          <p className="type-label text-muted-foreground">
             {submission.week.title}
-          </span>
+          </p>
         )}
       </div>
 
       <div
-        className={`grid gap-8 p-6 sm:p-8 lg:p-10 ${
+        className={
           submission.cover_image && !compact
-            ? "lg:grid-cols-12 lg:items-center"
-            : "grid-cols-1"
-        }`}
+            ? "grid gap-8 p-6 sm:p-8 lg:grid-cols-12 lg:items-center lg:gap-10 lg:p-10"
+            : "space-y-5 p-6 sm:p-8"
+        }
       >
         <div
           className={
             submission.cover_image && !compact
-              ? "lg:col-span-7 space-y-5"
-              : "space-y-5 max-w-3xl"
+              ? "space-y-5 lg:col-span-7"
+              : "max-w-3xl space-y-5"
           }
         >
           {submission.tags && submission.tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {submission.tags.slice(0, 4).map((tag) => (
-                <span
-                  key={tag}
-                  className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground border border-border px-2 py-0.5 rounded-sm bg-background"
-                >
+                <span key={tag} className="type-label text-muted-foreground">
                   {tag}
                 </span>
               ))}
             </div>
           )}
 
-          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-foreground leading-[1.15]">
+          <h2 className="type-display text-[clamp(1.6rem,4vw,2.75rem)] text-foreground">
             <Link
               href={`/tech-weekly/${submission.slug}`}
-              className="hover:underline decoration-1 underline-offset-4"
+              className="transition-opacity hover:opacity-70"
             >
               {submission.title}
             </Link>
           </h2>
 
-          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-            {excerpt}
-          </p>
+          <p className="type-body max-w-2xl text-base">{excerpt}</p>
 
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-border/80">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-9 w-9 rounded-sm border border-border">
-                <AvatarImage src={submission.author?.avatar_url || undefined} />
-                <AvatarFallback className="rounded-sm font-mono text-xs">
-                  {authorName[0]?.toUpperCase() || "C"}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="text-sm font-medium text-foreground leading-none">
-                  {authorName}
+          <div className="flex flex-wrap items-end justify-between gap-4 border-t border-[var(--fg-line)] pt-5">
+            <div>
+              <p className="type-person text-base text-foreground">
+                {authorName}
+              </p>
+              {authorMeta && (
+                <p className="type-label mt-1 text-muted-foreground">
+                  {authorMeta}
                 </p>
-                <p className="mt-1 font-mono text-[11px] text-muted-foreground">
-                  {authorBadge}
-                  {submission.author?.csi_id
-                    ? ` · #${submission.author.csi_id}`
-                    : ""}{" "}
-                  · <Clock className="inline h-3 w-3 -mt-0.5" />{" "}
-                  {submission.read_time} min read ({submission.word_count} words)
-                </p>
-              </div>
+              )}
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5">
-              <Button asChild size="sm" className="rounded-md px-4 text-xs">
-                <Link href={`/tech-weekly/${submission.slug}`}>
-                  Read Dispatch
-                  <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" />
-                </Link>
-              </Button>
+              <Link
+                href={`/tech-weekly/${submission.slug}`}
+                className="btn-editorial--solid btn-editorial !py-2.5 !px-4 text-[0.68rem]"
+              >
+                Read dispatch
+              </Link>
               {canCopyLinkedIn && (
                 <CopyForLinkedInButton submission={submission} size="sm" />
               )}
@@ -224,7 +208,7 @@ export function FeaturedTechWeeklyBanner({
           <div className="lg:col-span-5">
             <Link
               href={`/tech-weekly/${submission.slug}`}
-              className="block relative aspect-[16/10] w-full overflow-hidden rounded-md border border-border bg-muted"
+              className="relative block aspect-[16/10] w-full overflow-hidden border border-[var(--fg-line)] bg-muted"
             >
               <Image
                 src={submission.cover_image}

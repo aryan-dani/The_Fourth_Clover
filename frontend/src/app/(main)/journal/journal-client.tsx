@@ -148,13 +148,19 @@ export function JournalPageClient({
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Link href="/tech-weekly" className="btn-editorial !py-2.5 !px-4 text-[0.65rem]">
-              Tech Weekly
-              <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
-            </Link>
-            <Link href="/write" className="btn-editorial !py-2.5 !px-4 text-[0.65rem]">
+            <Link
+              href="/write"
+              className="btn-editorial btn-editorial--solid !px-4 !py-2.5 text-[0.65rem]"
+            >
               <PenTool className="h-3.5 w-3.5" aria-hidden />
               Write
+            </Link>
+            <Link
+              href="/tech-weekly"
+              className="btn-editorial !px-4 !py-2.5 text-[0.65rem]"
+            >
+              Tech Weekly
+              <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
             </Link>
           </div>
         </div>

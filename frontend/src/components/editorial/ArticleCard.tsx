@@ -97,7 +97,7 @@ export function ArticleCard({
           <SectionLabel href={meta.href} className={nest}>
             {meta.label}
           </SectionLabel>
-          <h3 className="font-display text-lg font-semibold leading-snug tracking-tight text-foreground transition-colors duration-editorial group-hover:text-brand">
+          <h3 className="type-display text-[clamp(1.05rem,2.2vw,1.35rem)] text-foreground transition-opacity group-hover:opacity-70">
             {title}
           </h3>
           {author && (
@@ -125,7 +125,7 @@ export function ArticleCard({
         <SectionLabel href={meta.href} className={nest}>
           {meta.label}
         </SectionLabel>
-        <h3 className="font-display text-base font-semibold leading-snug tracking-tight text-foreground transition-colors duration-editorial group-hover:text-brand sm:text-lg">
+        <h3 className="type-display text-[clamp(1rem,2vw,1.25rem)] text-foreground transition-opacity group-hover:opacity-70">
           {title}
         </h3>
         {excerpt && (
@@ -157,7 +157,7 @@ export function ArticleCard({
   return (
     <article
       className={cn(
-        "group relative flex flex-col overflow-hidden border border-hairline bg-background transition-colors duration-editorial hover:border-brand/35",
+        "group relative flex flex-col overflow-hidden border border-[var(--fg-line)] bg-[hsl(var(--card))] transition-opacity",
         isLead && "md:grid md:grid-cols-2 md:items-stretch",
         className,
       )}
@@ -205,10 +205,10 @@ export function ArticleCard({
 
         <h2
           className={cn(
-            "font-display font-semibold tracking-tight text-foreground transition-colors duration-editorial group-hover:text-brand",
+            "type-display text-foreground transition-opacity group-hover:opacity-70",
             isLead
-              ? "text-display-sm md:text-display-md"
-              : "text-xl leading-snug",
+              ? "text-[clamp(1.5rem,3.5vw,2.4rem)]"
+              : "text-[clamp(1.15rem,2.5vw,1.45rem)]",
           )}
         >
           {title}

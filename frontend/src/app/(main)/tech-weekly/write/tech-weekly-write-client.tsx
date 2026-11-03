@@ -12,7 +12,6 @@ import {
   ShieldCheck,
   Terminal,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { PostBodyRenderer } from "@/components/post/PostBodyRenderer";
 import { EditorShell } from "@/features/editor/EditorShell";
 import { EditorCanvas } from "@/features/editor/EditorCanvas";
@@ -347,22 +346,28 @@ export default function TechWeeklyWriteClient({
   if (!initialContext.authenticated) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20">
-        <div className="space-y-4 border border-border bg-card p-10 text-center">
+        <div className="panel space-y-4 p-10 text-center">
           <Lock className="mx-auto h-8 w-8 text-foreground" />
-          <h1 className="font-display text-2xl font-semibold text-foreground">
-            Sign in with Google to Access the Writing Studio
+          <h1 className="type-display text-[clamp(1.4rem,3.5vw,2rem)] text-foreground">
+            Sign in to write
           </h1>
-          <p className="mx-auto max-w-md text-sm text-muted-foreground">
+          <p className="type-body mx-auto max-w-md text-sm">
             Publishing on CSI Tech Weekly is open to every verified CSI MIT-WPU
             member after you sign in and claim your roster ID.
           </p>
-          <div className="flex justify-center gap-3 pt-2">
-            <Button asChild className="rounded-md">
-              <Link href="/auth/signin">Sign in with Google</Link>
-            </Button>
-            <Button variant="outline" asChild className="rounded-md">
-              <Link href="/tech-weekly">Back to Tech Weekly</Link>
-            </Button>
+          <div className="flex flex-wrap justify-center gap-3 pt-2">
+            <Link
+              href="/auth/signin"
+              className="btn-editorial btn-editorial--solid inline-flex !px-4 !py-2.5 text-[0.68rem]"
+            >
+              Sign in with Google
+            </Link>
+            <Link
+              href="/tech-weekly"
+              className="btn-editorial inline-flex !px-4 !py-2.5 text-[0.68rem]"
+            >
+              Back to Tech Weekly
+            </Link>
           </div>
         </div>
       </div>
@@ -372,22 +377,28 @@ export default function TechWeeklyWriteClient({
   if (initialContext.role === "unverified") {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20">
-        <div className="space-y-4 border border-border bg-card p-10 text-center">
+        <div className="panel space-y-4 p-10 text-center">
           <ShieldCheck className="mx-auto h-8 w-8 text-foreground" />
-          <h1 className="font-display text-2xl font-semibold text-foreground">
-            Verify Your CSI Roster Identity
+          <h1 className="type-display text-[clamp(1.4rem,3.5vw,2rem)] text-foreground">
+            Verify your CSI ID
           </h1>
-          <p className="mx-auto max-w-md text-sm text-muted-foreground">
+          <p className="type-body mx-auto max-w-md text-sm">
             Link your Google account with your CSI ID and 10-digit MIT-WPU PRN
-            to unlock the CSI Tech Weekly Writing Studio.
+            to unlock the writing studio.
           </p>
-          <div className="flex justify-center gap-3 pt-2">
-            <Button asChild className="rounded-md">
-              <Link href="/verify-csi">Verify CSI Identity</Link>
-            </Button>
-            <Button variant="outline" asChild className="rounded-md">
-              <Link href="/tech-weekly">Browse Tech Weekly</Link>
-            </Button>
+          <div className="flex flex-wrap justify-center gap-3 pt-2">
+            <Link
+              href="/verify-csi"
+              className="btn-editorial btn-editorial--solid inline-flex !px-4 !py-2.5 text-[0.68rem]"
+            >
+              Verify CSI Identity
+            </Link>
+            <Link
+              href="/tech-weekly"
+              className="btn-editorial inline-flex !px-4 !py-2.5 text-[0.68rem]"
+            >
+              Browse Tech Weekly
+            </Link>
           </div>
         </div>
       </div>
@@ -397,25 +408,31 @@ export default function TechWeeklyWriteClient({
   if (!initialContext.canWrite) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20">
-        <div className="space-y-4 border border-border bg-card p-10 text-center">
+        <div className="panel space-y-4 p-10 text-center">
           <AlertCircle className="mx-auto h-8 w-8 text-foreground" />
-          <h1 className="font-display text-2xl font-semibold text-foreground">
+          <h1 className="type-display text-[clamp(1.4rem,3.5vw,2rem)] text-foreground">
             Verify to publish
           </h1>
-          <p className="mx-auto max-w-md text-sm text-muted-foreground">
+          <p className="type-body mx-auto max-w-md text-sm">
             Tech Weekly writing is open to every verified CSI member. Link your
             CSI ID and PRN to unlock the writing studio
             {initialContext.csiId
               ? ` (currently CSI #${initialContext.csiId}).`
               : "."}
           </p>
-          <div className="flex justify-center gap-3 pt-2">
-            <Button asChild className="rounded-md">
-              <Link href="/verify-csi">Verify CSI Identity</Link>
-            </Button>
-            <Button variant="outline" asChild className="rounded-md">
-              <Link href="/tech-weekly">Return to Tech Weekly</Link>
-            </Button>
+          <div className="flex flex-wrap justify-center gap-3 pt-2">
+            <Link
+              href="/verify-csi"
+              className="btn-editorial btn-editorial--solid inline-flex !px-4 !py-2.5 text-[0.68rem]"
+            >
+              Verify CSI Identity
+            </Link>
+            <Link
+              href="/tech-weekly"
+              className="btn-editorial inline-flex !px-4 !py-2.5 text-[0.68rem]"
+            >
+              Return to Tech Weekly
+            </Link>
           </div>
         </div>
       </div>

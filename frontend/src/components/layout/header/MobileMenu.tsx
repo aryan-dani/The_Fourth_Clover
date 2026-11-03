@@ -236,7 +236,7 @@ export function MobileMenu({
           <Link
             href="/auth/signin"
             onClick={onClose}
-            className="type-label link-u self-start"
+            className="btn-editorial btn-editorial--solid self-start !border-[var(--paper)] !bg-[var(--paper)] !px-4 !py-2.5 !text-[0.7rem] !text-[var(--ink)]"
           >
             Sign in
           </Link>

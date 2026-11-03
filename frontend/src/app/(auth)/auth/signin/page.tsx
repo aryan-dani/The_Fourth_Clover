@@ -10,59 +10,50 @@ export default function SignInPage() {
   return (
     <AuthShell>
       <div className="space-y-6">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Return to Masthead
-          </Link>
+        <Link
+          href="/"
+          className="type-label inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Return home
+        </Link>
 
-          <div className="rounded-lg border border-border bg-card overflow-hidden shadow-xs">
-            <div className="border-b border-border bg-muted/40 px-6 py-3 flex items-center justify-between">
-              <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-foreground">
-                Institutional Access
-              </span>
-              <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                CSI MIT-WPU
-              </span>
+        <div className="panel overflow-hidden">
+          <div className="panel-header">
+            <span className="type-label text-foreground">Sign in</span>
+            <span className="type-label text-muted-foreground">CSI MIT-WPU</span>
+          </div>
+
+          <div className="space-y-6 p-6 sm:p-8">
+            <div className="space-y-3">
+              <div className="flex h-10 w-10 items-center justify-center border border-[var(--fg-line)] text-[var(--brand-color)]">
+                <CloverMark className="h-5 w-5" />
+              </div>
+              <h1 className="type-display text-[clamp(1.6rem,4vw,2.25rem)] text-foreground">
+                The Fourth Clover
+              </h1>
+              <p className="type-body text-sm">
+                Sign in with Google. Verified CSI members from every department
+                can write Journal pieces and Tech Weekly dispatches.
+              </p>
             </div>
 
-            <div className="p-6 sm:p-8 space-y-6">
-              <div className="space-y-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-background text-foreground">
-                  <CloverMark className="h-5 w-5" />
-                </div>
-                <h1 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
-                  Sign in to The Fourth Clover
-                </h1>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Authenticate with Google. Verified CSI MIT-WPU members from
-                  every department can file weekly engineering dispatches.
-                </p>
-              </div>
+            <GoogleSignIn />
 
-              <GoogleSignIn />
-
-              <div className="border-t border-border pt-5 space-y-2.5 text-xs text-muted-foreground">
-                <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-foreground">
-                  Verification Protocol
-                </p>
-                <ol className="space-y-1.5 list-decimal list-inside">
-                  <li>Authenticate with your Google account.</li>
-                  <li>
-                    Link your CSI Roster ID and 10-digit University PRN (one-time
-                    two-factor claim).
-                  </li>
-                  <li>
-                    Publish anytime while open · cycles start Friday 09:00 IST
-                    IST.
-                  </li>
-                </ol>
-              </div>
+            <div className="space-y-2.5 border-t border-[var(--fg-line)] pt-5">
+              <p className="type-label text-foreground">After you sign in</p>
+              <ol className="list-inside list-decimal space-y-1.5 text-sm text-muted-foreground">
+                <li>Verify with your CSI ID and university PRN.</li>
+                <li>Write Journal anytime.</li>
+                <li>
+                  Submit Tech Weekly while the window is open (Friday 09:00 IST
+                  through Wednesday).
+                </li>
+              </ol>
             </div>
           </div>
         </div>
+      </div>
     </AuthShell>
   );
 }

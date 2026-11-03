@@ -104,9 +104,7 @@ export default function VerifyCsiPage() {
       <div className="mx-auto max-w-3xl px-4 py-20">
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
           <Loader2 className="h-6 w-6 animate-spin text-foreground" />
-          <p className="font-mono text-xs uppercase tracking-wider">
-            Checking CSI roster…
-          </p>
+          <p className="type-label">Checking CSI roster…</p>
         </div>
       </div>
     );
@@ -115,19 +113,22 @@ export default function VerifyCsiPage() {
   if (!user) {
     return (
       <div className="mx-auto max-w-3xl space-y-10 px-4 py-12 sm:py-16">
-        <div className="rounded-lg border border-border bg-card p-8 text-center space-y-4">
+        <div className="panel space-y-4 p-8 text-center">
           <ShieldCheck className="mx-auto h-8 w-8 text-foreground" />
-          <h1 className="font-display text-2xl font-semibold text-foreground">
+          <h1 className="type-display text-[clamp(1.5rem,4vw,2rem)] text-foreground">
             Sign in to verify your CSI ID
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="type-body text-sm">
             Use Google first, then link your CSI Member ID and university PRN.
             Anyone on the CSI roster can join Tech Weekly after verifying.
           </p>
           <div className="pt-2">
-            <Button asChild className="rounded-md">
-              <Link href="/auth/signin">Continue to Google Sign In</Link>
-            </Button>
+            <Link
+              href="/auth/signin"
+              className="btn-editorial btn-editorial--solid inline-flex"
+            >
+              Continue to Google Sign In
+            </Link>
           </div>
         </div>
         <TechWeeklyGuide />
@@ -138,14 +139,14 @@ export default function VerifyCsiPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-10 px-4 py-12 sm:py-16">
       {isVerified ? (
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <div className="flex items-center justify-between border-b border-border bg-muted/40 px-6 py-3.5">
-            <span className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.15em] text-foreground">
+        <div className="panel overflow-hidden">
+          <div className="panel-header">
+            <span className="type-label inline-flex items-center gap-2 text-foreground">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              Verified CSI Identity
+              Verified CSI identity
             </span>
             {profile?.csi_id && (
-              <span className="font-mono text-xs text-foreground">
+              <span className="type-label text-foreground">
                 CSI #{profile.csi_id}
               </span>
             )}
@@ -153,30 +154,28 @@ export default function VerifyCsiPage() {
 
           <div className="space-y-6 p-6 sm:p-8">
             <div className="space-y-1">
-              <h1 className="font-display text-2xl font-semibold text-foreground sm:text-3xl">
+              <h1 className="type-person text-2xl text-foreground sm:text-3xl">
                 {profile?.full_name || profile?.username}
               </h1>
-              <p className="text-xs text-muted-foreground">
+              <p className="type-body text-sm">
                 Linked to the official CSI MIT-WPU roster. You can submit Tech
                 Weekly dispatches when the window is open.
               </p>
             </div>
 
-            <dl className="divide-y divide-border border-y border-border text-xs font-mono">
-              <div className="flex justify-between py-3">
-                <dt className="uppercase text-muted-foreground">Assigned role</dt>
-                <dd className="font-medium text-foreground">
+            <dl className="divide-y divide-[var(--fg-line)] border-y border-[var(--fg-line)] text-sm">
+              <div className="flex justify-between gap-4 py-3">
+                <dt className="type-label text-muted-foreground">Role</dt>
+                <dd className="text-foreground">
                   {formatRoleLabel(profile?.role)}
                 </dd>
               </div>
-              <div className="flex justify-between py-3">
-                <dt className="uppercase text-muted-foreground">Department</dt>
+              <div className="flex justify-between gap-4 py-3">
+                <dt className="type-label text-muted-foreground">Department</dt>
                 <dd className="text-foreground">{profile?.dept || "CSI"}</dd>
               </div>
-              <div className="flex justify-between py-3">
-                <dt className="uppercase text-muted-foreground">
-                  Academic year
-                </dt>
+              <div className="flex justify-between gap-4 py-3">
+                <dt className="type-label text-muted-foreground">Year</dt>
                 <dd className="text-foreground">
                   {profile?.year || "CSI MIT-WPU"}
                 </dd>
@@ -184,41 +183,39 @@ export default function VerifyCsiPage() {
             </dl>
 
             <div className="flex flex-wrap items-center gap-3">
-              <Button asChild className="rounded-md text-xs">
-                <Link href="/tech-weekly">
-                  Open CSI Tech Weekly
-                  <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                </Link>
-              </Button>
+              <Link
+                href="/tech-weekly"
+                className="btn-editorial btn-editorial--solid inline-flex !px-4 !py-2.5 text-[0.68rem]"
+              >
+                Open CSI Tech Weekly
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
               {canWriteTechWeekly && (
-                <Button
-                  asChild
-                  variant="outline"
-                  className="rounded-md bg-card text-xs"
+                <Link
+                  href="/tech-weekly/write"
+                  className="btn-editorial inline-flex !px-4 !py-2.5 text-[0.68rem]"
                 >
-                  <Link href="/tech-weekly/write">
-                    <PenTool className="mr-1.5 h-3.5 w-3.5" />
-                    Write weekly dispatch
-                  </Link>
-                </Button>
+                  <PenTool className="h-3.5 w-3.5" />
+                  Write weekly dispatch
+                </Link>
               )}
             </div>
           </div>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <div className="flex items-center justify-between border-b border-border bg-muted/40 px-6 py-3.5">
-            <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-foreground">
+        <div className="panel overflow-hidden">
+          <div className="panel-header">
+            <span className="type-label text-foreground">
               Join CSI Tech Weekly
             </span>
-            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+            <span className="type-label text-muted-foreground">
               One-time verify
             </span>
           </div>
 
           <div className="space-y-6 p-6 sm:p-8">
             <div className="space-y-2">
-              <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+              <h1 className="type-display text-[clamp(1.6rem,4vw,2.25rem)] text-foreground">
                 Verify your CSI ID
               </h1>
               <ol className="list-decimal space-y-1.5 pl-4 text-sm leading-relaxed text-muted-foreground">
@@ -239,7 +236,7 @@ export default function VerifyCsiPage() {
               <div className="space-y-1.5">
                 <Label
                   htmlFor="csi-id"
-                  className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground"
+                  className="type-label text-muted-foreground"
                 >
                   CSI Member ID
                 </Label>
@@ -251,14 +248,14 @@ export default function VerifyCsiPage() {
                   value={csiIdInput}
                   onChange={(e) => setCsiIdInput(e.target.value)}
                   required
-                  className="h-10 rounded-md font-mono text-sm"
+                  className="h-10 rounded-none font-mono text-sm"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <Label
                   htmlFor="prn"
-                  className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground"
+                  className="type-label text-muted-foreground"
                 >
                   University PRN (10 digits)
                 </Label>
@@ -270,12 +267,12 @@ export default function VerifyCsiPage() {
                   value={prnInput}
                   onChange={(e) => setPrnInput(e.target.value)}
                   required
-                  className="h-10 rounded-md font-mono text-sm"
+                  className="h-10 rounded-none font-mono text-sm"
                 />
               </div>
 
               {errorMessage && (
-                <Alert variant="destructive" className="rounded-md py-3">
+                <Alert variant="destructive" className="rounded-none py-3">
                   <AlertDescription className="text-xs">
                     {errorMessage}
                   </AlertDescription>
@@ -285,7 +282,7 @@ export default function VerifyCsiPage() {
               <Button
                 type="submit"
                 disabled={submitting}
-                className="h-10 w-full rounded-md text-xs font-medium"
+                className="h-10 w-full rounded-none text-xs font-medium"
               >
                 {submitting ? (
                   <>
@@ -298,7 +295,7 @@ export default function VerifyCsiPage() {
               </Button>
             </form>
 
-            <div className="flex items-start gap-2.5 border-t border-border pt-4 text-xs text-muted-foreground">
+            <div className="flex items-start gap-2.5 border-t border-[var(--fg-line)] pt-4 text-xs text-muted-foreground">
               <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground" />
               <span>
                 Once claimed, a CSI ID stays bound to this Google account. Only

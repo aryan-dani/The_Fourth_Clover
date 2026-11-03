@@ -113,37 +113,37 @@
       border-color var(--theme-duration) var(--ease-in-out);
   }
 
-  /* Dark mode — forest */
+  /* Dark mode — forest: page deep, panels one step up, borders lighter still */
   .dark {
     color-scheme: dark;
     --bg: var(--ink-deep);
     --fg: var(--paper);
     --fg-muted: var(--body-on-dark);
-    --fg-line: var(--ink-surface);
+    --fg-line: color-mix(in srgb, var(--paper) 14%, var(--ink-surface));
     --brand-color: var(--clover-bright);
 
     --background: 145 20% 11%;
     --foreground: 43 38% 94%;
-    --card: 140 12% 19%;
+    --card: 140 14% 16%;
     --card-foreground: 43 38% 94%;
-    --popover: 140 12% 19%;
+    --popover: 140 14% 17%;
     --popover-foreground: 43 38% 94%;
     --primary: 43 38% 94%;
     --primary-foreground: 145 20% 11%;
-    --secondary: 140 10% 18%;
+    --secondary: 140 12% 18%;
     --secondary-foreground: 43 38% 94%;
-    --muted: 140 10% 18%;
+    --muted: 140 12% 15%;
     --muted-foreground: 45 16% 75%;
-    --accent: 140 10% 20%;
+    --accent: 140 12% 20%;
     --accent-foreground: 43 38% 94%;
-    --border: 140 12% 19%;
-    --input: 140 12% 19%;
+    --border: 140 10% 28%;
+    --input: 140 10% 22%;
     --ring: 152 35% 55%;
     --brand: 152 35% 47%;
     --brand-foreground: 145 20% 8%;
-    --surface: 140 12% 19%;
-    --surface-muted: 140 10% 16%;
-    --hairline: 140 12% 19%;
+    --surface: 140 14% 16%;
+    --surface-muted: 140 12% 14%;
+    --hairline: 140 10% 28%;
   }
 }
 
@@ -475,16 +475,28 @@
     color: hsl(var(--muted-foreground));
   }
 
+  /* Shared editorial panel — hairline, square, sits above the page */
   .panel {
     border: 1px solid var(--fg-line);
-    border-radius: var(--radius);
+    border-radius: 0;
     background: hsl(var(--card));
   }
 
   .panel-muted {
     border: 1px solid var(--fg-line);
-    border-radius: var(--radius);
-    background: hsl(var(--surface));
+    border-radius: 0;
+    background: hsl(var(--surface-muted));
+  }
+
+  .panel-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--fg-line);
+    background: color-mix(in srgb, var(--fg) 3.5%, transparent);
+    padding: 0.85rem 1.25rem;
   }
 
   .status-mark {
@@ -523,7 +535,7 @@
     --bg: var(--ink-deep);
     --fg: var(--paper);
     --fg-muted: var(--body-on-dark);
-    --fg-line: var(--ink-surface);
+    --fg-line: color-mix(in srgb, var(--paper) 14%, var(--ink-surface));
     --brand-color: var(--clover-bright);
     color: var(--fg);
   }

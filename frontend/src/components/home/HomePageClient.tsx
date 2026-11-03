@@ -105,8 +105,11 @@ export function HomePageClient({ data }: { data: HomeData }) {
                 An editorial publication from CSI MIT-WPU — essays and verse in
                 the Journal, systems thinking in Tech Weekly.
               </p>
-              <div className="mt-5 flex flex-wrap gap-3 md:mt-6">
-                <Link href="/journal" className="btn-editorial">
+              <div className="mt-5 flex flex-wrap items-center gap-3 md:mt-6">
+                <Link
+                  href="/journal"
+                  className="btn-editorial btn-editorial--solid"
+                >
                   Read the Journal
                 </Link>
                 <Link href="/tech-weekly" className="btn-editorial">
@@ -144,7 +147,10 @@ export function HomePageClient({ data }: { data: HomeData }) {
                     : `Submission window closes in ${countdown.label}`}
                 </p>
               </div>
-              <Link href="/tech-weekly" className="btn-editorial">
+              <Link
+                href="/tech-weekly"
+                className="btn-editorial btn-editorial--solid"
+              >
                 Open issue
               </Link>
             </div>
@@ -263,12 +269,15 @@ export function HomePageClient({ data }: { data: HomeData }) {
               engineering cycle.
             </p>
             <div className="mt-10 flex flex-wrap justify-center gap-4">
+              <Link
+                href="/tech-weekly"
+                className="btn-editorial btn-editorial--solid"
+              >
+                This week’s Tech Weekly
+              </Link>
               <a href="/feed.xml" className="btn-editorial">
                 Journal RSS
               </a>
-              <Link href="/tech-weekly" className="btn-editorial">
-                This week’s Tech Weekly
-              </Link>
             </div>
           </Reveal>
         </div>

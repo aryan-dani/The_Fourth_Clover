@@ -39,13 +39,7 @@ export function TechWeeklyGuide({
   compact?: boolean;
 }) {
   return (
-    <div
-      className={
-        compact
-          ? "space-y-6 border border-[var(--fg-line)] p-5"
-          : "space-y-8"
-      }
-    >
+    <div className={compact ? "panel space-y-6 p-5" : "space-y-8"}>
       <div className="space-y-2">
         <SectionLabel>What is CSI Tech Weekly?</SectionLabel>
         <p className="text-sm leading-relaxed text-muted-foreground">
@@ -64,9 +58,7 @@ export function TechWeeklyGuide({
               key={row.when}
               className="flex flex-col gap-1 px-3 py-2.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
             >
-              <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-foreground">
-                {row.when}
-              </span>
+              <span className="type-label text-foreground">{row.when}</span>
               <span className="text-sm text-muted-foreground sm:text-right">
                 {row.what}
               </span>
@@ -84,7 +76,7 @@ export function TechWeeklyGuide({
               className="flex items-baseline justify-between gap-3 border border-[var(--fg-line)] px-3 py-2"
             >
               <span className="text-sm text-muted-foreground">{row.label}</span>
-              <span className="font-mono text-sm font-medium tabular-nums text-foreground">
+              <span className="type-label tabular-nums text-foreground">
                 {row.pts}
               </span>
             </li>
@@ -97,7 +89,7 @@ export function TechWeeklyGuide({
         <ol className="space-y-2 text-sm leading-relaxed text-muted-foreground">
           {RUBRIC.map((line, i) => (
             <li key={line} className="flex gap-2">
-              <span className="font-mono text-[11px] text-foreground">
+              <span className="type-label text-foreground">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <span>{line}</span>

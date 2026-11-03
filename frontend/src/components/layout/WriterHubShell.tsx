@@ -55,13 +55,14 @@ export function WriterHubShell({ children }: { children: React.ReactNode }) {
     <div className="wrap pb-12 pt-6" data-lenis-prevent>
       <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
         <aside className="w-full shrink-0 lg:sticky lg:top-28 lg:w-64 xl:w-72">
-          <div className="space-y-5 border border-[var(--fg-line)] p-5">
+          <div className="panel space-y-5 p-5">
             <div className="flex flex-col items-center gap-3 text-center">
-              <Avatar className="h-16 w-16 ring-1 ring-[var(--fg-line)]">
+              <Avatar className="h-16 w-16 rounded-md ring-1 ring-[var(--fg-line)]">
                 <AvatarImage
                   src={profile?.avatar_url || user?.user_metadata?.avatar_url}
+                  className="rounded-md object-cover"
                 />
-                <AvatarFallback className="bg-surface text-xl font-medium">
+                <AvatarFallback className="rounded-md bg-[hsl(var(--surface-muted))] text-xl font-medium">
                   {displayName[0] || "?"}
                 </AvatarFallback>
               </Avatar>

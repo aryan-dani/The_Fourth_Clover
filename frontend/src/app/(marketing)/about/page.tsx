@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Globe, ArrowUpRight } from "lucide-react";
 import { GitHubIcon, LinkedInIcon } from "@/components/icons/BrandIcons";
 import { PageShell } from "@/components/layout/PageShell";
@@ -14,11 +13,10 @@ export default function AboutPage() {
       description="An independent technical publication and editorial platform built for CSI MIT-WPU engineers and thoughtful writers."
     >
       <div className="space-y-14">
-        {/* Mission Spread */}
-        <div className="grid gap-10 lg:grid-cols-12 items-start">
-          <div className="lg:col-span-7 space-y-5">
+        <div className="grid items-start gap-10 lg:grid-cols-12">
+          <div className="space-y-5 lg:col-span-7">
             <p className="type-label text-muted-foreground">
-              01 · Editorial Mandate
+              01 · Editorial mandate
             </p>
             <h2 className="type-display text-[clamp(1.6rem,4vw,2.4rem)]">
               Built for rigorous technical writing and long-form clarity.
@@ -29,7 +27,7 @@ export default function AboutPage() {
               systems breakdowns, and technical monographs are treated with
               print-grade typography.
             </p>
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+            <p className="type-body text-sm sm:text-base">
               Every week, verified members of the Computer Society of India
               (MIT-WPU Student Chapter) — across every department — submit
               essays from Friday 09:00 IST through Wednesday morning. Our
@@ -38,37 +36,37 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="lg:col-span-5 rounded-lg border border-border bg-card p-8 flex flex-col justify-between gap-8">
-            <div className="flex items-center justify-between border-b border-border pb-5">
-              <div className="flex h-12 w-12 items-center justify-center rounded-md border border-border bg-background text-primary">
-                <CloverMark className="h-6 w-6" />
+          <div className="panel flex flex-col justify-between gap-8 p-0 lg:col-span-5">
+            <div className="panel-header">
+              <div className="flex h-10 w-10 items-center justify-center border border-[var(--fg-line)] text-[var(--brand-color)]">
+                <CloverMark className="h-5 w-5" />
               </div>
-              <span className="font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                ISSN · CSI MIT-WPU
+              <span className="type-label text-muted-foreground">
+                CSI MIT-WPU
               </span>
             </div>
 
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                Publication Protocol
+            <div className="space-y-3 px-6 pb-6">
+              <p className="type-label text-muted-foreground">
+                Publication protocol
               </p>
-              <dl className="space-y-2.5 text-xs">
-                <div className="flex justify-between border-b border-border/60 pb-2">
-                  <dt className="text-muted-foreground">Submission Window</dt>
-                  <dd className="font-mono font-medium text-foreground">
-                    Opens Friday 09:00 IST
+              <dl className="divide-y divide-[var(--fg-line)] border-y border-[var(--fg-line)] text-sm">
+                <div className="flex justify-between gap-4 py-3">
+                  <dt className="text-muted-foreground">Submission window</dt>
+                  <dd className="type-label text-foreground">
+                    Friday 09:00 IST
                   </dd>
                 </div>
-                <div className="flex justify-between border-b border-border/60 pb-2">
-                  <dt className="text-muted-foreground">Weekly Selection</dt>
-                  <dd className="font-mono font-medium text-foreground">
-                    1 Featured LinkedIn Dispatch
+                <div className="flex justify-between gap-4 py-3">
+                  <dt className="text-muted-foreground">Weekly selection</dt>
+                  <dd className="type-label text-foreground">
+                    1 LinkedIn dispatch
                   </dd>
                 </div>
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Identity Verification</dt>
-                  <dd className="font-mono font-medium text-foreground">
-                    CSI ID + University PRN
+                <div className="flex justify-between gap-4 py-3">
+                  <dt className="text-muted-foreground">Verification</dt>
+                  <dd className="type-label text-foreground">
+                    CSI ID + PRN
                   </dd>
                 </div>
               </dl>
@@ -76,20 +74,19 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* Creator Section */}
-        <div className="border-t border-border pt-12">
+        <div id="masthead" className="border-t border-[var(--fg-line)] pt-12">
           <div className="mb-8">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary mb-1.5">
-              02 · Masthead & Architecture
+            <p className="type-label mb-2 text-muted-foreground">
+              02 · Masthead
             </p>
-            <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">
+            <h2 className="type-display text-[clamp(1.5rem,3.5vw,2.25rem)]">
               Publisher & Technical Secretary
             </h2>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-12 items-start rounded-lg border border-border bg-card p-6 sm:p-8">
-            <div className="md:col-span-3 flex justify-center md:justify-start">
-              <div className="w-36 h-36 sm:w-44 sm:h-44 bg-muted rounded-md overflow-hidden border border-border relative">
+          <div className="panel grid items-start gap-8 p-6 sm:p-8 md:grid-cols-12">
+            <div className="flex justify-center md:col-span-3 md:justify-start">
+              <div className="relative h-36 w-36 overflow-hidden border border-[var(--fg-line)] bg-muted sm:h-44 sm:w-44">
                 <Image
                   src="/images/aryan-dani.jpg"
                   alt="Aryan Dani"
@@ -100,22 +97,22 @@ export default function AboutPage() {
               </div>
             </div>
 
-            <div className="md:col-span-9 space-y-4">
-              <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border pb-3">
+            <div className="space-y-4 md:col-span-9">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--fg-line)] pb-3">
                 <div>
-                  <h3 className="font-display text-2xl font-bold text-foreground">
+                  <h3 className="type-person text-2xl text-foreground">
                     Aryan Dani
                   </h3>
-                  <p className="text-xs font-mono uppercase tracking-[0.14em] text-primary mt-0.5">
-                    Technical Secretary · CSI MIT-WPU · Creator of The Fourth Clover
+                  <p className="type-label mt-1 text-[var(--brand-color)]">
+                    Technical Secretary · CSI MIT-WPU
                   </p>
                 </div>
-                <span className="font-mono text-xs text-muted-foreground">
+                <span className="type-label text-muted-foreground">
                   CSI #303
                 </span>
               </div>
 
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+              <p className="type-body text-sm sm:text-base">
                 I built The Fourth Clover to explore the intersection of modern
                 full-stack engineering and editorial publishing. Designed with
                 Next.js App Router, TypeScript, and row-level secured Supabase
@@ -123,40 +120,37 @@ export default function AboutPage() {
                 MIT-WPU&apos;s weekly engineering publication.
               </p>
 
-              <div className="flex flex-wrap items-center gap-2.5 pt-2">
-                <Button variant="outline" size="sm" asChild>
-                  <Link
-                    href="https://github.com/aryan-dani"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <GitHubIcon className="mr-1.5 h-3.5 w-3.5" />
-                    GitHub
-                    <ArrowUpRight className="ml-1 h-3 w-3 text-muted-foreground" />
-                  </Link>
-                </Button>
-                <Button variant="outline" size="sm" asChild>
-                  <Link
-                    href="https://www.linkedin.com/in/aryandani/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <LinkedInIcon className="mr-1.5 h-3.5 w-3.5" />
-                    LinkedIn
-                    <ArrowUpRight className="ml-1 h-3 w-3 text-muted-foreground" />
-                  </Link>
-                </Button>
-                <Button variant="outline" size="sm" asChild>
-                  <Link
-                    href="https://www.aryandani.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Globe className="mr-1.5 h-3.5 w-3.5" />
-                    aryandani.com
-                    <ArrowUpRight className="ml-1 h-3 w-3 text-muted-foreground" />
-                  </Link>
-                </Button>
+              <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                <Link
+                  href="https://github.com/aryan-dani"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-editorial !px-3 !py-2 text-[0.65rem]"
+                >
+                  <GitHubIcon className="h-3.5 w-3.5" />
+                  GitHub
+                  <ArrowUpRight className="h-3 w-3 opacity-60" />
+                </Link>
+                <Link
+                  href="https://www.linkedin.com/in/aryandani/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-editorial !px-3 !py-2 text-[0.65rem]"
+                >
+                  <LinkedInIcon className="h-3.5 w-3.5" />
+                  LinkedIn
+                  <ArrowUpRight className="h-3 w-3 opacity-60" />
+                </Link>
+                <Link
+                  href="https://www.aryandani.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-editorial !px-3 !py-2 text-[0.65rem]"
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  aryandani.com
+                  <ArrowUpRight className="h-3 w-3 opacity-60" />
+                </Link>
               </div>
             </div>
           </div>
