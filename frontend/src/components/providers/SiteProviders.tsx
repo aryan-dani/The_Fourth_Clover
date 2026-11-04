@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
-import { SmoothScrollProvider } from "@/components/motion/SmoothScroll";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 
 declare global {
@@ -10,6 +9,7 @@ declare global {
   }
 }
 
+/** Boot flags only — Lenis/GSAP live under SiteChrome so auth stays light. */
 export function SiteProviders({ children }: { children: ReactNode }) {
   const reducedMotion = usePrefersReducedMotion();
 
@@ -24,5 +24,5 @@ export function SiteProviders({ children }: { children: ReactNode }) {
     if (root.dataset.intro !== "done") root.dataset.intro = "done";
   }, [reducedMotion]);
 
-  return <SmoothScrollProvider>{children}</SmoothScrollProvider>;
+  return <>{children}</>;
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import dynamic from "next/dynamic";
+import { useCallback, useEffect, useState } from "react";
 import { Search, PenSquare } from "lucide-react";
 import {
   DropdownMenu,
@@ -11,9 +12,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NotificationsMenu } from "@/components/layout/header/NotificationsMenu";
 import { UserMenu } from "@/components/layout/header/UserMenu";
-import { SearchPalette } from "@/components/search/SearchPalette";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import type { UserCapabilities } from "@/lib/roles";
+
+const SearchPalette = dynamic(
+  () =>
+    import("@/components/search/SearchPalette").then((m) => m.SearchPalette),
+  { ssr: false },
+);
 
 type ProfileSummary = {
   id: string;
@@ -36,6 +42,24 @@ export function HeaderActions({
   variant?: "bar" | "dock";
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchMounted, setSearchMounted] = useState(false);
+
+  const openSearch = useCallback(() => {
+    setSearchMounted(true);
+    setSearchOpen(true);
+  }, []);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSearchMounted(true);
+        setSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <>
@@ -45,7 +69,7 @@ export function HeaderActions({
           type="button"
           className="nav-icon"
           aria-label="Search (⌘K)"
-          onClick={() => setSearchOpen(true)}
+          onClick={openSearch}
         >
           <Search className="h-4 w-4" strokeWidth={1.75} />
         </button>
@@ -94,7 +118,9 @@ export function HeaderActions({
         )}
       </div>
 
-      <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} />
+      {searchMounted ? (
+        <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} />
+      ) : null}
     </>
   );
 }

@@ -3,12 +3,6 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import Script from "next/script";
-import {
-  Jost,
-  JetBrains_Mono,
-  Monsieur_La_Doulaise,
-  Noto_Serif_Display,
-} from "next/font/google";
 import { AppToaster } from "@/components/providers/app-toaster";
 import { ThemeColorMeta } from "@/components/providers/theme-color";
 import { NavigationProgress } from "@/components/providers/navigation-progress";
@@ -16,41 +10,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/features/auth/auth-context";
 import { SiteProviders } from "@/components/providers/SiteProviders";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { fontDisplay, fontMono, fontSans } from "@/lib/fonts";
 import { siteUrl } from "@/lib/site";
-
-const display = Noto_Serif_Display({
-  variable: "--font-display",
-  subsets: ["latin"],
-  axes: ["wdth"],
-  display: "swap",
-});
-
-const displayItalic = Noto_Serif_Display({
-  variable: "--font-display-italic",
-  subsets: ["latin"],
-  style: "italic",
-  axes: ["wdth"],
-  display: "swap",
-});
-
-const script = Monsieur_La_Doulaise({
-  variable: "--font-script",
-  subsets: ["latin"],
-  weight: "400",
-  display: "swap",
-});
-
-const sans = Jost({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const mono = JetBrains_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 export const viewport: Viewport = {
   themeColor: "#F2ECE0",
@@ -87,7 +48,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${display.variable} ${displayItalic.variable} ${script.variable} ${sans.variable} ${mono.variable}`}
+      className={`${fontDisplay.variable} ${fontSans.variable} ${fontMono.variable}`}
       suppressHydrationWarning
     >
       <body className="font-sans" suppressHydrationWarning>

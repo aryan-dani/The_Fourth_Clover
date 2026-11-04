@@ -1,7 +1,7 @@
 import { HomePageClient } from "@/components/home/HomePageClient";
 import { fetchHomeData } from "@/features/data/home-queries";
 
-export const revalidate = 15;
+export const revalidate = 60;
 
 export default async function HomePage() {
   const data = await fetchHomeData();

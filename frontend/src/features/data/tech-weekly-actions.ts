@@ -96,12 +96,21 @@ function computeIsWindowOpen(
 const LANDING_SUBMISSION_LIMIT = 8;
 const LANDING_WEEKS_LIMIT = 8;
 
-export async function fetchTechWeeklyLandingData(): Promise<TechWeeklyLandingPayload> {
+function pickCurrentWeekFromList(weeks: TechWeek[], nowMs: number): TechWeek | null {
+  const covering = weeks.find((week) => {
+    const starts = new Date(week.starts_at).getTime();
+    const ends = new Date(week.ends_at).getTime();
+    return Number.isFinite(starts) && Number.isFinite(ends) && nowMs >= starts && nowMs <= ends;
+  });
+  return covering || weeks[0] || null;
+}
+
+export const fetchTechWeeklyLandingData = cache(
+  async (): Promise<TechWeeklyLandingPayload> => {
   const supabase = createSupabasePublicServerClient();
 
-  const [currentWeekRpcRes, weeksRes, settingsRes, submissionsRes, featuredRes] =
+  const [weeksRes, settingsRes, submissionsRes, featuredRes] =
     await Promise.all([
-      supabase.rpc("get_or_create_current_tech_week"),
       supabase
         .from("tech_weeks")
         .select("*")
@@ -162,12 +171,21 @@ export async function fetchTechWeeklyLandingData(): Promise<TechWeeklyLandingPay
         ]);
 
   const rawWeeks = (weeksRes.data || []) as TechWeek[];
-  const rpcWeek = (currentWeekRpcRes.data as TechWeek | null) ?? null;
-  const allWeeks =
-    rpcWeek && !rawWeeks.some((w) => w.id === rpcWeek.id)
-      ? [rpcWeek, ...rawWeeks]
-      : rawWeeks;
-  const currentWeek = rpcWeek || allWeeks[0] || null;
+  const nowMs = Date.now();
+  let currentWeek = pickCurrentWeekFromList(rawWeeks, nowMs);
+  let allWeeks = rawWeeks;
+
+  // Create-on-read only when no week row exists yet.
+  if (!currentWeek) {
+    const { data: rpcWeek } = await supabase.rpc("get_or_create_current_tech_week");
+    const created = (rpcWeek as TechWeek | null) ?? null;
+    if (created) {
+      currentWeek = created;
+      allWeeks = rawWeeks.some((w) => w.id === created.id)
+        ? rawWeeks
+        : [created, ...rawWeeks];
+    }
+  }
   const settings =
     (settingsRes.data as PlatformSettings | null) || DEFAULT_SETTINGS;
 
@@ -287,7 +305,8 @@ export async function fetchTechWeeklyLandingData(): Promise<TechWeeklyLandingPay
     submissions,
     leaderboard,
   };
-}
+  },
+);
 
 export async function fetchFeaturedTechWeeklyPost(): Promise<TechSubmissionWithAuthor | null> {
   try {

@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getCapabilities } from "@/lib/roles";
 import { SiteHeaderClient } from "@/components/layout/header/SiteHeaderClient";
+import { AuthProfileBootstrap } from "@/features/auth/AuthProfileBootstrap";
 
 export async function SiteHeader() {
   const supabase = await createSupabaseServerClient();
@@ -34,10 +35,13 @@ export async function SiteHeader() {
   const signedIn = Boolean(user);
 
   return (
-    <SiteHeaderClient
-      signedIn={signedIn}
-      profile={profile}
-      capabilities={caps}
-    />
+    <>
+      <AuthProfileBootstrap profile={profile} />
+      <SiteHeaderClient
+        signedIn={signedIn}
+        profile={profile}
+        capabilities={caps}
+      />
+    </>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { PostBodyRenderer } from "@/components/post/PostBodyRenderer";
 import { fetchTechSubmissionDetailBySlug } from "@/features/data/tech-weekly-actions";
 import { TechSubmissionDetailClient } from "./tech-submission-detail-client";
 
@@ -40,6 +41,9 @@ export default async function TechSubmissionDetailPage({
   return (
     <TechSubmissionDetailClient
       submission={submission}
+      body={
+        <PostBodyRenderer content={submission.content} forceMarkdown />
+      }
       initialComments={comments}
       initialViewerReactions={viewerReactions}
       allowMemberComments={allowMemberComments}

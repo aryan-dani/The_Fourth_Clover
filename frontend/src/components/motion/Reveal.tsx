@@ -258,7 +258,7 @@ export function DrawLine({
   );
 }
 
-/** Soft page enter — remount with a key on route change for navigation fades. */
+/** Soft page enter — CSS only; remount with a key on route change. */
 export function PageEnter({
   children,
   className,
@@ -266,35 +266,11 @@ export function PageEnter({
   children: ReactNode;
   className?: string;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useMotionEffect(() => {
-    const el = ref.current;
-    if (!el || prefersReducedMotionNow()) {
-      if (el) el.dataset.revealed = "true";
-      return;
-    }
-    const tween = gsap.fromTo(
-      el,
-      { opacity: 0, y: 14 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.7,
-        ease: "expo.out",
-        onComplete: () => {
-          gsap.set(el, { clearProps: "transform,opacity" });
-          el.dataset.revealed = "true";
-        },
-      },
-    );
-    return () => {
-      tween.kill();
-    };
-  }, []);
-
   return (
-    <div ref={ref} data-reveal="fade" className={className}>
+    <div
+      data-page-enter
+      className={className ? `page-enter ${className}` : "page-enter"}
+    >
       {children}
     </div>
   );

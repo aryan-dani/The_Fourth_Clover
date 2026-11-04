@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "Weekly technical articles, tutorials, and system architecture deep-dives written by verified CSI MIT-WPU members.",
 };
 
-export const revalidate = 15;
+export const revalidate = 60;
 
 export default async function TechWeeklyPage() {
   const data = await fetchTechWeeklyLandingData();

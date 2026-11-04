@@ -7,7 +7,7 @@ import { JournalPageClient } from "./journal-client";
 
 const JOURNAL_PAGE_SIZE = 12;
 
-export const revalidate = 15;
+export const revalidate = 60;
 
 type JournalSearchParams = {
   sort?: string;

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { PostBodyRenderer } from "@/components/post/PostBodyRenderer";
 import {
   fetchPublicationPostBySlug,
   listRelatedPublicationPosts,
@@ -72,9 +73,19 @@ export default async function CsiPostPage({
     .filter((m) => m.role === "editor")
     .map((m) => m.user_id);
 
+  const isCsiPost = Boolean(post.publication_id);
+  const postFormat = post.format === "poetry" ? "poetry" : "prose";
+
   return (
     <PostPageClient
       initialPost={post}
+      body={
+        <PostBodyRenderer
+          content={post.content}
+          forceMarkdown={isCsiPost}
+          format={postFormat}
+        />
+      }
       publicationSlug="csi"
       publicationName="CSI Tech Blog"
       relatedPosts={relatedPosts}

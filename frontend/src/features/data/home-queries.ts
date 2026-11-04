@@ -1,5 +1,6 @@
 import { createSupabasePublicServerClient } from "@/lib/supabase/server";
 import { fetchTechWeeklyLandingData } from "@/features/data/tech-weekly-actions";
+import { POSTS_CARD_SELECT } from "@/features/data/server-queries";
 import type { PostWithAuthor, TechSubmissionWithAuthor } from "@/types/database";
 
 export type HomeData = {
@@ -12,15 +13,6 @@ export type HomeData = {
   weekTitle: string | null;
 };
 
-const POST_SELECT = `
-  *,
-  author:profiles!posts_author_id_fkey (
-    id, username, full_name, avatar_url
-  ),
-  likes(count),
-  comments(count)
-`;
-
 export async function fetchHomeData(): Promise<HomeData> {
   const supabase = createSupabasePublicServerClient();
 
@@ -28,14 +20,14 @@ export async function fetchHomeData(): Promise<HomeData> {
     fetchTechWeeklyLandingData(),
     supabase
       .from("posts")
-      .select(POST_SELECT)
+      .select(POSTS_CARD_SELECT)
       .eq("status", "published")
       .is("publication_id", null)
       .order("published_at", { ascending: false })
       .limit(7),
     supabase
       .from("posts")
-      .select(POST_SELECT)
+      .select(POSTS_CARD_SELECT)
       .eq("status", "published")
       .is("publication_id", null)
       .eq("format", "poetry")

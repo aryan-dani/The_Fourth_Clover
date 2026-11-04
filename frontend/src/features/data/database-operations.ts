@@ -18,7 +18,9 @@ export class DatabaseOperations {
   static async getProfile(id: string): Promise<QueryResult<Profile>> {
     return await supabase
       .from("profiles")
-      .select("*")
+      .select(
+        "id, username, full_name, avatar_url, bio, role, is_admin, is_suspended, csi_id, dept, year, created_at, updated_at",
+      )
       .eq("id", id)
       .maybeSingle();
   }

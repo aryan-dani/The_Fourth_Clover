@@ -12,7 +12,7 @@ import { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase/client";
 import type { Profile } from "@/types/database";
 import { getProfile } from "@/features/data/database-operations";
-import type { AuthContextType } from "./auth-context-types";
+import type { AuthContextType, AuthProfileSeed } from "./auth-context-types";
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
@@ -21,6 +21,7 @@ const AuthContext = createContext<AuthContextType>({
   profileLoading: false,
   signOut: async () => {},
   refreshProfile: async () => {},
+  bootstrapProfile: () => {},
 });
 
 // Helper to clear all Supabase auth data from localStorage
@@ -152,6 +153,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user?.id, fetchProfile]);
 
+  const bootstrapProfile = useCallback((seed: AuthProfileSeed) => {
+    if (!seed?.id) return;
+    if (lastFetchedUserId.current === seed.id && profileRef.current) return;
+    setProfile((prev) => ({ ...(prev || ({} as Profile)), ...seed }));
+    lastFetchedUserId.current = seed.id;
+  }, []);
+
   useEffect(() => {
     const uid = user?.id;
     if (uid && lastFetchedUserId.current !== uid) {
@@ -190,6 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profileLoading,
         signOut,
         refreshProfile,
+        bootstrapProfile,
       }}
     >
       {children}

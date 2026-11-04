@@ -5,7 +5,7 @@ import type {
   TechSubmissionWithAuthor,
   TechWeek,
 } from "@/types/database";
-import { LEGACY_POSTS_WITH_AUTHOR_SELECT } from "@/features/data/server-queries";
+import { POSTS_CARD_SELECT } from "@/features/data/server-queries";
 
 const AUTHOR_BADGE_SELECT = `
   id,
@@ -79,7 +79,7 @@ export const fetchTagPageContent = cache(
     const [postsRes, techRes, popular] = await Promise.all([
       supabase
         .from("posts")
-        .select(LEGACY_POSTS_WITH_AUTHOR_SELECT)
+        .select(POSTS_CARD_SELECT)
         .eq("status", "published")
         .is("publication_id", null)
         .not("tags", "is", null)
@@ -103,8 +103,8 @@ export const fetchTagPageContent = cache(
       listPopularTags(200),
     ]);
 
-    const posts = ((postsRes.data || []) as PostWithAuthor[]).filter((p) =>
-      tagMatches(p.tags, tagLower),
+    const posts = ((postsRes.data || []) as unknown as PostWithAuthor[]).filter(
+      (p) => tagMatches(p.tags, tagLower),
     );
     const submissions = (
       (techRes.data || []) as unknown as TechSubmissionWithAuthor[]

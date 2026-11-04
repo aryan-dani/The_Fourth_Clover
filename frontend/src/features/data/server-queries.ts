@@ -43,6 +43,34 @@ export const LEGACY_POSTS_WITH_AUTHOR_SELECT = `
   comments(count)
 `;
 
+/** List/card payloads — omit full `content` body. */
+export const POSTS_CARD_SELECT = `
+  id,
+  author_id,
+  publication_id,
+  title,
+  slug,
+  excerpt,
+  cover_image,
+  featured_image,
+  tags,
+  format,
+  status,
+  is_anonymous,
+  read_time,
+  published_at,
+  created_at,
+  updated_at,
+  author:profiles!posts_author_id_fkey (
+    id,
+    username,
+    full_name,
+    avatar_url
+  ),
+  likes(count),
+  comments(count)
+`;
+
 const FALLBACK_CSI_PUBLICATION: Publication = {
   id: "38a1f07f-4ed3-4465-b8fa-9899d69e6ea3",
   slug: "csi",
@@ -439,7 +467,7 @@ export const fetchExploreInitialData = cache(
       const end = offset + limit - 1;
       const { data, error } = await supabase
         .from("posts")
-        .select(LEGACY_POSTS_WITH_AUTHOR_SELECT)
+        .select(POSTS_CARD_SELECT)
         .eq("status", "published")
         .order("published_at", { ascending: false })
         .range(offset, end);
@@ -452,7 +480,7 @@ export const fetchExploreInitialData = cache(
         };
       }
 
-      const posts = (data || []) as PostWithAuthor[];
+      const posts = (data || []) as unknown as PostWithAuthor[];
       const tags = normalizeTags(posts);
 
       return { posts, tags, error: null };
@@ -494,7 +522,7 @@ async function queryJournalPosts(
 
     let query = supabase
       .from("posts")
-      .select(LEGACY_POSTS_WITH_AUTHOR_SELECT)
+      .select(POSTS_CARD_SELECT)
       .eq("status", "published")
       .is("publication_id", null);
 
@@ -517,7 +545,7 @@ async function queryJournalPosts(
         return { posts: [], error: error.message };
       }
 
-      const ranked = ([...(data || [])] as PostWithAuthor[]).sort(
+      const ranked = ([...(data || [])] as unknown as PostWithAuthor[]).sort(
         (a, b) =>
           (b.likes?.[0]?.count || 0) - (a.likes?.[0]?.count || 0) ||
           new Date(b.published_at || b.created_at).getTime() -
@@ -535,7 +563,10 @@ async function queryJournalPosts(
       return { posts: [], error: error.message };
     }
 
-    return { posts: (data || []) as PostWithAuthor[], error: null };
+    return {
+      posts: (data || []) as unknown as PostWithAuthor[],
+      error: null,
+    };
   } catch (e) {
     return {
       posts: [],
@@ -919,7 +950,7 @@ export async function fetchFollowingFeedInitial(
     const end = offset + limit - 1;
     const { data, error } = await supabase
       .from("posts")
-      .select(LEGACY_POSTS_WITH_AUTHOR_SELECT)
+      .select(POSTS_CARD_SELECT)
       .in("author_id", authorIds)
       .eq("status", "published")
       .order("published_at", { ascending: false })
@@ -929,7 +960,10 @@ export async function fetchFollowingFeedInitial(
       return { posts: [], error: error.message };
     }
 
-    return { posts: (data || []) as PostWithAuthor[], error: null };
+    return {
+      posts: (data || []) as unknown as PostWithAuthor[],
+      error: null,
+    };
   } catch (e) {
     return {
       posts: [],

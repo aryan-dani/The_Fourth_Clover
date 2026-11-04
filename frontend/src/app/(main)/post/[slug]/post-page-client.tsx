@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useTransition } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useTransition,
+  type ReactNode,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -42,12 +49,13 @@ import {
   Copy,
 } from "lucide-react";
 import { CommentSection } from "@/features/comments/components/CommentSection";
-import { PostBodyRenderer } from "@/components/post/PostBodyRenderer";
 import { extractHeadings } from "@/lib/post-content";
 import type { PostWithAuthor, PublicationRole } from "@/types/database";
 
 type PostPageClientProps = {
   initialPost: PostWithAuthor;
+  /** Server-rendered article body (keeps markdown out of the client bundle). */
+  body: ReactNode;
   publicationSlug?: string;
   publicationName?: string;
   relatedPosts?: PostWithAuthor[];
@@ -58,6 +66,7 @@ type PostPageClientProps = {
 
 export function PostPageClient({
   initialPost,
+  body,
   publicationSlug,
   publicationName,
   relatedPosts = [],
@@ -536,11 +545,7 @@ export function PostPageClient({
           ) : undefined
         }
       >
-        <PostBodyRenderer
-          content={post.content}
-          forceMarkdown={isCsiPost}
-          format={postFormat}
-        />
+        {body}
       </ArticleLayout>
     </div>
   );

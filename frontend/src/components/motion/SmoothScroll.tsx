@@ -10,8 +10,6 @@ import {
   type ReactNode,
 } from "react";
 import { usePathname } from "next/navigation";
-import Lenis from "lenis";
-import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { usePrefersReducedMotion } from "@/lib/hooks";
 
 export type ScrollTarget = string | number | HTMLElement;
@@ -34,6 +32,25 @@ type SmoothScrollContextValue = {
   enabled: boolean;
 };
 
+type LenisInstance = {
+  scrollTo: (
+    target: ScrollTarget,
+    options?: {
+      offset?: number;
+      immediate?: boolean;
+      force?: boolean;
+      duration?: number;
+      easing?: (t: number) => number;
+    },
+  ) => void;
+  on: (event: string, handler: (...args: unknown[]) => void) => void;
+  off: (event: string, handler: (...args: unknown[]) => void) => void;
+  raf: (time: number) => void;
+  stop: () => void;
+  start: () => void;
+  destroy: () => void;
+};
+
 const noop = () => {};
 const SmoothScrollContext = createContext<SmoothScrollContextValue>({
   scrollTo: noop,
@@ -49,7 +66,7 @@ export function useSmoothScroll() {
 
 declare global {
   interface Window {
-    __cloverLenis?: Lenis;
+    __cloverLenis?: LenisInstance;
   }
 }
 
@@ -65,6 +82,7 @@ const LENIS_OFF_PREFIXES = [
   "/tech-weekly/review",
   "/csi/write",
   "/csi/review",
+  "/auth",
 ];
 
 function shouldDisableLenis(pathname: string | null): boolean {
@@ -74,8 +92,18 @@ function shouldDisableLenis(pathname: string | null): boolean {
   );
 }
 
+function scheduleIdle(fn: () => void): () => void {
+  if (typeof window === "undefined") return noop;
+  if ("requestIdleCallback" in window) {
+    const id = window.requestIdleCallback(() => fn(), { timeout: 1200 });
+    return () => window.cancelIdleCallback(id);
+  }
+  const id = globalThis.setTimeout(fn, 200);
+  return () => globalThis.clearTimeout(id);
+}
+
 export function SmoothScrollProvider({ children }: { children: ReactNode }) {
-  const lenisRef = useRef<Lenis | null>(null);
+  const lenisRef = useRef<LenisInstance | null>(null);
   const listenersRef = useRef(new Set<ScrollListener>());
   const lockCountRef = useRef(0);
   const reducedMotion = usePrefersReducedMotion();
@@ -84,8 +112,6 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
   const enabled = !reducedMotion && !toolsRoute;
 
   useEffect(() => {
-    ScrollTrigger.config({ ignoreMobileResize: true });
-
     let lastY = window.scrollY;
     let direction: 1 | -1 = 1;
     const onScroll = () => {
@@ -98,38 +124,62 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
     };
     window.addEventListener("scroll", onScroll, { passive: true });
 
-    let lenis: Lenis | null = null;
+    let cancelled = false;
+    let lenis: LenisInstance | null = null;
     let tick: ((time: number) => void) | null = null;
+    let cleanupMotion: (() => void) | null = null;
+    let cancelIdle = noop;
 
     if (enabled) {
-      lenis = new Lenis({
-        duration: 1.2,
-        easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        smoothWheel: true,
-        wheelMultiplier: 0.9,
+      cancelIdle = scheduleIdle(() => {
+        void (async () => {
+          const [{ default: Lenis }, { gsap, ScrollTrigger }] =
+            await Promise.all([import("lenis"), import("@/lib/gsap")]);
+          if (cancelled) return;
+
+          ScrollTrigger.config({ ignoreMobileResize: true });
+
+          lenis = new Lenis({
+            duration: 1.2,
+            easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            smoothWheel: true,
+            wheelMultiplier: 0.9,
+          }) as unknown as LenisInstance;
+          lenisRef.current = lenis;
+          window.__cloverLenis = lenis;
+          lenis.on("scroll", ScrollTrigger.update);
+
+          tick = (time: number) => lenis?.raf(time * 1000);
+          gsap.ticker.add(tick);
+          gsap.ticker.lagSmoothing(0);
+
+          if (lockCountRef.current > 0) lenis.stop();
+
+          const refresh = () => ScrollTrigger.refresh();
+          window.addEventListener("load", refresh);
+          if (document.fonts) void document.fonts.ready.then(refresh);
+
+          cleanupMotion = () => {
+            window.removeEventListener("load", refresh);
+            if (tick) gsap.ticker.remove(tick);
+            lenis?.destroy();
+            lenisRef.current = null;
+            delete window.__cloverLenis;
+          };
+        })();
       });
-      lenisRef.current = lenis;
-      window.__cloverLenis = lenis;
-      lenis.on("scroll", ScrollTrigger.update);
-
-      tick = (time: number) => lenis?.raf(time * 1000);
-      gsap.ticker.add(tick);
-      gsap.ticker.lagSmoothing(0);
-
-      if (lockCountRef.current > 0) lenis.stop();
     }
 
-    const refresh = () => ScrollTrigger.refresh();
-    window.addEventListener("load", refresh);
-    if (document.fonts) document.fonts.ready.then(refresh);
-
     return () => {
+      cancelled = true;
+      cancelIdle();
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("load", refresh);
-      if (tick) gsap.ticker.remove(tick);
-      lenis?.destroy();
-      lenisRef.current = null;
-      delete window.__cloverLenis;
+      cleanupMotion?.();
+      if (!cleanupMotion) {
+        lenis?.destroy();
+        lenisRef.current = null;
+        delete window.__cloverLenis;
+      }
     };
   }, [enabled]);
 
@@ -146,7 +196,6 @@ export function SmoothScrollProvider({ children }: { children: ReactNode }) {
           duration: immediate ? 0 : 1.6,
           easing: (t: number) => 1 - Math.pow(1 - t, 4),
         });
-        if (immediate) ScrollTrigger.update();
         return;
       }
       if (typeof target === "number") {

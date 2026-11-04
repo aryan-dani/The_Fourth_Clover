@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,6 @@ import {
   TagChip,
   type CommentNode,
 } from "@/components/editorial";
-import { PostBodyRenderer } from "@/components/post/PostBodyRenderer";
 import { CopyForLinkedInButton } from "@/components/tech-weekly/FeaturedTechWeeklyBanner";
 import {
   ArrowLeft,
@@ -73,11 +72,14 @@ function toCommentNodes(
 
 export function TechSubmissionDetailClient({
   submission: initialSubmission,
+  body,
   initialComments,
   initialViewerReactions,
   allowMemberComments: _allowMemberComments,
 }: {
   submission: TechSubmissionWithAuthor;
+  /** Server-rendered dispatch body (keeps markdown out of the client bundle). */
+  body: ReactNode;
   initialComments: TechCommentWithAuthor[];
   initialViewerReactions: TechReactionType[];
   /** Kept for call-site compatibility; comments are open to every verified CSI member. */
@@ -576,7 +578,7 @@ export function TechSubmissionDetailClient({
           )
         }
       >
-        <PostBodyRenderer content={submission.content} forceMarkdown />
+        {body}
       </ArticleLayout>
 
       <Dialog

@@ -3,6 +3,19 @@ import type { Profile } from "@/types/database";
 
 export type EmptyPromise = Promise<void>;
 
+/** Slim profile seed from SiteHeader RSC — enough for nav/capabilities. */
+export type AuthProfileSeed = Pick<
+  Profile,
+  | "id"
+  | "username"
+  | "full_name"
+  | "avatar_url"
+  | "role"
+  | "is_admin"
+  | "is_suspended"
+  | "csi_id"
+>;
+
 export interface AuthContextType {
   user: User | null;
   profile: Profile | null;
@@ -12,4 +25,6 @@ export interface AuthContextType {
   profileLoading: boolean;
   signOut: () => EmptyPromise;
   refreshProfile: () => EmptyPromise;
+  /** Seed profile from server chrome so we skip an immediate client getProfile. */
+  bootstrapProfile: (seed: AuthProfileSeed) => void;
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { fetchPostBySlugForPage } from "@/features/data/server-queries";
+import { PostBodyRenderer } from "@/components/post/PostBodyRenderer";
 import { PostPageClient } from "./post-page-client";
 import { absoluteUrl } from "@/lib/site";
 
@@ -54,5 +55,20 @@ export default async function PostPage({
   const { slug } = await params;
   const post = await fetchPostBySlugForPage(slug);
   if (!post) notFound();
-  return <PostPageClient initialPost={post} />;
+
+  const isCsiPost = Boolean(post.publication_id);
+  const postFormat = post.format === "poetry" ? "poetry" : "prose";
+
+  return (
+    <PostPageClient
+      initialPost={post}
+      body={
+        <PostBodyRenderer
+          content={post.content}
+          forceMarkdown={isCsiPost}
+          format={postFormat}
+        />
+      }
+    />
+  );
 }
