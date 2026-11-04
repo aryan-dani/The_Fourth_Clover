@@ -86,15 +86,20 @@ function WritePageContent({
   } = form.watch();
 
   useEffect(() => {
-    if (!editingPostId && title) {
-      const nextSlug = generateSlug(title);
-      const currentSlug = form.getValues("slug");
-      if (
-        !currentSlug ||
-        (currentSlug !== nextSlug && !form.getFieldState("slug").isDirty)
-      ) {
-        form.setValue("slug", nextSlug, { shouldValidate: true });
-      }
+    if (!title) return;
+    const nextSlug = generateSlug(title);
+    if (!nextSlug) return;
+    const currentSlug = form.getValues("slug");
+    const slugIsSafe = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(currentSlug || "");
+    // Auto-fill for new posts, and repair unsafe title-as-slug values.
+    if (
+      !currentSlug ||
+      !slugIsSafe ||
+      (!editingPostId &&
+        currentSlug !== nextSlug &&
+        !form.getFieldState("slug").isDirty)
+    ) {
+      form.setValue("slug", nextSlug, { shouldValidate: true });
     }
   }, [title, editingPostId, form]);
 

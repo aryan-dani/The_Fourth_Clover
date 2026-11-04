@@ -13,7 +13,13 @@ export const postSchema = z.object({
     .string()
     .max(300, "Excerpt must be less than 300 characters")
     .optional(),
-  slug: z.string().min(3, "Slug must be at least 3 characters"),
+  slug: z
+    .string()
+    .min(3, "Slug must be at least 3 characters")
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      "Slug must be lowercase letters, numbers, and hyphens only",
+    ),
   featured_image: z.string().url().optional().nullable(),
   scheduled_at: z.string().optional().nullable(),
   publication_id: z.string().uuid().optional().nullable(),

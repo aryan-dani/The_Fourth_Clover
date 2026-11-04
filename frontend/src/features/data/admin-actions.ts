@@ -3,6 +3,7 @@
 import crypto from "crypto";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { generateSlug } from "@/lib/utils";
 import type {
   AuditLogEntry,
   CsiRole,
@@ -649,6 +650,21 @@ export async function adminApproveAnonymousJournalPostAction(input: {
     return { success: false, error: error.message };
   }
 
+  // Coerce messy title-as-slug values into URL-safe kebab-case before go-live.
+  let liveSlug = post.slug;
+  const safeSlug = generateSlug(post.slug || post.title || "");
+  if (safeSlug.length >= 3 && safeSlug !== post.slug) {
+    const { data: updated, error: slugErr } = await supabase
+      .from("posts")
+      .update({ slug: safeSlug })
+      .eq("id", post.id)
+      .select("slug")
+      .maybeSingle();
+    if (!slugErr && updated?.slug) {
+      liveSlug = updated.slug;
+    }
+  }
+
   if (realAuthorId && realAuthorId !== user.id) {
     await supabase.from("notifications").insert({
       user_id: realAuthorId,
@@ -664,11 +680,14 @@ export async function adminApproveAnonymousJournalPostAction(input: {
   revalidatePath("/journal");
   revalidatePath("/");
   revalidatePath("/dashboard");
-  if (post.slug) {
+  if (liveSlug) {
+    revalidatePath(`/post/${liveSlug}`);
+  }
+  if (post.slug && post.slug !== liveSlug) {
     revalidatePath(`/post/${post.slug}`);
   }
 
-  return { success: true, slug: post.slug };
+  return { success: true, slug: liveSlug };
 }
 
 export async function adminSendBackAnonymousJournalPostAction(input: {

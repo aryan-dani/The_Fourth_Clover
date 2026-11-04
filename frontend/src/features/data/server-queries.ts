@@ -213,28 +213,46 @@ export const fetchPublicationPostBySlug = cache(
       const publication = await getPublicationBySlug(publicationSlug);
       if (!publication) return null;
 
-      const publicSupabase = createSupabasePublicServerClient();
-      const { data } = await publicSupabase
-        .from("posts")
-        .select(POSTS_WITH_AUTHOR_SELECT)
-        .eq("publication_id", publication.id)
-        .eq("slug", postSlug)
-        .maybeSingle();
+      let decoded = postSlug;
+      try {
+        decoded = decodeURIComponent(postSlug);
+      } catch {
+        decoded = postSlug;
+      }
+      const candidates = Array.from(
+        new Set([decoded, postSlug].filter(Boolean)),
+      );
 
-      if (data) {
-        return data as PostWithAuthor;
+      const publicSupabase = createSupabasePublicServerClient();
+      for (const candidate of candidates) {
+        const { data } = await publicSupabase
+          .from("posts")
+          .select(POSTS_WITH_AUTHOR_SELECT)
+          .eq("publication_id", publication.id)
+          .eq("slug", candidate)
+          .maybeSingle();
+
+        if (data) {
+          return data as PostWithAuthor;
+        }
       }
 
       // Fallback to authenticated server client for private drafts
       const authSupabase = await createSupabaseServerClient();
-      const { data: draftData } = await authSupabase
-        .from("posts")
-        .select(POSTS_WITH_AUTHOR_SELECT)
-        .eq("publication_id", publication.id)
-        .eq("slug", postSlug)
-        .maybeSingle();
+      for (const candidate of candidates) {
+        const { data: draftData } = await authSupabase
+          .from("posts")
+          .select(POSTS_WITH_AUTHOR_SELECT)
+          .eq("publication_id", publication.id)
+          .eq("slug", candidate)
+          .maybeSingle();
 
-      return (draftData as PostWithAuthor | null) ?? null;
+        if (draftData) {
+          return draftData as PostWithAuthor;
+        }
+      }
+
+      return null;
     } catch {
       return null;
     }
@@ -623,16 +641,27 @@ export async function fetchJournalPostsPage(
 
 export const fetchPostBySlugForPage = cache(
   async (slug: string): Promise<PostWithAuthor | null> => {
-    const supabase = createSupabasePublicServerClient();
-    const { data, error } = await supabase
-      .from("posts")
-      .select(LEGACY_POSTS_WITH_AUTHOR_SELECT)
-      .eq("slug", slug)
-      .eq("status", "published")
-      .maybeSingle();
+    // Netlify/Next may leave %20 in params; DB slugs use real characters or kebab-case.
+    let decoded = slug;
+    try {
+      decoded = decodeURIComponent(slug);
+    } catch {
+      decoded = slug;
+    }
+    const candidates = Array.from(new Set([decoded, slug].filter(Boolean)));
 
-    if (error || !data) return null;
-    return data as PostWithAuthor;
+    const supabase = createSupabasePublicServerClient();
+    for (const candidate of candidates) {
+      const { data, error } = await supabase
+        .from("posts")
+        .select(LEGACY_POSTS_WITH_AUTHOR_SELECT)
+        .eq("slug", candidate)
+        .eq("status", "published")
+        .maybeSingle();
+
+      if (!error && data) return data as PostWithAuthor;
+    }
+    return null;
   },
 );
 

@@ -14,9 +14,16 @@ import {
 } from "@/features/data/database-operations";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { calculateReadTime } from "@/lib/utils";
+import { calculateReadTime, generateSlug } from "@/lib/utils";
 import { postSchema } from "@/lib/validations";
 import type { PublicationRole } from "@/types/database";
+
+/** Always persist URL-safe slugs — raw titles with spaces 404 on /post/[slug]. */
+function resolvePostSlug(slug: string | undefined, title: string): string {
+  const fromSlug = generateSlug(slug || "");
+  if (fromSlug.length >= 3) return fromSlug;
+  return generateSlug(title);
+}
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set([
@@ -257,7 +264,7 @@ export function useMutatePost(
         format: values.format ?? "prose",
         is_anonymous: wantAnonymous,
         read_time,
-        slug: values.slug,
+        slug: resolvePostSlug(values.slug, values.title),
         featured_image: values.featured_image || null,
         scheduled_at: values.scheduled_at || null,
         publication_id: pubId,
@@ -383,7 +390,7 @@ export function useMutatePost(
           format: values.format ?? "prose",
           is_anonymous: wantAnonymous,
           read_time,
-          slug: values.slug,
+          slug: resolvePostSlug(values.slug, values.title),
           featured_image: values.featured_image || null,
           scheduled_at: values.scheduled_at || null,
           publication_id: pubId,
