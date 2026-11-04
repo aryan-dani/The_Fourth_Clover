@@ -55,11 +55,13 @@ export async function searchContentAction(
       .select("id, username, full_name, bio")
       .or(`username.ilike.${pattern},full_name.ilike.${pattern}`)
       .not("username", "is", null)
+      .neq("username", "anonymous")
+      .eq("is_suspended", false)
       .limit(lim),
     supabase
       .from("posts")
       .select(
-        "id, title, slug, excerpt, author:profiles!posts_author_id_fkey(username, full_name)",
+        "id, title, slug, excerpt, is_anonymous, author:profiles!posts_author_id_fkey(username, full_name)",
       )
       .eq("status", "published")
       .is("publication_id", null)
@@ -86,9 +88,10 @@ export async function searchContentAction(
       supabase
         .from("posts")
         .select(
-          "id, title, slug, excerpt, author:profiles!posts_author_id_fkey(username, full_name)",
+          "id, title, slug, excerpt, is_anonymous, author:profiles!posts_author_id_fkey(username, full_name)",
         )
         .eq("status", "published")
+        .eq("is_anonymous", false)
         .in("author_id", authorIds)
         .order("published_at", { ascending: false })
         .limit(lim),

@@ -87,7 +87,33 @@ export function PostPageClient({
     isSuperAdmin ||
     viewerRole === "editor" ||
     Boolean(user?.id && editorUserIds.includes(user.id));
-  const isAuthor = Boolean(user?.id && user.id === post.author_id);
+  const [isAttributedAuthor, setIsAttributedAuthor] = useState(false);
+  const isAuthor = Boolean(
+    user?.id &&
+      (user.id === post.author_id ||
+        (post.is_anonymous && isAttributedAuthor)),
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    async function checkAttribution() {
+      if (!user?.id || !post.is_anonymous || !post.id) {
+        setIsAttributedAuthor(false);
+        return;
+      }
+      const { data } = await supabase
+        .from("journal_anonymous_authors")
+        .select("post_id")
+        .eq("post_id", post.id)
+        .eq("author_id", user.id)
+        .maybeSingle();
+      if (!cancelled) setIsAttributedAuthor(Boolean(data));
+    }
+    void checkAttribution();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, post.id, post.is_anonymous]);
 
   const headings = useMemo(
     () => extractHeadings(post.content),
@@ -227,7 +253,9 @@ export function PostPageClient({
       : `${origin}/post/${post.slug}`;
     const text = formatLinkedinRepostCopy({
       title: post.title,
-      authorName: post.author.full_name || post.author.username,
+      authorName: post.is_anonymous
+        ? "Anonymous"
+        : post.author.full_name || post.author.username,
       excerpt: post.excerpt,
       url: postUrl,
       tags: post.tags,
@@ -429,6 +457,7 @@ export function PostPageClient({
           year: post.author.year,
           isCsi: isCsiPost,
         }}
+        anonymous={Boolean(post.is_anonymous)}
         publishedAt={publishedOrCreatedDate}
         readTime={post.read_time}
         coverImage={post.cover_image || post.featured_image}

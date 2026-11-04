@@ -21,7 +21,9 @@ export async function generateMetadata({
   const title = `${post.title} | The Fourth Clover`;
   const description =
     (post.excerpt && post.excerpt.slice(0, 160)) ||
-    `A story by ${post.author.full_name || post.author.username} on The Fourth Clover.`;
+    (post.is_anonymous
+      ? "A story on The Fourth Clover."
+      : `A story by ${post.author.full_name || post.author.username} on The Fourth Clover.`);
 
   const ogImage = post.cover_image ? absoluteUrl(post.cover_image) : undefined;
 

@@ -22,6 +22,7 @@ export type ArticleCardProps = {
   readTime?: number | null;
   tags?: string[] | null;
   format?: ArticleFormat;
+  anonymous?: boolean;
   reactionCount?: number | null;
   commentCount?: number | null;
   className?: string;
@@ -57,6 +58,7 @@ export function ArticleCard({
   readTime,
   tags,
   format = "prose",
+  anonymous = false,
   reactionCount,
   commentCount,
   className,
@@ -107,6 +109,7 @@ export function ArticleCard({
               readTime={readTime}
               size="sm"
               className={nest}
+              anonymous={anonymous}
             />
           )}
         </div>
@@ -243,6 +246,7 @@ export function ArticleCard({
               readTime={readTime}
               size="sm"
               className={nest}
+              anonymous={anonymous}
             />
           ) : (
             <div className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">

@@ -64,6 +64,14 @@ async function requireSuperAdmin() {
   };
 }
 
+export type AnonymousJournalQueueItem = PostWithAuthor & {
+  real_author?: {
+    id: string;
+    username: string;
+    full_name: string | null;
+  } | null;
+};
+
 export type SuperAdminDashboardPayload = {
   authorized: boolean;
   viewerProfile: Profile | null;
@@ -81,6 +89,7 @@ export type SuperAdminDashboardPayload = {
     } | null;
   })[];
   legacyPosts: PostWithAuthor[];
+  anonymousJournalQueue: AnonymousJournalQueueItem[];
 };
 
 const FALLBACK_SETTINGS: PlatformSettings = {
@@ -110,6 +119,7 @@ export async function fetchSuperAdminDashboardData(): Promise<SuperAdminDashboar
       settings: FALLBACK_SETTINGS,
       auditLogs: [],
       legacyPosts: [],
+      anonymousJournalQueue: [],
     };
   }
 
@@ -122,6 +132,8 @@ export async function fetchSuperAdminDashboardData(): Promise<SuperAdminDashboar
     settingsRes,
     auditRes,
     postsRes,
+    anonQueueRes,
+    attributionRes,
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -179,7 +191,7 @@ export async function fetchSuperAdminDashboardData(): Promise<SuperAdminDashboar
       .from("posts")
       .select(
         `
-        id, title, slug, excerpt, cover_image, status, read_time, published_at, created_at, updated_at, author_id, tags,
+        id, title, slug, excerpt, cover_image, status, read_time, published_at, created_at, updated_at, author_id, tags, is_anonymous,
         author:profiles!posts_author_id_fkey (
           id, username, full_name, avatar_url, bio
         )
@@ -187,6 +199,33 @@ export async function fetchSuperAdminDashboardData(): Promise<SuperAdminDashboar
       )
       .order("created_at", { ascending: false })
       .limit(100),
+    supabase
+      .from("posts")
+      .select(
+        `
+        id, title, slug, excerpt, cover_image, status, read_time, published_at, created_at, updated_at, author_id, tags, is_anonymous, content, review_note, format,
+        author:profiles!posts_author_id_fkey (
+          id, username, full_name, avatar_url, bio
+        )
+      `
+      )
+      .eq("is_anonymous", true)
+      .eq("status", "in_review")
+      .is("publication_id", null)
+      .order("updated_at", { ascending: false })
+      .limit(100),
+    supabase
+      .from("journal_anonymous_authors")
+      .select(
+        `
+        post_id,
+        author_id,
+        author:profiles!journal_anonymous_authors_author_id_fkey (
+          id, username, full_name
+        )
+      `
+      )
+      .limit(200),
   ]);
 
   const users = (usersRes.data || []) as Profile[];
@@ -206,6 +245,62 @@ export async function fetchSuperAdminDashboardData(): Promise<SuperAdminDashboar
     };
   });
 
+  type AttributionRow = {
+    post_id: string;
+    author_id: string;
+    author:
+      | { id: string; username: string; full_name: string | null }
+      | { id: string; username: string; full_name: string | null }[]
+      | null;
+  };
+
+  const attributionByPost = new Map<
+    string,
+    { id: string; username: string; full_name: string | null }
+  >();
+  for (const row of (attributionRes.data || []) as AttributionRow[]) {
+    const author = Array.isArray(row.author) ? row.author[0] : row.author;
+    if (author) {
+      attributionByPost.set(row.post_id, author);
+    }
+  }
+
+  const legacyPosts = ((postsRes.data || []) as unknown as PostWithAuthor[]).map(
+    (post) => {
+      if (!post.is_anonymous) return post;
+      const real = attributionByPost.get(post.id);
+      if (!real) return post;
+      return {
+        ...post,
+        author: {
+          ...(post.author || {
+            id: real.id,
+            username: real.username,
+            full_name: real.full_name,
+            avatar_url: null,
+            bio: null,
+          }),
+          id: real.id,
+          username: real.username,
+          full_name: real.full_name,
+        },
+      };
+    },
+  );
+
+  const anonymousJournalQueue = (
+    (anonQueueRes.data || []) as unknown as PostWithAuthor[]
+  ).map((post) => ({
+    ...post,
+    real_author: post.author
+      ? {
+          id: post.author.id,
+          username: post.author.username,
+          full_name: post.author.full_name,
+        }
+      : null,
+  }));
+
   return {
     authorized: true,
     viewerProfile: profile,
@@ -217,7 +312,8 @@ export async function fetchSuperAdminDashboardData(): Promise<SuperAdminDashboar
     settings:
       (settingsRes.data as PlatformSettings | null) || FALLBACK_SETTINGS,
     auditLogs,
-    legacyPosts: (postsRes.data || []) as unknown as PostWithAuthor[],
+    legacyPosts,
+    anonymousJournalQueue,
   };
 }
 
@@ -521,5 +617,109 @@ export async function adminUpdatePlatformSettingsAction(input: {
   revalidatePath("/tech-weekly");
   revalidatePath("/tech-weekly/write");
   revalidatePath("/tech-weekly/review");
+  return { success: true };
+}
+
+export async function adminApproveAnonymousJournalPostAction(input: {
+  postId: string;
+}): Promise<{ success: boolean; error?: string; slug?: string }> {
+  const { authorized, supabase, user } = await requireSuperAdmin();
+  if (!authorized || !user) {
+    return { success: false, error: "Super Admin authorization required." };
+  }
+
+  const { data: post, error: postErr } = await supabase
+    .from("posts")
+    .select("id, title, slug, author_id, status, is_anonymous, publication_id")
+    .eq("id", input.postId)
+    .maybeSingle();
+
+  if (postErr || !post) {
+    return { success: false, error: "Post not found." };
+  }
+
+  const realAuthorId = post.author_id;
+
+  const { error } = await supabase.rpc(
+    "admin_approve_anonymous_journal_post",
+    { p_post_id: input.postId },
+  );
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  if (realAuthorId && realAuthorId !== user.id) {
+    await supabase.from("notifications").insert({
+      user_id: realAuthorId,
+      type: "review_approved",
+      message: `Your anonymous Journal piece "${post.title}" was approved and published.`,
+      post_id: post.id,
+      from_user_id: user.id,
+      read: false,
+    });
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/journal");
+  revalidatePath("/");
+  revalidatePath("/dashboard");
+  if (post.slug) {
+    revalidatePath(`/post/${post.slug}`);
+  }
+
+  return { success: true, slug: post.slug };
+}
+
+export async function adminSendBackAnonymousJournalPostAction(input: {
+  postId: string;
+  note?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const { authorized, supabase, user } = await requireSuperAdmin();
+  if (!authorized || !user) {
+    return { success: false, error: "Super Admin authorization required." };
+  }
+
+  const { data: post, error: postErr } = await supabase
+    .from("posts")
+    .select("id, title, slug, author_id, status, is_anonymous")
+    .eq("id", input.postId)
+    .maybeSingle();
+
+  if (postErr || !post) {
+    return { success: false, error: "Post not found." };
+  }
+
+  const cleanNote = input.note?.trim() || null;
+
+  const { error } = await supabase.rpc(
+    "admin_send_back_anonymous_journal_post",
+    {
+      p_post_id: input.postId,
+      p_note: cleanNote,
+    },
+  );
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  if (post.author_id && post.author_id !== user.id) {
+    const notifMsg = cleanNote
+      ? `Changes requested on your anonymous Journal piece "${post.title}": ${cleanNote}`
+      : `An admin requested changes on your anonymous Journal piece "${post.title}".`;
+
+    await supabase.from("notifications").insert({
+      user_id: post.author_id,
+      type: "changes_requested",
+      message: notifMsg,
+      post_id: post.id,
+      from_user_id: user.id,
+      read: false,
+    });
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/dashboard");
   return { success: true };
 }

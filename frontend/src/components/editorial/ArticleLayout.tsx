@@ -28,6 +28,7 @@ export type ArticleLayoutProps = {
   actions?: React.ReactNode;
   className?: string;
   showProgress?: boolean;
+  anonymous?: boolean;
 };
 
 export function ArticleLayout({
@@ -48,6 +49,7 @@ export function ArticleLayout({
   actions,
   className,
   showProgress = true,
+  anonymous = false,
 }: ArticleLayoutProps) {
   const hasToc = Boolean(headings && headings.length > 0);
 
@@ -73,6 +75,7 @@ export function ArticleLayout({
               author={author}
               publishedAt={publishedAt}
               readTime={readTime}
+              anonymous={anonymous}
             />
           )}
         </header>

@@ -19,6 +19,8 @@ export const postSchema = z.object({
   publication_id: z.string().uuid().optional().nullable(),
   // No .default() — Zod 4 input/output split breaks react-hook-form resolvers.
   format: z.enum(["prose", "poetry"]),
+  /** Journal only: hide public name; requires admin approval before publish. */
+  is_anonymous: z.boolean(),
 });
 
 export const inlineImageAltSchema = z.object({

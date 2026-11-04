@@ -117,6 +117,7 @@ export type Database = {
           linkedin_picked_by?: string | null;
           tags: string[] | null;
           format: "prose" | "poetry";
+          is_anonymous: boolean;
           read_time: number;
           created_at: string;
           updated_at: string;
@@ -139,6 +140,7 @@ export type Database = {
           linkedin_picked_by?: string | null;
           tags?: string[] | null;
           format?: "prose" | "poetry";
+          is_anonymous?: boolean;
           read_time?: number;
           created_at?: string;
           updated_at?: string;
@@ -161,11 +163,29 @@ export type Database = {
           linkedin_picked_by?: string | null;
           tags?: string[] | null;
           format?: "prose" | "poetry";
+          is_anonymous?: boolean;
           read_time?: number;
           created_at?: string;
           updated_at?: string;
           published_at?: string | null;
           scheduled_at?: string | null;
+        };
+      };
+      journal_anonymous_authors: {
+        Row: {
+          post_id: string;
+          author_id: string;
+          created_at: string;
+        };
+        Insert: {
+          post_id: string;
+          author_id: string;
+          created_at?: string;
+        };
+        Update: {
+          post_id?: string;
+          author_id?: string;
+          created_at?: string;
         };
       };
       bookmarks: {
@@ -734,6 +754,22 @@ export type Database = {
           kind: string;
           excerpt: string | null;
         }[];
+      };
+      admin_approve_anonymous_journal_post: {
+        Args: { p_post_id: string };
+        Returns: undefined;
+      };
+      admin_send_back_anonymous_journal_post: {
+        Args: { p_post_id: string; p_note?: string | null };
+        Returns: undefined;
+      };
+      journal_anonymous_profile_id: {
+        Args: Record<string, never>;
+        Returns: string;
+      };
+      is_journal_anonymous_author: {
+        Args: { p_post_id: string; p_uid: string };
+        Returns: boolean;
       };
     };
   };

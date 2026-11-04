@@ -22,6 +22,8 @@ export type BylineProps = {
   readTime?: number | null;
   className?: string;
   size?: "sm" | "md";
+  /** When true, show "Anonymous" with no profile link. */
+  anonymous?: boolean;
 };
 
 function badgeLabel(author: BylineAuthor): string | null {
@@ -39,36 +41,54 @@ export function Byline({
   readTime,
   className,
   size = "md",
+  anonymous = false,
 }: BylineProps) {
-  const displayName =
-    (author.fullName ?? author.full_name)?.trim() || author.username;
-  const avatarSrc = author.avatarUrl ?? author.avatar_url;
+  const displayName = anonymous
+    ? "Anonymous"
+    : (author.fullName ?? author.full_name)?.trim() || author.username;
+  const avatarSrc = anonymous
+    ? null
+    : (author.avatarUrl ?? author.avatar_url);
   const initial = displayName.charAt(0).toUpperCase();
-  const badge = badgeLabel(author);
+  const badge = anonymous ? null : badgeLabel(author);
   const avatarSize = size === "sm" ? "h-7 w-7" : "h-9 w-9";
+
+  const avatar = (
+    <Avatar className={cn(avatarSize, "rounded-full border border-hairline")}>
+      <AvatarImage src={avatarSrc || undefined} alt={displayName} />
+      <AvatarFallback className="bg-muted font-mono text-[10px] uppercase text-muted-foreground">
+        {initial}
+      </AvatarFallback>
+    </Avatar>
+  );
 
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <Link
-        href={`/profile/${author.username}`}
-        className="shrink-0 transition-opacity duration-editorial hover:opacity-80"
-      >
-        <Avatar className={cn(avatarSize, "rounded-full border border-hairline")}>
-          <AvatarImage src={avatarSrc || undefined} alt={displayName} />
-          <AvatarFallback className="bg-muted font-mono text-[10px] uppercase text-muted-foreground">
-            {initial}
-          </AvatarFallback>
-        </Avatar>
-      </Link>
+      {anonymous ? (
+        <div className="shrink-0">{avatar}</div>
+      ) : (
+        <Link
+          href={`/profile/${author.username}`}
+          className="shrink-0 transition-opacity duration-editorial hover:opacity-80"
+        >
+          {avatar}
+        </Link>
+      )}
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-          <Link
-            href={`/profile/${author.username}`}
-            className="truncate text-sm font-medium text-foreground transition-colors duration-editorial hover:text-brand"
-          >
-            {displayName}
-          </Link>
+          {anonymous ? (
+            <span className="truncate text-sm font-medium text-foreground">
+              {displayName}
+            </span>
+          ) : (
+            <Link
+              href={`/profile/${author.username}`}
+              className="truncate text-sm font-medium text-foreground transition-colors duration-editorial hover:text-brand"
+            >
+              {displayName}
+            </Link>
+          )}
           {badge && (
             <span className="meta-label shrink-0 text-brand/80">{badge}</span>
           )}

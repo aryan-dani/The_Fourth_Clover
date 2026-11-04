@@ -630,6 +630,7 @@ export async function fetchPublicProfilePageData(username: string): Promise<{
     .select("*, likes(count), comments(count)")
     .eq("author_id", profile.id)
     .eq("status", "published")
+    .eq("is_anonymous", false)
     .order("created_at", { ascending: false })
     .limit(24);
 
@@ -685,21 +686,39 @@ export async function fetchDashboardInitialData(): Promise<{
     };
   }
 
-  const [postsQuery, csiRoleInfo] = await Promise.all([
+  const postSelect = `
+    *,
+    likes (count),
+    comments (count),
+    publication:publications (id, slug, name)
+  `;
+
+  const [postsQuery, attributionRes, csiRoleInfo] = await Promise.all([
     supabase
       .from("posts")
-      .select(
-        `
-          *,
-          likes (count),
-          comments (count),
-          publication:publications (id, slug, name)
-        `,
-      )
+      .select(postSelect)
       .eq("author_id", user.id)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("journal_anonymous_authors")
+      .select("post_id")
+      .eq("author_id", user.id),
     getUserPublicationRole("csi", user.id),
   ]);
+
+  const attributedIds = (attributionRes.data || []).map(
+    (row: { post_id: string }) => row.post_id,
+  );
+
+  let attributedPosts: DashboardPostRow[] = [];
+  if (attributedIds.length > 0) {
+    const attributedRes = await supabase
+      .from("posts")
+      .select(postSelect)
+      .in("id", attributedIds)
+      .order("created_at", { ascending: false });
+    attributedPosts = (attributedRes.data || []) as DashboardPostRow[];
+  }
 
   let userPosts: DashboardPostRow[] = [];
   if (!postsQuery.error && postsQuery.data) {
@@ -718,6 +737,15 @@ export async function fetchDashboardInitialData(): Promise<{
       .order("created_at", { ascending: false });
     userPosts = (fallbackRes.data || []) as DashboardPostRow[];
   }
+
+  const postsById = new Map<string, DashboardPostRow>();
+  for (const post of [...userPosts, ...attributedPosts]) {
+    postsById.set(post.id, post);
+  }
+  userPosts = Array.from(postsById.values()).sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
 
   const totalPosts = userPosts.length;
   const publishedPosts = userPosts.filter(

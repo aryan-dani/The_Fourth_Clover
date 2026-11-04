@@ -355,6 +355,7 @@ export function JournalPageClient({
               readTime={post.read_time}
               tags={post.tags}
               format={post.format === "poetry" ? "poetry" : "prose"}
+              anonymous={Boolean(post.is_anonymous)}
               reactionCount={post.likes?.[0]?.count}
               commentCount={post.comments?.[0]?.count}
               priority={index < 3}
@@ -364,8 +365,9 @@ export function JournalPageClient({
       ) : (
         <ul className="divide-y divide-[var(--fg-line)] border-t border-[var(--fg-line)]">
           {posts.map((post) => {
-            const author =
-              post.author?.full_name || post.author?.username || "Author";
+            const author = post.is_anonymous
+              ? "Anonymous"
+              : post.author?.full_name || post.author?.username || "Author";
             const when = post.published_at || post.created_at;
             const date = when
               ? new Intl.DateTimeFormat("en-US", {

@@ -47,6 +47,8 @@ import {
   adminToggleUserSuspensionAction,
   adminUpdatePlatformSettingsAction,
   adminUpsertRosterEntryAction,
+  adminApproveAnonymousJournalPostAction,
+  adminSendBackAnonymousJournalPostAction,
   type SuperAdminDashboardPayload,
 } from "@/features/data/admin-actions";
 import {
@@ -95,6 +97,9 @@ export default function AdminClient({
     "all" | "tech" | "heads" | "claimed" | "flagged"
   >("all");
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [anonSendBackNotes, setAnonSendBackNotes] = useState<
+    Record<string, string>
+  >({});
 
   // Manual CSI link form state
   const [selectedUserId, setSelectedUserId] = useState("");
@@ -613,6 +618,13 @@ export default function AdminClient({
             >
               <Settings className="mr-1.5 h-3.5 w-3.5" />
               Schedule & Cutoff
+            </TabsTrigger>
+            <TabsTrigger
+              value="anonymous-journal"
+              className="rounded-[var(--radius)] px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background"
+            >
+              <PenSquare className="mr-1.5 h-3.5 w-3.5" />
+              Anonymous journal ({initialData.anonymousJournalQueue.length})
             </TabsTrigger>
             <TabsTrigger
               value="moderation"
@@ -1643,6 +1655,144 @@ export default function AdminClient({
             </div>
           </TabsContent>
 
+          {/* TAB: ANONYMOUS JOURNAL APPROVAL QUEUE */}
+          <TabsContent value="anonymous-journal" className="space-y-3">
+            <div className="panel space-y-2 p-5">
+              <h2 className="text-base font-semibold text-foreground">
+                Anonymous Journal queue
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                These pieces hide the writer&apos;s name publicly. You still see
+                the real account here. Approve to publish as Anonymous, or send
+                back with a note.
+              </p>
+            </div>
+            {initialData.anonymousJournalQueue.length === 0 ? (
+              <div className="panel p-6 text-sm text-muted-foreground">
+                No anonymous Journal pieces waiting for approval.
+              </div>
+            ) : (
+              initialData.anonymousJournalQueue.map((post) => {
+                const real =
+                  post.real_author ||
+                  (post.author
+                    ? {
+                        id: post.author.id,
+                        username: post.author.username,
+                        full_name: post.author.full_name,
+                      }
+                    : null);
+                const noteKey = post.id;
+                return (
+                  <div key={post.id} className="panel space-y-3 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0 space-y-1">
+                        <p className="font-display font-semibold text-foreground">
+                          {post.title}
+                        </p>
+                        {post.excerpt && (
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {post.excerpt}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          Real author:{" "}
+                          <strong className="text-foreground">
+                            {real?.full_name || real?.username || "Unknown"}
+                          </strong>
+                          {real?.username ? ` (@${real.username})` : ""} ·{" "}
+                          {post.format || "prose"} · Updated{" "}
+                          {new Date(post.updated_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-[10px]">
+                        in review
+                      </Badge>
+                    </div>
+                    <Input
+                      value={anonSendBackNotes[noteKey] || ""}
+                      onChange={(e) =>
+                        setAnonSendBackNotes((prev) => ({
+                          ...prev,
+                          [noteKey]: e.target.value,
+                        }))
+                      }
+                      placeholder="Optional note when sending back"
+                      className="h-9 rounded-[var(--radius)] text-xs"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        className="h-8 rounded-[var(--radius)] text-xs"
+                        disabled={busyKey === `anon-approve-${post.id}`}
+                        onClick={async () => {
+                          setBusyKey(`anon-approve-${post.id}`);
+                          const res =
+                            await adminApproveAnonymousJournalPostAction({
+                              postId: post.id,
+                            });
+                          setBusyKey(null);
+                          if (!res.success) {
+                            toast.error(res.error || "Failed to approve.");
+                            return;
+                          }
+                          toast.success("Anonymous piece approved and published.");
+                          router.refresh();
+                        }}
+                      >
+                        {busyKey === `anon-approve-${post.id}` ? (
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                        )}
+                        Approve
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 rounded-[var(--radius)] text-xs"
+                        disabled={busyKey === `anon-back-${post.id}`}
+                        onClick={async () => {
+                          setBusyKey(`anon-back-${post.id}`);
+                          const res =
+                            await adminSendBackAnonymousJournalPostAction({
+                              postId: post.id,
+                              note: anonSendBackNotes[noteKey],
+                            });
+                          setBusyKey(null);
+                          if (!res.success) {
+                            toast.error(res.error || "Failed to send back.");
+                            return;
+                          }
+                          toast.success("Sent back to the writer as a draft.");
+                          router.refresh();
+                        }}
+                      >
+                        {busyKey === `anon-back-${post.id}` ? (
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                        )}
+                        Send back
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 rounded-[var(--radius)] text-xs"
+                        asChild
+                      >
+                        <Link href={`/write?edit=${post.id}`}>
+                          <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                          Open
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </TabsContent>
+
           {/* TAB 7: LEGACY OPEN BLOG POSTS */}
           <TabsContent value="legacy" className="space-y-3">
             {initialData.legacyPosts.map((post) => (
@@ -1658,8 +1808,8 @@ export default function AdminClient({
                     {post.title}
                   </Link>
                   <p className="text-xs text-muted-foreground">
-                    By {post.author?.full_name || post.author?.username} ·{" "}
-                    {post.status}
+                    By {post.author?.full_name || post.author?.username}
+                    {post.is_anonymous ? " (anonymous)" : ""} · {post.status}
                   </p>
                 </div>
                 <div className="flex gap-2">

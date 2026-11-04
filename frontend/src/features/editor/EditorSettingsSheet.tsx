@@ -42,6 +42,11 @@ type EditorSettingsSheetProps = {
   showFormat?: boolean;
   format?: PostFormatOption;
   onFormatChange?: (value: PostFormatOption) => void;
+  /** Journal-only: post without a public name (admin approval required) */
+  showAnonymous?: boolean;
+  isAnonymous?: boolean;
+  onAnonymousChange?: (value: boolean) => void;
+  anonymousLocked?: boolean;
   triggerLabel?: string;
 };
 
@@ -63,6 +68,10 @@ export function EditorSettingsSheet({
   showFormat = false,
   format = "prose",
   onFormatChange,
+  showAnonymous = false,
+  isAnonymous = false,
+  onAnonymousChange,
+  anonymousLocked = false,
   triggerLabel = "Settings",
 }: EditorSettingsSheetProps) {
   return (
@@ -205,6 +214,29 @@ export function EditorSettingsSheet({
                   <SelectItem value="poetry">Poetry</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {showAnonymous && onAnonymousChange && (
+            <div className="space-y-2 rounded-md border border-border/70 bg-muted/20 p-3">
+              <label className="flex items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={isAnonymous}
+                  disabled={anonymousLocked}
+                  onChange={(e) => onAnonymousChange(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-input"
+                />
+                <span className="space-y-1">
+                  <span className="block text-sm font-medium text-foreground">
+                    Post without a name
+                  </span>
+                  <span className="block text-[11px] leading-relaxed text-muted-foreground">
+                    Readers see “Anonymous”. An admin must approve it before it
+                    goes live. Comments you leave still use your account.
+                  </span>
+                </span>
+              </label>
             </div>
           )}
         </div>

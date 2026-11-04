@@ -82,6 +82,7 @@ function WritePageContent({
     slug,
     cover_image,
     format,
+    is_anonymous: isAnonymous,
   } = form.watch();
 
   useEffect(() => {
@@ -147,6 +148,7 @@ function WritePageContent({
     excerpt,
     status,
     format,
+    isAnonymous,
     isLoading,
     isUploading,
     isInlineUploading,
@@ -202,7 +204,9 @@ function WritePageContent({
       : status === "published"
         ? "Live"
         : status === "in_review"
-          ? "In review"
+          ? isAnonymous
+            ? "Awaiting approval"
+            : "In review"
           : "Draft";
 
   const backHref = resolvedPubSlug ? `/${resolvedPubSlug}` : "/dashboard";
@@ -226,12 +230,22 @@ function WritePageContent({
             disabled: isLoading,
             loading: isLoading,
           }
-        : {
-            label: "Publish",
-            onClick: () => void submitPublished(),
-            disabled: isLoading,
-            loading: isLoading,
-          };
+        : isJournal && isAnonymous
+          ? {
+              label:
+                status === "in_review"
+                  ? "Update submission"
+                  : "Submit for approval",
+              onClick: () => void submitForReview(),
+              disabled: isLoading,
+              loading: isLoading,
+            }
+          : {
+              label: "Publish",
+              onClick: () => void submitPublished(),
+              disabled: isLoading,
+              loading: isLoading,
+            };
 
   const secondaryAction =
     status !== "published"
@@ -282,6 +296,12 @@ function WritePageContent({
             format={format === "poetry" ? "poetry" : "prose"}
             onFormatChange={(v) =>
               form.setValue("format", v, { shouldDirty: true })
+            }
+            showAnonymous={isJournal}
+            isAnonymous={Boolean(isAnonymous)}
+            anonymousLocked={status === "published" && Boolean(isAnonymous)}
+            onAnonymousChange={(v) =>
+              form.setValue("is_anonymous", v, { shouldDirty: true })
             }
           />
         }

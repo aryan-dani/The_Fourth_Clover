@@ -124,6 +124,7 @@ export function FollowingFeedClient({
                 readTime={post.read_time}
                 tags={post.tags}
                 format={post.format === "poetry" ? "poetry" : "prose"}
+                anonymous={Boolean(post.is_anonymous)}
                 reactionCount={post.likes?.[0]?.count}
                 commentCount={post.comments?.[0]?.count}
                 priority={index < 3}

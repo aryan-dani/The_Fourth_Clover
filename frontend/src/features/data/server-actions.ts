@@ -104,31 +104,61 @@ export async function notifyEditorsOfReviewSubmissionAction(
 
     const { data: post } = await supabase
       .from("posts")
-      .select("id, title, author_id, publication_id, status")
+      .select("id, title, author_id, publication_id, status, is_anonymous")
       .eq("id", postId)
       .maybeSingle();
 
-    if (!post || !post.publication_id) {
+    if (!post) {
+      return { ok: false, error: "Post not found" };
+    }
+
+    const { data: authorProfile } = await supabase
+      .from("profiles")
+      .select("full_name, username")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const authorName =
+      authorProfile?.full_name || authorProfile?.username || "A writer";
+
+    // Anonymous Journal: notify super admins
+    if (!post.publication_id && post.is_anonymous) {
+      const { data: admins } = await supabase
+        .from("profiles")
+        .select("id")
+        .or("role.eq.super_admin,is_admin.eq.true");
+
+      const adminIds = (admins || [])
+        .map((row: { id: string }) => row.id)
+        .filter((id: string) => id !== user.id);
+
+      if (adminIds.length > 0) {
+        await supabase.from("notifications").insert(
+          adminIds.map((adminId: string) => ({
+            user_id: adminId,
+            type: "review_submitted" as const,
+            message: `${authorName} submitted anonymous Journal piece "${postTitle || post.title}" for approval`,
+            post_id: post.id,
+            from_user_id: user.id,
+            read: false,
+          })),
+        );
+      }
+
+      revalidatePath("/admin");
+      revalidatePath("/dashboard");
+      return { ok: true };
+    }
+
+    if (!post.publication_id) {
       return { ok: false, error: "Publication post not found" };
     }
 
-    const [authorProfileRes, editorsRes] = await Promise.all([
-      supabase
-        .from("profiles")
-        .select("full_name, username")
-        .eq("id", user.id)
-        .maybeSingle(),
-      supabase
-        .from("publication_members")
-        .select("user_id")
-        .eq("publication_id", post.publication_id)
-        .eq("role", "editor"),
-    ]);
-
-    const authorName =
-      authorProfileRes.data?.full_name ||
-      authorProfileRes.data?.username ||
-      "A CSI writer";
+    const editorsRes = await supabase
+      .from("publication_members")
+      .select("user_id")
+      .eq("publication_id", post.publication_id)
+      .eq("role", "editor");
 
     const editorIds = (editorsRes.data || [])
       .map((row: { user_id: string }) => row.user_id)

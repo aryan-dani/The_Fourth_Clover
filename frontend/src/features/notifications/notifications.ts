@@ -50,6 +50,10 @@ export function getNotificationHref(n: NotificationWithSender): string {
     return `/profile/${encodeURIComponent(n.from_user.username)}`;
   }
   if (n.type === "review_submitted") {
+    // Journal anonymous submissions have a post_id with no publication.
+    if (n.post_id && n.post && !n.post.publication_slug) {
+      return "/admin";
+    }
     return "/tech-weekly/review";
   }
 

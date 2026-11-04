@@ -243,7 +243,11 @@ export function HomePageClient({ data }: { data: HomeData }) {
                   {post.title}
                 </span>
                 <span className="type-label shrink-0 text-muted-foreground">
-                  {post.author?.full_name || post.author?.username || "Author"}
+                  {post.is_anonymous
+                    ? "Anonymous"
+                    : post.author?.full_name ||
+                      post.author?.username ||
+                      "Author"}
                   {" · "}
                   {formatDate(post.published_at || post.created_at)}
                 </span>

@@ -56,9 +56,16 @@ function StatFigure({
   );
 }
 
-function getStatusBadge(status: Post["status"]) {
+function getStatusBadge(
+  status: Post["status"],
+  isAnonymous?: boolean,
+) {
   if (status === "published") {
-    return <Badge variant="default">Published</Badge>;
+    return (
+      <Badge variant="default">
+        {isAnonymous ? "Published · Anonymous" : "Published"}
+      </Badge>
+    );
   }
   if (status === "in_review") {
     return (
@@ -66,11 +73,15 @@ function getStatusBadge(status: Post["status"]) {
         variant="outline"
         className="border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-300"
       >
-        In Review
+        {isAnonymous ? "Awaiting approval" : "In Review"}
       </Badge>
     );
   }
-  return <Badge variant="secondary">Draft</Badge>;
+  return (
+    <Badge variant="secondary">
+      {isAnonymous ? "Draft · Anonymous" : "Draft"}
+    </Badge>
+  );
 }
 
 export function DashboardClient({
@@ -103,22 +114,53 @@ export function DashboardClient({
 
       if (showLoading) setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("posts")
-          .select(
-            `
+        const postSelect = `
           *,
           likes (count),
           comments (count),
           publication:publications (id, slug, name)
-        `,
-          )
-          .eq("author_id", userId)
-          .order("created_at", { ascending: false });
+        `;
 
-        if (error) throw error;
+        const [ownRes, attributionRes] = await Promise.all([
+          supabase
+            .from("posts")
+            .select(postSelect)
+            .eq("author_id", userId)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("journal_anonymous_authors")
+            .select("post_id")
+            .eq("author_id", userId),
+        ]);
 
-        const userPosts = (data as DashboardPostRow[]) || [];
+        if (ownRes.error) throw ownRes.error;
+
+        const attributedIds = (attributionRes.data || []).map(
+          (row: { post_id: string }) => row.post_id,
+        );
+        let attributedPosts: DashboardPostRow[] = [];
+        if (attributedIds.length > 0) {
+          const attributedRes = await supabase
+            .from("posts")
+            .select(postSelect)
+            .in("id", attributedIds)
+            .order("created_at", { ascending: false });
+          if (attributedRes.error) throw attributedRes.error;
+          attributedPosts = (attributedRes.data as DashboardPostRow[]) || [];
+        }
+
+        const postsById = new Map<string, DashboardPostRow>();
+        for (const post of [
+          ...((ownRes.data as DashboardPostRow[]) || []),
+          ...attributedPosts,
+        ]) {
+          postsById.set(post.id, post);
+        }
+        const userPosts = Array.from(postsById.values()).sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() -
+            new Date(a.created_at).getTime(),
+        );
         setPosts(userPosts);
 
         const totalLikes = userPosts.reduce(
@@ -180,29 +222,44 @@ export function DashboardClient({
       post.publication_id || post.publication?.slug === "csi",
     );
     const isWriterOnly = isCsiPost && csiRole !== "editor";
+    const isAnonymousJournal =
+      Boolean(post.is_anonymous) && !post.publication_id;
 
     try {
+      if (isAnonymousJournal && post.status === "published") {
+        toast.error(
+          "Published anonymous pieces stay live. Ask an admin to remove one if needed.",
+        );
+        return;
+      }
       if (post.status === "published" || post.status === "in_review") {
         const { error } = await updatePost(post.id, {
           status: "draft",
           published_at: null,
+          is_anonymous: post.is_anonymous,
         });
         if (error) throw error;
         toast.success("Post moved back to drafts.");
-      } else if (isWriterOnly) {
+      } else if (isAnonymousJournal || isWriterOnly) {
         const { error } = await updatePost(post.id, {
           status: "in_review",
           published_at: null,
           review_note: null,
+          is_anonymous: isAnonymousJournal ? true : post.is_anonymous,
         });
         if (error) throw error;
         await notifyEditorsOfReviewSubmissionAction(post.id, post.title);
-        toast.success("Submitted to CSI editors for review!");
+        toast.success(
+          isAnonymousJournal
+            ? "Submitted for admin approval!"
+            : "Submitted to CSI editors for review!",
+        );
       } else {
         const { error } = await updatePost(post.id, {
           status: "published",
           published_at: new Date().toISOString(),
           review_note: null,
+          is_anonymous: false,
         });
         if (error) throw error;
         toast.success("Post published successfully!");
@@ -238,8 +295,11 @@ export function DashboardClient({
         // Tech Weekly pieces are edited at /tech-weekly/write?id=.
         const editHref = `/write?edit=${post.id}`;
         const viewHref = isCsi ? `/csi/${post.slug}` : `/post/${post.slug}`;
+        // Anonymous journal in_review is not publicly readable yet.
         const href =
-          post.status === "published" || post.status === "in_review"
+          post.status === "published" ||
+          (post.status === "in_review" &&
+            (isCsi || !post.is_anonymous))
             ? viewHref
             : editHref;
 
@@ -259,6 +319,14 @@ export function DashboardClient({
                 {post.publication?.slug || "CSI"}
               </Badge>
             )}
+            {post.is_anonymous && !isCsi && (
+              <Badge
+                variant="outline"
+                className="rounded-full border-border/70 px-2 py-0 text-[10px] font-semibold uppercase text-muted-foreground"
+              >
+                Anonymous
+              </Badge>
+            )}
             {post.status === "draft" && post.review_note && (
               <Badge
                 variant="outline"
@@ -275,7 +343,10 @@ export function DashboardClient({
       accessorKey: "status",
       header: "Status",
       cell: ({ row }: { row: Row<DashboardPostRow> }) => {
-        return getStatusBadge(row.original.status);
+        return getStatusBadge(
+          row.original.status,
+          Boolean(row.original.is_anonymous),
+        );
       },
     },
     {
@@ -302,11 +373,18 @@ export function DashboardClient({
         const editHref = `/write?edit=${post.id}`;
         const isWriterOnly = isCsi && csiRole !== "editor";
 
+        const isAnonymousJournal =
+          Boolean(post.is_anonymous) && !isCsi;
+
         let statusActionLabel = "Publish";
-        if (post.status === "published") {
+        if (isAnonymousJournal && post.status === "published") {
+          statusActionLabel = "";
+        } else if (post.status === "published") {
           statusActionLabel = "Unpublish";
         } else if (post.status === "in_review") {
           statusActionLabel = "Withdraw to Draft";
+        } else if (isAnonymousJournal) {
+          statusActionLabel = "Submit for approval";
         } else if (isWriterOnly) {
           statusActionLabel = "Submit for Review";
         }
@@ -330,9 +408,11 @@ export function DashboardClient({
               <DropdownMenuItem asChild>
                 <Link href={editHref}>Edit</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleStatusAction(post)}>
-                {statusActionLabel}
-              </DropdownMenuItem>
+              {statusActionLabel ? (
+                <DropdownMenuItem onClick={() => handleStatusAction(post)}>
+                  {statusActionLabel}
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuItem
                 className="text-red-500"
                 onClick={() => handleDeletePost(post.id)}

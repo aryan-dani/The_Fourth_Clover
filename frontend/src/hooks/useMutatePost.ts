@@ -93,6 +93,7 @@ export function useMutatePost(
       scheduled_at: null,
       publication_id: options?.publicationId ?? null,
       format: "prose",
+      is_anonymous: false,
     },
   });
 
@@ -125,7 +126,29 @@ export function useMutatePost(
       const authorId = userIdRef.current;
       const isEditor =
         options?.memberRole === "editor" || Boolean(profile?.is_admin);
-      if (authorId && data.author_id !== authorId && !isEditor) {
+
+      let isAttributedAuthor = false;
+      if (
+        authorId &&
+        data.author_id !== authorId &&
+        data.is_anonymous &&
+        !data.publication_id
+      ) {
+        const { data: attribution } = await supabase
+          .from("journal_anonymous_authors")
+          .select("post_id")
+          .eq("post_id", data.id)
+          .eq("author_id", authorId)
+          .maybeSingle();
+        isAttributedAuthor = Boolean(attribution);
+      }
+
+      if (
+        authorId &&
+        data.author_id !== authorId &&
+        !isEditor &&
+        !isAttributedAuthor
+      ) {
         toast.error("You don't have access to this post.");
         router.push("/dashboard");
         return;
@@ -149,6 +172,7 @@ export function useMutatePost(
         scheduled_at: data.scheduled_at || null,
         publication_id: data.publication_id ?? options?.publicationId ?? null,
         format: data.format === "poetry" ? "poetry" : "prose",
+        is_anonymous: Boolean(data.is_anonymous),
       });
     } catch (error) {
       console.error("Error loading post:", error);
@@ -209,11 +233,17 @@ export function useMutatePost(
 
       // Enforce writer role guard on client before sending to Supabase RLS
       let targetStatus = values.status;
+      const wantAnonymous = Boolean(values.is_anonymous) && !pubId;
       if (
         pubId &&
         targetStatus === "published" &&
         options?.memberRole === "writer"
       ) {
+        targetStatus = "in_review";
+      }
+      // Anonymous journal posts cannot self-publish; keep drafts as draft,
+      // and coerce a publish attempt into in_review.
+      if (wantAnonymous && targetStatus === "published") {
         targetStatus = "in_review";
       }
 
@@ -225,6 +255,7 @@ export function useMutatePost(
         excerpt: values.excerpt || null,
         tags: tagsArray,
         format: values.format ?? "prose",
+        is_anonymous: wantAnonymous,
         read_time,
         slug: values.slug,
         featured_image: values.featured_image || null,
@@ -267,7 +298,11 @@ export function useMutatePost(
               result.data.title,
             );
           }
-          toast.success("Submitted for editor review!");
+          toast.success(
+            wantAnonymous
+              ? "Submitted for admin approval!"
+              : "Submitted for editor review!",
+          );
           syncEditUrl(result.data.id);
         } else if (result.data.status === "published") {
           toast.success(
@@ -319,12 +354,23 @@ export function useMutatePost(
           values.publication_id ?? effectivePublicationId ?? null;
 
         let safeStatus = values.status;
+        const wantAnonymous = Boolean(values.is_anonymous) && !pubId;
         if (
           pubId &&
           safeStatus === "published" &&
           options?.memberRole === "writer"
         ) {
           safeStatus = "draft";
+        }
+        // Anonymous journal: never escalate to published via autosave.
+        // Keep published only when the post is already live (admin-approved).
+        if (
+          wantAnonymous &&
+          safeStatus === "published" &&
+          !publishedAtRef.current
+        ) {
+          safeStatus =
+            values.status === "in_review" ? "in_review" : "draft";
         }
 
         const basePayload = {
@@ -335,6 +381,7 @@ export function useMutatePost(
           excerpt: values.excerpt || null,
           tags: tagsArray,
           format: values.format ?? "prose",
+          is_anonymous: wantAnonymous,
           read_time,
           slug: values.slug,
           featured_image: values.featured_image || null,

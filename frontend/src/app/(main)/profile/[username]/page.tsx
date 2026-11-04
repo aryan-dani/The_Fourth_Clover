@@ -15,6 +15,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { username } = await params;
   const decoded = decodeURIComponent(username);
+  if (decoded.toLowerCase() === "anonymous") {
+    return {
+      title: "Profile not found",
+      description: "This writer profile could not be found on The Fourth Clover.",
+    };
+  }
   const { profile } = await fetchPublicProfilePageData(decoded);
   if (!profile) {
     return {
@@ -58,6 +64,7 @@ export default async function ProfilePage({
 }) {
   const { username } = await params;
   const decoded = decodeURIComponent(username);
+  if (decoded.toLowerCase() === "anonymous") notFound();
   const { profile, posts } = await fetchPublicProfilePageData(decoded);
   if (!profile) notFound();
 

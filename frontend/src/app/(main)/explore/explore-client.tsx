@@ -105,7 +105,11 @@ export function ExplorePageClient({
           post.title.toLowerCase().includes(lowercasedTerm) ||
           (post.excerpt &&
             post.excerpt.toLowerCase().includes(lowercasedTerm)) ||
-          post.author.full_name?.toLowerCase().includes(lowercasedTerm)
+          (!post.is_anonymous &&
+            post.author.full_name?.toLowerCase().includes(lowercasedTerm)) ||
+          (post.is_anonymous &&
+            lowercasedTerm.length >= 4 &&
+            "anonymous".includes(lowercasedTerm)),
       );
     }
 
@@ -335,20 +339,35 @@ export function ExplorePageClient({
                 </div>
 
                 <div className="flex items-center justify-between border-t border-border/80 px-6 py-3.5 text-xs text-muted-foreground">
-                  <Link
-                    href={`/profile/${post.author.username}`}
-                    className="flex items-center gap-2 hover:text-foreground truncate"
-                  >
-                    <Avatar className="h-5 w-5 rounded-sm border border-border">
-                      <AvatarImage src={post.author.avatar_url || undefined} />
-                      <AvatarFallback className="rounded-sm font-mono text-[10px]">
-                        {post.author.full_name?.[0] || post.author.username[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium text-foreground truncate">
-                      {post.author.full_name || post.author.username}
-                    </span>
-                  </Link>
+                  {post.is_anonymous ? (
+                    <div className="flex items-center gap-2 truncate">
+                      <Avatar className="h-5 w-5 rounded-sm border border-border">
+                        <AvatarFallback className="rounded-sm font-mono text-[10px]">
+                          A
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium text-foreground truncate">
+                        Anonymous
+                      </span>
+                    </div>
+                  ) : (
+                    <Link
+                      href={`/profile/${post.author.username}`}
+                      className="flex items-center gap-2 hover:text-foreground truncate"
+                    >
+                      <Avatar className="h-5 w-5 rounded-sm border border-border">
+                        <AvatarImage
+                          src={post.author.avatar_url || undefined}
+                        />
+                        <AvatarFallback className="rounded-sm font-mono text-[10px]">
+                          {post.author.full_name?.[0] || post.author.username[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium text-foreground truncate">
+                        {post.author.full_name || post.author.username}
+                      </span>
+                    </Link>
+                  )}
 
                   <div className="flex items-center gap-3 font-mono text-[11px] tabular-nums shrink-0">
                     <span className="inline-flex items-center gap-1">
