@@ -128,3 +128,12 @@ roster.csv
 *roster*.csv
 *.roster.json
 
+# Local scratch / PDF tooling (not part of the app)
+_kohler_dump.txt
+_outreach_dump.txt
+_outreach_full.txt
+_pdf_inspect.py
+_pdf_fonts/
+_theme_previews/
+outreach_pdf/
+
