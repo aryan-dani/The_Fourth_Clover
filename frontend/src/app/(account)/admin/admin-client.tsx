@@ -5,31 +5,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
-  ArrowLeft,
   Award,
   Ban,
   CheckCircle2,
-  ClipboardList,
-  Database,
   ExternalLink,
-  FileText,
-  History,
   KeyRound,
   Link2,
   Loader2,
-  PenSquare,
   Plus,
   RotateCcw,
   Search,
-  Settings,
-  Shield,
   ShieldAlert,
-  ShieldCheck,
   Terminal,
   Trash2,
   Unlink,
-  UserCheck,
-  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -400,16 +389,14 @@ export default function AdminClient({
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[var(--radius)] bg-destructive/10 text-destructive">
             <ShieldAlert className="h-6 w-6" />
           </div>
-          <h1 className="type-display text-2xl">
-            Super Admin Access Required
-          </h1>
+          <h1 className="type-display text-2xl">Admin access required</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            This command console is restricted to CSI Technical Secretary &
-            Super Admin (CSI ID #303).
+            Roster and moderation tools are limited to Super Admin (CSI
+            #303).
           </p>
           <div className="mt-6 flex justify-center gap-3">
             <Button variant="outline" asChild>
-              <Link href="/tech-weekly">Go to CSI Tech Weekly</Link>
+              <Link href="/tech-weekly">Tech Weekly</Link>
             </Button>
             <Button variant="ghost" asChild>
               <Link href="/">Home</Link>
@@ -420,232 +407,97 @@ export default function AdminClient({
     );
   }
 
+  const openReports = initialData.reports.filter(
+    (r) => r.status === "open",
+  ).length;
+  const verifiedAccounts = initialData.users.filter((u) =>
+    Boolean(u.csi_id),
+  ).length;
+
   return (
-    <PageShell className="py-8 space-y-8 pb-24">
-        {/* Masthead */}
-        <header className="space-y-5 border-b border-hairline pb-8">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <Link
-              href="/tech-weekly"
-              className="type-label link-u inline-flex items-center gap-1.5 text-muted-foreground"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              Tech Weekly
-            </Link>
-            <span className="status-mark status-mark--brand">
-              SUPER ADMIN · CSI #303
-            </span>
-          </div>
-
-          <p
-            className="type-display-italic text-[clamp(1.85rem,4.5vw,2.75rem)] leading-none text-[var(--brand-color)]"
-            aria-hidden="true"
-          >
-            Admin
+    <PageShell className="space-y-8 py-8 pb-24">
+        <header className="space-y-3 border-b border-hairline pb-8">
+          <p className="type-label text-muted-foreground">Admin</p>
+          <h1 className="type-display text-[clamp(1.75rem,4vw,2.75rem)] text-foreground">
+            Roster and moderation
+          </h1>
+          <p className="type-body max-w-2xl text-muted-foreground">
+            Signed in as{" "}
+            {initialData.viewerProfile?.full_name ||
+              initialData.viewerProfile?.username}
+            . CSI roster, identity links, Tech Weekly picks, anonymous Journal
+            approvals, and reports.
           </p>
-
-          <div className="flex flex-wrap items-end justify-between gap-6">
-            <div className="space-y-3 max-w-2xl">
-              <h1 className="type-display text-[clamp(1.75rem,4vw,2.75rem)] text-foreground">
-                Platform & Roster Command Console
-              </h1>
-              <p className="type-body text-muted-foreground">
-                Signed in as{" "}
-                <span className="font-semibold text-foreground">
-                  {initialData.viewerProfile?.full_name ||
-                    initialData.viewerProfile?.username}
-                </span>{" "}
-                · Manage CSI 2FA roster identities, Technical Head permissions
-                (Darshan #241 & Tanish #246), Wednesday LinkedIn picks, and IST
-                cutoff schedules.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2.5">
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/tech-weekly/review">
-                  <Award className="mr-1.5 h-4 w-4" />
-                  Wednesday Review Queue
-                </Link>
-              </Button>
-              <Button size="sm" asChild>
-                <Link href="/tech-weekly/write">
-                  <PenSquare className="mr-1.5 h-4 w-4" />
-                  New Tech Weekly Dispatch
-                </Link>
-              </Button>
-            </div>
-          </div>
         </header>
 
-        {/* Telemetry */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="panel flex flex-col justify-between p-5">
-            <div className="flex items-center justify-between">
-              <span className="type-label text-muted-foreground">
-                Registered Accounts
-              </span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius)] border border-[var(--fg-line)] text-[var(--brand-color)]">
-                <Users className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <p className="type-display text-3xl tabular-nums text-foreground">
-                {initialData.users.length}
-              </p>
-              <div className="mt-2 flex items-center gap-2 text-xs">
-                <span className="status-mark status-mark--brand">
-                  <UserCheck className="h-3 w-3" />
-                  {initialData.users.filter((u) => Boolean(u.csi_id)).length}{" "}
-                  verified
-                </span>
-                <span className="text-muted-foreground">
-                  {initialData.users.filter((u) => !u.csi_id).length} unverified
-                </span>
-              </div>
-            </div>
+        <div className="grid grid-cols-2 gap-px border border-[var(--fg-line)] bg-[var(--fg-line)] sm:grid-cols-4">
+          <div className="bg-[var(--bg)] px-4 py-4">
+            <p className="type-label text-muted-foreground">Accounts</p>
+            <p className="mt-2 type-display text-2xl tabular-nums text-foreground">
+              {initialData.users.length}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {verifiedAccounts} verified
+            </p>
           </div>
-
-          <div className="panel flex flex-col justify-between p-5">
-            <div className="flex items-center justify-between">
-              <span className="type-label text-muted-foreground">
-                Seeded CSI Roster
-              </span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius)] border border-[var(--fg-line)] text-[var(--brand-color)]">
-                <Database className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <p className="type-display text-3xl tabular-nums text-foreground">
-                {initialData.roster.length}
-              </p>
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                <span className="status-mark status-mark--brand">
-                  {techRosterCount} Tech Team
-                </span>
-                <span className="text-muted-foreground">
-                  {claimedRosterCount} claimed · {flaggedRoster.length} flagged
-                </span>
-              </div>
-            </div>
+          <div className="bg-[var(--bg)] px-4 py-4">
+            <p className="type-label text-muted-foreground">Roster</p>
+            <p className="mt-2 type-display text-2xl tabular-nums text-foreground">
+              {initialData.roster.length}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {claimedRosterCount} claimed · {flaggedRoster.length} flagged
+            </p>
           </div>
-
-          <div className="panel flex flex-col justify-between p-5">
-            <div className="flex items-center justify-between">
-              <span className="type-label text-muted-foreground">
-                Tech Weekly Posts
-              </span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius)] border border-[var(--fg-line)] text-[var(--brand-color)]">
-                <Terminal className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <p className="type-display text-3xl tabular-nums text-foreground">
-                {initialData.submissions.length}
-              </p>
-              <div className="mt-2 flex items-center gap-2 text-xs">
-                <span className="status-mark status-mark--brand">
-                  {
-                    initialData.submissions.filter(
-                      (s) => s.status === "selected"
-                    ).length
-                  }{" "}
-                  LinkedIn picks
-                </span>
-                <span className="text-muted-foreground">
-                  {
-                    initialData.submissions.filter(
-                      (s) => s.status === "submitted"
-                    ).length
-                  }{" "}
-                  in queue
-                </span>
-              </div>
-            </div>
+          <div className="bg-[var(--bg)] px-4 py-4">
+            <p className="type-label text-muted-foreground">Tech Weekly</p>
+            <p className="mt-2 type-display text-2xl tabular-nums text-foreground">
+              {initialData.submissions.length}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {
+                initialData.submissions.filter((s) => s.status === "submitted")
+                  .length
+              }{" "}
+              in queue
+            </p>
           </div>
-
-          <div className="panel flex flex-col justify-between p-5">
-            <div className="flex items-center justify-between">
-              <span className="type-label text-muted-foreground">
-                Security & Audit
-              </span>
-              <div className="flex h-8 w-8 items-center justify-center rounded-[var(--radius)] border border-[var(--fg-line)] text-[var(--fg-muted)]">
-                <ShieldCheck className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <p className="type-display text-3xl tabular-nums text-foreground">
-                {initialData.auditLogs.length}
-              </p>
-              <div className="mt-2 flex items-center gap-2 text-xs">
-                <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 font-medium text-foreground">
-                  {initialData.reports.filter((r) => r.status === "open").length}{" "}
-                  open reports
-                </span>
-                <span className="text-muted-foreground">audit events</span>
-              </div>
-            </div>
+          <div className="bg-[var(--bg)] px-4 py-4">
+            <p className="type-label text-muted-foreground">Open reports</p>
+            <p className="mt-2 type-display text-2xl tabular-nums text-foreground">
+              {openReports}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {initialData.auditLogs.length} audit events
+            </p>
           </div>
         </div>
 
-        {/* Command Navigation Tabs */}
         <Tabs defaultValue="roster-directory" className="space-y-6">
-          <TabsList className="flex flex-wrap h-auto gap-1.5 panel p-1.5">
-            <TabsTrigger
-              value="roster-directory"
-              className="rounded-[var(--radius)] px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background"
-            >
-              <Database className="mr-1.5 h-3.5 w-3.5" />
-              CSI Roster ({initialData.roster.length})
+          <TabsList className="flex h-auto flex-wrap justify-start gap-2 border-0 bg-transparent p-0">
+            <TabsTrigger value="roster-directory" className="btn-chip type-label !rounded-[var(--radius)] data-[state=active]:bg-transparent">
+              Roster ({initialData.roster.length})
             </TabsTrigger>
-            <TabsTrigger
-              value="users"
-              className="rounded-[var(--radius)] px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background"
-            >
-              <Users className="mr-1.5 h-3.5 w-3.5" />
-              Users & Identity Linking ({initialData.users.length})
+            <TabsTrigger value="users" className="btn-chip type-label !rounded-[var(--radius)] data-[state=active]:bg-transparent">
+              Users ({initialData.users.length})
             </TabsTrigger>
-            <TabsTrigger
-              value="submissions"
-              className="rounded-[var(--radius)] px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background"
-            >
-              <Award className="mr-1.5 h-3.5 w-3.5" />
+            <TabsTrigger value="submissions" className="btn-chip type-label !rounded-[var(--radius)] data-[state=active]:bg-transparent">
               Tech Weekly ({initialData.submissions.length})
             </TabsTrigger>
-            <TabsTrigger
-              value="settings"
-              className="rounded-[var(--radius)] px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background"
-            >
-              <Settings className="mr-1.5 h-3.5 w-3.5" />
-              Schedule & Cutoff
+            <TabsTrigger value="settings" className="btn-chip type-label !rounded-[var(--radius)] data-[state=active]:bg-transparent">
+              Schedule
             </TabsTrigger>
-            <TabsTrigger
-              value="anonymous-journal"
-              className="rounded-[var(--radius)] px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background"
-            >
-              <PenSquare className="mr-1.5 h-3.5 w-3.5" />
-              Anonymous journal ({initialData.anonymousJournalQueue.length})
+            <TabsTrigger value="anonymous-journal" className="btn-chip type-label !rounded-[var(--radius)] data-[state=active]:bg-transparent">
+              Anonymous ({initialData.anonymousJournalQueue.length})
             </TabsTrigger>
-            <TabsTrigger
-              value="moderation"
-              className="rounded-[var(--radius)] px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background"
-            >
-              <ClipboardList className="mr-1.5 h-3.5 w-3.5" />
+            <TabsTrigger value="moderation" className="btn-chip type-label !rounded-[var(--radius)] data-[state=active]:bg-transparent">
               Moderation ({initialData.reports.length})
             </TabsTrigger>
-            <TabsTrigger
-              value="audit"
-              className="rounded-[var(--radius)] px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background"
-            >
-              <History className="mr-1.5 h-3.5 w-3.5" />
-              Audit Log ({initialData.auditLogs.length})
+            <TabsTrigger value="audit" className="btn-chip type-label !rounded-[var(--radius)] data-[state=active]:bg-transparent">
+              Audit ({initialData.auditLogs.length})
             </TabsTrigger>
-            <TabsTrigger
-              value="legacy"
-              className="rounded-[var(--radius)] px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background"
-            >
-              <FileText className="mr-1.5 h-3.5 w-3.5" />
-              Open Blog ({initialData.legacyPosts.length})
+            <TabsTrigger value="legacy" className="btn-chip type-label !rounded-[var(--radius)] data-[state=active]:bg-transparent">
+              Journal posts ({initialData.legacyPosts.length})
             </TabsTrigger>
           </TabsList>
 
@@ -655,13 +507,12 @@ export default function AdminClient({
             <div className="panel space-y-4 p-6">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-                    <Plus className="h-4 w-4 text-primary" />
-                    Add or Update CSI Roster Member (2FA PRN Provisioning)
+                  <h2 className="type-label text-foreground">
+                    Add or update roster member
                   </h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Add a new CSI member or update an existing member&apos;s PRN
-                    and role. PRNs are hashed with HMAC-SHA256 before storage.
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Add a CSI member or update PRN and role. PRNs are hashed
+                    before storage.
                   </p>
                 </div>
                 <span className="font-mono text-[11px] text-muted-foreground">
@@ -672,7 +523,7 @@ export default function AdminClient({
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6 items-end">
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <label className="type-label text-muted-foreground">
                     CSI ID
                   </label>
                   <Input
@@ -684,7 +535,7 @@ export default function AdminClient({
                 </div>
 
                 <div className="space-y-1.5 lg:col-span-2">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <label className="type-label text-muted-foreground">
                     Full Name
                   </label>
                   <Input
@@ -696,7 +547,7 @@ export default function AdminClient({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <label className="type-label text-muted-foreground">
                     Dept & Year
                   </label>
                   <div className="flex gap-1.5">
@@ -725,8 +576,8 @@ export default function AdminClient({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    University PRN (2FA)
+                  <label className="type-label text-muted-foreground">
+                    University PRN
                   </label>
                   <Input
                     value={newRosterPrn}
@@ -800,12 +651,12 @@ export default function AdminClient({
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-border/70 bg-muted/30 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <tr className="border-b border-border/70 bg-muted/30 type-label text-muted-foreground">
                       <th className="py-3 px-4">CSI ID</th>
                       <th className="py-3 px-4">Member Name</th>
                       <th className="py-3 px-4">Dept & Year</th>
                       <th className="py-3 px-4">Role</th>
-                      <th className="py-3 px-4">2FA PRN Status</th>
+                      <th className="py-3 px-4">PRN status</th>
                       <th className="py-3 px-4">Claimed Account</th>
                       <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
@@ -948,14 +799,12 @@ export default function AdminClient({
             <div className="panel space-y-4 p-6">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-                    <Link2 className="h-4 w-4 text-primary" />
-                    Manual CSI Identity Link / Reassign / Role Override
+                  <h2 className="type-label text-foreground">
+                    Link CSI identity
                   </h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Manually link or reassign any CSI ID to a Google-signed-in
-                    user account, or override their role. All changes are logged
-                    in the audit trail.
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Link or reassign a CSI ID to a signed-in account, or override
+                    their role. Changes go to the audit log.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -979,7 +828,7 @@ export default function AdminClient({
 
               <div className="grid gap-3 md:grid-cols-4 items-end">
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <label className="type-label text-muted-foreground">
                     Target User Account
                   </label>
                   <select
@@ -998,7 +847,7 @@ export default function AdminClient({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <label className="type-label text-muted-foreground">
                     CSI ID (Blank to Unlink)
                   </label>
                   <Input
@@ -1010,7 +859,7 @@ export default function AdminClient({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <label className="type-label text-muted-foreground">
                     Role Override
                   </label>
                   <select
@@ -1334,19 +1183,18 @@ export default function AdminClient({
           <TabsContent value="settings">
             <div className="panel space-y-6 p-6">
               <div>
-                <h2 className="text-base font-semibold text-foreground">
-                  CSI Tech Weekly Schedule & Cutoff Engine
+                <h2 className="type-label text-foreground">
+                  Schedule and cutoff
                 </h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Configure the weekly IST cutoff schedule, submission window
-                  override, and whether non-Tech roster members can post
-                  comments.
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Weekly IST cutoff, submission window override, and comment
+                  access.
                 </p>
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <label className="type-label text-muted-foreground">
                     Cutoff Day (IST)
                   </label>
                   <select
@@ -1365,7 +1213,7 @@ export default function AdminClient({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <label className="type-label text-muted-foreground">
                     Cutoff Hour (0-23 IST)
                   </label>
                   <Input
@@ -1381,7 +1229,7 @@ export default function AdminClient({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <label className="type-label text-muted-foreground">
                     Cutoff Minute (0-59 IST)
                   </label>
                   <Input
@@ -1399,7 +1247,7 @@ export default function AdminClient({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <label className="type-label text-muted-foreground">
                     Submissions Window Override
                   </label>
                   <select
@@ -1424,7 +1272,7 @@ export default function AdminClient({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <label className="type-label text-muted-foreground">
                     Featured LinkedIn Picks Per Week
                   </label>
                   <Input
@@ -1478,11 +1326,11 @@ export default function AdminClient({
           <TabsContent value="moderation" className="space-y-6">
             <div className="panel space-y-4 p-6">
               <div>
-                <h2 className="text-base font-semibold text-foreground">
-                  User Reports ({initialData.reports.length})
+                <h2 className="type-label text-foreground">
+                  Reports ({initialData.reports.length})
                 </h2>
-                <p className="text-xs text-muted-foreground">
-                  Resolve or dismiss content reports submitted by members.
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Resolve or dismiss reports from members.
                 </p>
               </div>
               {initialData.reports.length === 0 ? (
@@ -1552,8 +1400,8 @@ export default function AdminClient({
 
             <div className="panel space-y-4 p-6">
               <div>
-                <h2 className="text-base font-semibold text-foreground">
-                  Recent Tech Weekly Comments ({initialData.comments.length})
+                <h2 className="type-label text-foreground">
+                  Comments ({initialData.comments.length})
                 </h2>
               </div>
               {initialData.comments.length === 0 ? (
@@ -1612,12 +1460,10 @@ export default function AdminClient({
           <TabsContent value="audit">
             <div className="panel space-y-4 p-6">
               <div>
-                <h2 className="text-base font-semibold text-foreground">
-                  Immutable Security & Curation Audit Log
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Every role claim, manual CSI link, weekly LinkedIn pick, and
-                  moderation action is recorded with actor and state snapshots.
+                <h2 className="type-label text-foreground">Audit log</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Role claims, CSI links, LinkedIn picks, and moderation actions
+                  with actor and state snapshots.
                 </p>
               </div>
               <div className="space-y-2.5">
@@ -1658,13 +1504,12 @@ export default function AdminClient({
           {/* TAB: ANONYMOUS JOURNAL APPROVAL QUEUE */}
           <TabsContent value="anonymous-journal" className="space-y-3">
             <div className="panel space-y-2 p-5">
-              <h2 className="text-base font-semibold text-foreground">
+              <h2 className="type-label text-foreground">
                 Anonymous Journal queue
               </h2>
-              <p className="text-xs text-muted-foreground">
-                These pieces hide the writer&apos;s name publicly. You still see
-                the real account here. Approve to publish as Anonymous, or send
-                back with a note.
+              <p className="mt-1 text-sm text-muted-foreground">
+                Writers stay anonymous publicly. You still see the real account
+                here. Approve to publish, or send back with a note.
               </p>
             </div>
             {initialData.anonymousJournalQueue.length === 0 ? (

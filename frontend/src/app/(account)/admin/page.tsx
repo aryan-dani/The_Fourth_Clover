@@ -3,9 +3,9 @@ import { fetchSuperAdminDashboardData } from "@/features/data/admin-actions";
 import AdminClient from "./admin-client";
 
 export const metadata: Metadata = {
-  title: "Super Admin Command Center | The Fourth Clover",
+  title: "Admin · Roster and moderation",
   description:
-    "Manage CSI roster identities, weekly LinkedIn picks, platform settings, moderation, and audit logs.",
+    "CSI roster, identity links, Tech Weekly picks, anonymous Journal approvals, and reports.",
 };
 
 export const dynamic = "force-dynamic";

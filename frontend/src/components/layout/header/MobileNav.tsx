@@ -84,7 +84,7 @@ export function MobileNav({
                 onClick={close}
                 className="block rounded-md px-3 py-2 text-sm hover:bg-surface"
               >
-                Studio
+                My writing
               </Link>
               {profile?.username && (
                 <Link
@@ -92,7 +92,7 @@ export function MobileNav({
                   onClick={close}
                   className="block rounded-md px-3 py-2 text-sm hover:bg-surface"
                 >
-                  Profile
+                  Public profile
                 </Link>
               )}
               <Link

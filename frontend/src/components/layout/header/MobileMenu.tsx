@@ -212,7 +212,7 @@ export function MobileMenu({
               </Link>
             )}
             <Link href="/dashboard" onClick={onClose} className="link-u">
-              Studio
+              My writing
             </Link>
             {profile?.username && (
               <Link
@@ -220,7 +220,7 @@ export function MobileMenu({
                 onClick={onClose}
                 className="link-u"
               >
-                Profile
+                Public profile
               </Link>
             )}
             <Link href="/settings" onClick={onClose} className="link-u">

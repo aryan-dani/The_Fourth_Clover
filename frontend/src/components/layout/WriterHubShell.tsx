@@ -77,20 +77,20 @@ export function WriterHubShell({ children }: { children: React.ReactNode }) {
               </p>
             </div>
 
-            <nav className="flex flex-col gap-1" aria-label="Studio">
+            <nav className="flex flex-col gap-1" aria-label="My writing">
               <Link href="/dashboard" className={navClass("posts")}>
                 <LayoutDashboard
                   className={NAV_ICON_CLASS}
                   strokeWidth={NAV_STROKE}
                 />
-                My Posts
+                My writing
               </Link>
               <Link href="/settings" className={navClass("profile")}>
                 <UserRound
                   className={NAV_ICON_CLASS}
                   strokeWidth={NAV_STROKE}
                 />
-                Profile &amp; Links
+                Settings
               </Link>
               <Link
                 href={publicHref}
@@ -100,7 +100,7 @@ export function WriterHubShell({ children }: { children: React.ReactNode }) {
                   className={NAV_ICON_CLASS}
                   strokeWidth={NAV_STROKE}
                 />
-                Public Profile
+                Public profile
               </Link>
             </nav>
           </div>

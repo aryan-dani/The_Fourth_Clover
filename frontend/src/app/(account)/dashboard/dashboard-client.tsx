@@ -453,7 +453,7 @@ export function DashboardClient({
     <WriterHubShell>
       <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0 max-w-xl">
-          <p className="type-label text-muted-foreground">Studio</p>
+          <p className="type-label text-muted-foreground">My writing</p>
           <h1 className="type-display mt-2 text-[clamp(2rem,5vw,3rem)]">
             Your writing
           </h1>

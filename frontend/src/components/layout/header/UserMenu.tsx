@@ -74,20 +74,20 @@ export function UserMenu({
           </p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard">
+            <LayoutDashboard className="mr-2 h-4 w-4" />
+            My writing
+          </Link>
+        </DropdownMenuItem>
         {profile?.username && (
           <DropdownMenuItem asChild>
             <Link href={`/profile/${profile.username}`}>
               <User className="mr-2 h-4 w-4" />
-              Profile
+              Public profile
             </Link>
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem asChild>
-          <Link href="/dashboard">
-            <LayoutDashboard className="mr-2 h-4 w-4" />
-            Studio
-          </Link>
-        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/reading-list">
             <BookMarked className="mr-2 h-4 w-4" />
