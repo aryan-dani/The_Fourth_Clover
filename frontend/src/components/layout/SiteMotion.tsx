@@ -2,26 +2,12 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { Intro } from "@/components/motion/Intro";
-import { PageEnter } from "@/components/motion/Reveal";
+import { PageEnter } from "@/components/motion/PageEnter";
 import { prefersReducedMotionNow } from "@/lib/hooks";
 
-/** Home intro overlay only — does not remount chrome. */
-export function SiteMotion({ children }: { children: ReactNode }) {
-  const pathname = usePathname() || "/";
-  const isHome = pathname === "/";
-
-  return (
-    <>
-      {isHome && <Intro />}
-      {children}
-    </>
-  );
-}
-
 /**
- * Soft route body enter. Also fades the current page slightly when an
- * in-app link is clicked so the swap feels less abrupt.
+ * Fades the current page slightly when an in-app link is clicked.
+ * Does not hide the first paint.
  */
 export function PageTransition({ children }: { children: ReactNode }) {
   const pathname = usePathname() || "/";

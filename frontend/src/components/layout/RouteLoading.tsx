@@ -1,4 +1,4 @@
-export default function Loading() {
+export default function RouteLoading() {
   return (
     <div
       className="mx-auto w-full max-w-content space-y-8 px-4 py-16 sm:px-6"

@@ -1,13 +1,6 @@
 import { SiteHeaderClient } from "@/components/layout/header/SiteHeaderClient";
-import { getCapabilities } from "@/lib/roles";
 
-/** Static guest chrome while signed-in profile resolves. */
+/** Guest chrome. Auth state is resolved on the client. */
 export function SiteHeaderFallback() {
-  return (
-    <SiteHeaderClient
-      signedIn={false}
-      profile={null}
-      capabilities={getCapabilities(null)}
-    />
-  );
+  return <SiteHeaderClient />;
 }

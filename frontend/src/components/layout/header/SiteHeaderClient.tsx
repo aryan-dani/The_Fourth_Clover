@@ -1,45 +1,46 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { gsap } from "@/lib/gsap";
-import { whenIntroRevealing } from "@/lib/intro";
-import { prefersReducedMotionNow, useMotionEffect } from "@/lib/hooks";
 import { useSmoothScroll } from "@/components/motion/SmoothScroll";
 import { CloverMark } from "@/components/layout/CloverMark";
 import { HeaderNav } from "@/components/layout/header/HeaderNav";
 import { HeaderActions } from "@/components/layout/header/HeaderActions";
-import { MobileMenu } from "@/components/layout/header/MobileMenu";
-import type { UserCapabilities } from "@/lib/roles";
+import { useAuth } from "@/features/auth/auth-context";
+import { getCapabilities } from "@/lib/roles";
 import { cn } from "@/lib/utils";
+
+const MobileMenu = dynamic(
+  () =>
+    import("@/components/layout/header/MobileMenu").then((m) => m.MobileMenu),
+  { ssr: false },
+);
 
 const IDLE_HIDE_MS = 2000;
 const TOP_SHOW_Y = 48;
 
-type ProfileSummary = {
-  id: string;
-  username: string;
-  full_name: string | null;
-  avatar_url: string | null;
-  role: "unverified" | "member" | "tech_member" | "tech_head" | "super_admin";
-  is_admin: boolean;
-  is_suspended: boolean;
-  csi_id: number | null;
-} | null;
-
-export function SiteHeaderClient({
-  signedIn,
-  profile,
-  capabilities,
-}: {
-  signedIn: boolean;
-  profile: ProfileSummary;
-  capabilities: UserCapabilities;
-}) {
+export function SiteHeaderClient() {
+  const { user, profile } = useAuth();
+  const signedIn = Boolean(user);
+  const capabilities = getCapabilities(profile);
+  const headerProfile =
+    profile?.id && profile.username && profile.role
+      ? {
+          id: profile.id,
+          username: profile.username,
+          full_name: profile.full_name,
+          avatar_url: profile.avatar_url,
+          role: profile.role,
+          is_admin: Boolean(profile.is_admin),
+          csi_id: profile.csi_id ?? null,
+        }
+      : null;
   const pathname = usePathname();
   const { subscribe } = useSmoothScroll();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuMounted, setMenuMounted] = useState(false);
   const [raised, setRaised] = useState(false);
   const [hidden, setHidden] = useState(false);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -98,34 +99,6 @@ export function SiteHeaderClient({
     };
   }, [pathname]);
 
-  useMotionEffect(() => {
-    const el = innerRef.current;
-    if (!el || prefersReducedMotionNow()) {
-      if (el) el.dataset.revealed = "true";
-      return;
-    }
-    const tween = gsap.fromTo(
-      el,
-      { opacity: 0, y: -18 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 1.3,
-        delay: 0.35,
-        paused: true,
-        onComplete: () => {
-          gsap.set(el, { clearProps: "transform,opacity" });
-          el.dataset.revealed = "true";
-        },
-      },
-    );
-    const disarm = whenIntroRevealing(() => tween.play());
-    return () => {
-      disarm();
-      tween.kill();
-    };
-  }, []);
-
   const tucked = hidden && !menuOpen;
 
   return (
@@ -136,7 +109,6 @@ export function SiteHeaderClient({
       >
         <div
           ref={innerRef}
-          data-reveal="header"
           data-raised={raised ? "true" : "false"}
           data-tucked={tucked ? "true" : "false"}
           className={cn(
@@ -174,7 +146,7 @@ export function SiteHeaderClient({
             <div className="hidden md:block">
               <HeaderActions
                 signedIn={signedIn}
-                profile={profile}
+                profile={headerProfile}
                 capabilities={capabilities}
                 variant="bar"
               />
@@ -184,7 +156,10 @@ export function SiteHeaderClient({
               type="button"
               aria-expanded={menuOpen}
               aria-controls="mobile-menu"
-              onClick={() => setMenuOpen((v) => !v)}
+              onClick={() => {
+                setMenuMounted(true);
+                setMenuOpen((v) => !v);
+              }}
               className="type-label rounded-md px-3 py-2 text-foreground md:hidden"
             >
               {menuOpen ? "Close" : "Menu"}
@@ -193,14 +168,16 @@ export function SiteHeaderClient({
         </div>
       </header>
 
-      <MobileMenu
-        open={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        toggleRef={toggleRef}
-        signedIn={signedIn}
-        profile={profile}
-        capabilities={capabilities}
-      />
+      {menuMounted ? (
+        <MobileMenu
+          open={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          toggleRef={toggleRef}
+          signedIn={signedIn}
+          profile={headerProfile}
+          capabilities={capabilities}
+        />
+      ) : null}
     </>
   );
 }

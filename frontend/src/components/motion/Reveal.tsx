@@ -36,6 +36,12 @@ function markRevealed(el: Element) {
   (el as HTMLElement).dataset.revealed = "true";
 }
 
+/** Anything already on screen stays visible. Motion is for content below the fold. */
+function inFirstView(el: Element): boolean {
+  const top = (el as HTMLElement).getBoundingClientRect().top;
+  return top < window.innerHeight * 0.92;
+}
+
 type CommonProps = {
   as?: ElementType;
   className?: string;
@@ -72,7 +78,7 @@ export function RevealText({
 
   useMotionEffect(() => {
     const el = ref.current;
-    if (!el || prefersReducedMotionNow()) {
+    if (!el || prefersReducedMotionNow() || inFirstView(el)) {
       if (el) markRevealed(el);
       return;
     }
@@ -121,7 +127,7 @@ export function ScriptWipe({
 
   useMotionEffect(() => {
     const el = ref.current;
-    if (!el || prefersReducedMotionNow()) {
+    if (!el || prefersReducedMotionNow() || inFirstView(el)) {
       if (el) markRevealed(el);
       return;
     }
@@ -179,7 +185,7 @@ export function Reveal({
 
   useMotionEffect(() => {
     const el = ref.current;
-    if (!el || prefersReducedMotionNow()) {
+    if (!el || prefersReducedMotionNow() || inFirstView(el)) {
       if (el) markRevealed(el);
       return;
     }
@@ -222,7 +228,7 @@ export function DrawLine({
 
   useMotionEffect(() => {
     const el = ref.current;
-    if (!el || prefersReducedMotionNow()) {
+    if (!el || prefersReducedMotionNow() || inFirstView(el)) {
       if (el) markRevealed(el);
       return;
     }
@@ -258,20 +264,3 @@ export function DrawLine({
   );
 }
 
-/** Soft page enter — CSS only; remount with a key on route change. */
-export function PageEnter({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      data-page-enter
-      className={className ? `page-enter ${className}` : "page-enter"}
-    >
-      {children}
-    </div>
-  );
-}

@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   ],
 };
 
-const BOOT_SCRIPT = `(function(){var d=document.documentElement;try{var rm=window.matchMedia("(prefers-reduced-motion: reduce)").matches;if(!rm){d.classList.add("js-motion");}var seen=false;try{seen=sessionStorage.getItem("clover:intro")==="1";}catch(e){}var home=location.pathname==="/"||location.pathname==="";d.setAttribute("data-intro",(rm||seen||!home)?"done":"pending");setTimeout(function(){if(!window.__cloverReady){d.classList.add("motion-failsafe");d.setAttribute("data-intro","done");}},6000);}catch(e){d.setAttribute("data-intro","done");}})();`;
+const BOOT_SCRIPT = `(function(){var d=document.documentElement;try{if(!window.matchMedia("(prefers-reduced-motion: reduce)").matches){d.classList.add("js-motion");}}catch(e){}d.setAttribute("data-intro","done");})();`;
 
 export default function RootLayout({
   children,

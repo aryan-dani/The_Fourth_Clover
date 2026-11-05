@@ -9,6 +9,8 @@ export const metadata: Metadata = {
 };
 
 export const revalidate = 60;
+export const dynamic = "force-static";
+export const fetchCache = "force-cache";
 
 export default async function TechWeeklyPage() {
   const data = await fetchTechWeeklyLandingData();

@@ -4,6 +4,29 @@ import { fetchPostBySlugForPage } from "@/features/data/server-queries";
 import { PostBodyRenderer } from "@/components/post/PostBodyRenderer";
 import { PostPageClient } from "./post-page-client";
 import { absoluteUrl } from "@/lib/site";
+import { createSupabasePublicServerClient } from "@/lib/supabase/server";
+
+export const revalidate = 60;
+export const fetchCache = "force-cache";
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+  try {
+    const supabase = createSupabasePublicServerClient();
+    const { data } = await supabase
+      .from("posts")
+      .select("slug")
+      .eq("status", "published")
+      .order("published_at", { ascending: false })
+      .limit(100);
+    return (data || [])
+      .map((row) => row.slug)
+      .filter((slug): slug is string => Boolean(slug))
+      .map((slug) => ({ slug }));
+  } catch {
+    return [];
+  }
+}
 
 export async function generateMetadata({
   params,

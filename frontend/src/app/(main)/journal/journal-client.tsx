@@ -1,8 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
   ArrowUpRight,
@@ -48,6 +55,36 @@ function buildJournalHref(opts: {
   return qs ? `/journal?${qs}` : "/journal";
 }
 
+function parseSort(value: string | null): JournalSort {
+  return value === "popular" ? "popular" : "latest";
+}
+
+function parseFormat(value: string | null): JournalFormatFilter {
+  if (value === "poetry" || value === "prose") return value;
+  return "all";
+}
+
+function JournalUrlSync({
+  onChange,
+}: {
+  onChange: (next: {
+    sort: JournalSort;
+    format: JournalFormatFilter;
+    tag: string;
+  }) => void;
+}) {
+  const sp = useSearchParams();
+  const sort = parseSort(sp.get("sort"));
+  const format = parseFormat(sp.get("format"));
+  const tag = sp.get("tag")?.trim() || "";
+
+  useEffect(() => {
+    onChange({ sort, format, tag });
+  }, [sort, format, tag, onChange]);
+
+  return null;
+}
+
 function FilterChip({
   active,
   children,
@@ -86,16 +123,73 @@ export function JournalPageClient({
   const [loadError, setLoadError] = useState(initialLoadError);
   const [loadingMore, startLoadMore] = useTransition();
   const [view, setView] = useState<JournalView>("cards");
+  const [query, setQuery] = useState({
+    sort: initialSort,
+    format: initialFormat,
+    tag: initialTag,
+  });
 
-  const sort = initialSort;
-  const format = initialFormat;
-  const selectedTag = initialTag;
+  const sort = query.sort;
+  const format = query.format;
+  const selectedTag = query.tag;
+  const matchesInitial =
+    sort === initialSort && format === initialFormat && selectedTag === initialTag;
+
+  const onUrlChange = useCallback(
+    (next: { sort: JournalSort; format: JournalFormatFilter; tag: string }) => {
+      setQuery((prev) =>
+        prev.sort === next.sort &&
+        prev.format === next.format &&
+        prev.tag === next.tag
+          ? prev
+          : next,
+      );
+    },
+    [],
+  );
 
   useEffect(() => {
-    setPosts(initialPosts);
-    setHasMore(initialHasMore);
-    setLoadError(initialLoadError);
-  }, [initialPosts, initialHasMore, initialLoadError]);
+    if (matchesInitial) {
+      setPosts(initialPosts);
+      setHasMore(initialHasMore);
+      setLoadError(initialLoadError);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadError(null);
+    loadMoreJournalPostsAction({
+      limit: pageSize,
+      offset: 0,
+      sort,
+      format,
+      tag: selectedTag || undefined,
+    })
+      .then((next) => {
+        if (cancelled) return;
+        setPosts(next);
+        setHasMore(next.length === pageSize);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLoadError(
+          "We couldn’t load this filter. Check your connection and try again.",
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    matchesInitial,
+    initialPosts,
+    initialHasMore,
+    initialLoadError,
+    pageSize,
+    sort,
+    format,
+    selectedTag,
+  ]);
 
   const hrefFor = useCallback(
     (next: Partial<{ sort: JournalSort; format: JournalFormatFilter; tag: string }>) =>
@@ -135,6 +229,9 @@ export function JournalPageClient({
 
   return (
     <div className="wrap space-y-10 py-10 md:py-14">
+      <Suspense fallback={null}>
+        <JournalUrlSync onChange={onUrlChange} />
+      </Suspense>
       <header className="border-b border-[var(--fg-line)] pb-8">
         <p className="type-label text-muted-foreground">Journal</p>
         <div className="mt-4 flex flex-wrap items-end justify-between gap-6">

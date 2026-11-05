@@ -1,10 +1,4 @@
-"use client";
-
-import { useRef } from "react";
 import { cn } from "@/lib/utils";
-import { gsap } from "@/lib/gsap";
-import { whenIntroRevealing } from "@/lib/intro";
-import { prefersReducedMotionNow, useMotionEffect } from "@/lib/hooks";
 
 const LEAVES = [
   // right
@@ -23,69 +17,8 @@ type HeroCloverProps = {
   className?: string;
 };
 
-/**
- * Large stroked clover for the home hero — stroke-draw on intro, then holds still.
- */
+/** Large stroked clover for the home hero. Painted with the HTML, no intro wait. */
 export function HeroClover({ className }: HeroCloverProps) {
-  const leafRefs = useRef<(SVGPathElement | null)[]>([]);
-  const stemRef = useRef<SVGPathElement | null>(null);
-
-  useMotionEffect(() => {
-    const leaves = leafRefs.current.filter(Boolean) as SVGPathElement[];
-    const stem = stemRef.current;
-    const paths = [...leaves, ...(stem ? [stem] : [])];
-    if (paths.length === 0) return;
-
-    if (prefersReducedMotionNow()) {
-      paths.forEach((p) => {
-        p.style.strokeDasharray = "none";
-        p.style.strokeDashoffset = "0";
-      });
-      return;
-    }
-
-    paths.forEach((p) => {
-      const len = p.getTotalLength();
-      gsap.set(p, {
-        strokeDasharray: len,
-        strokeDashoffset: len,
-      });
-    });
-
-    const tl = gsap.timeline({ paused: true });
-    leaves.forEach((leaf, i) => {
-      tl.to(
-        leaf,
-        {
-          strokeDashoffset: 0,
-          duration: 0.55,
-          ease: "power2.out",
-        },
-        i === 0 ? 0 : "-=0.28",
-      );
-    });
-    if (stem) {
-      tl.to(
-        stem,
-        {
-          strokeDashoffset: 0,
-          duration: 0.4,
-          ease: "power2.out",
-        },
-        "-=0.15",
-      );
-    }
-
-    const disarm = whenIntroRevealing(() => {
-      tl.play();
-    });
-
-    return () => {
-      disarm();
-      tl.kill();
-    };
-  }, []);
-
   return (
     <div
       className={cn(
@@ -103,9 +36,6 @@ export function HeroClover({ className }: HeroCloverProps) {
         {LEAVES.map((d, i) => (
           <path
             key={i}
-            ref={(el) => {
-              leafRefs.current[i] = el;
-            }}
             d={d}
             stroke="currentColor"
             strokeWidth="1.75"
@@ -115,7 +45,6 @@ export function HeroClover({ className }: HeroCloverProps) {
           />
         ))}
         <path
-          ref={stemRef}
           d={STEM}
           stroke="currentColor"
           strokeWidth="1.75"

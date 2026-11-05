@@ -1,3 +1,3 @@
-import Loading from "../../../loading";
+import RouteLoading from "@/components/layout/RouteLoading";
 
-export default Loading;
+export default RouteLoading;

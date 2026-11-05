@@ -613,7 +613,7 @@
     }
   }
   .page-enter {
-    animation: page-enter 0.5s var(--ease-out) both;
+    animation: none;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -804,10 +804,7 @@
   }
 }
 
-/* Reveal states */
-html.js-motion [data-reveal]:not([data-revealed]):not([data-reveal="image"]) {
-  opacity: 0;
-}
+/* Reveal states — content stays visible. Motion may enhance below-fold items after JS. */
 html.motion-failsafe [data-reveal]:not([data-revealed]) {
   opacity: 1 !important;
   transform: none !important;
