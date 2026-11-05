@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { fetchPostBySlugForPage } from "@/features/data/server-queries";
+import {
+  fetchJournalNeighbors,
+  fetchPostBySlugForPage,
+} from "@/features/data/server-queries";
 import { PostBodyRenderer } from "@/components/post/PostBodyRenderer";
 import { PostPageClient } from "./post-page-client";
 import { absoluteUrl } from "@/lib/site";
@@ -81,6 +84,9 @@ export default async function PostPage({
 
   const isCsiPost = Boolean(post.publication_id);
   const postFormat = post.format === "poetry" ? "poetry" : "prose";
+  const journalNeighbors = isCsiPost
+    ? { previous: null, next: null }
+    : await fetchJournalNeighbors(post);
 
   return (
     <PostPageClient
@@ -92,6 +98,7 @@ export default async function PostPage({
           format={postFormat}
         />
       }
+      journalNeighbors={journalNeighbors}
     />
   );
 }

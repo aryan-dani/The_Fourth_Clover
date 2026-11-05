@@ -4,6 +4,7 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   useTransition,
@@ -78,11 +79,27 @@ function JournalUrlSync({
   const format = parseFormat(sp.get("format"));
   const tag = sp.get("tag")?.trim() || "";
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     onChange({ sort, format, tag });
   }, [sort, format, tag, onChange]);
 
   return null;
+}
+
+function JournalFilterLoading() {
+  return (
+    <div className="space-y-4" role="status" aria-live="polite">
+      <p className="type-label text-muted-foreground">Loading this shelf</p>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }, (_, index) => (
+          <div
+            key={index}
+            className="h-44 animate-pulse bg-[var(--fg-line)]/50"
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function FilterChip({
@@ -134,6 +151,22 @@ export function JournalPageClient({
   const selectedTag = query.tag;
   const matchesInitial =
     sort === initialSort && format === initialFormat && selectedTag === initialTag;
+  const queryKey = `${sort}|${format}|${selectedTag}`;
+  const initialKey = `${initialSort}|${initialFormat}|${initialTag}`;
+  const [readyKey, setReadyKey] = useState(initialKey);
+  const [seenInitialPosts, setSeenInitialPosts] = useState(initialPosts);
+  const filterPending = queryKey !== readyKey;
+
+  if (
+    matchesInitial &&
+    (readyKey !== initialKey || seenInitialPosts !== initialPosts)
+  ) {
+    setSeenInitialPosts(initialPosts);
+    setPosts(initialPosts);
+    setHasMore(initialHasMore);
+    setLoadError(initialLoadError);
+    if (readyKey !== initialKey) setReadyKey(initialKey);
+  }
 
   const onUrlChange = useCallback(
     (next: { sort: JournalSort; format: JournalFormatFilter; tag: string }) => {
@@ -150,9 +183,7 @@ export function JournalPageClient({
 
   useEffect(() => {
     if (matchesInitial) {
-      setPosts(initialPosts);
-      setHasMore(initialHasMore);
-      setLoadError(initialLoadError);
+      document.documentElement.removeAttribute("data-journal-filter");
       return;
     }
 
@@ -169,9 +200,15 @@ export function JournalPageClient({
         if (cancelled) return;
         setPosts(next);
         setHasMore(next.length === pageSize);
+        setReadyKey(queryKey);
+        document.documentElement.removeAttribute("data-journal-filter");
       })
       .catch(() => {
         if (cancelled) return;
+        setPosts([]);
+        setHasMore(false);
+        setReadyKey(queryKey);
+        document.documentElement.removeAttribute("data-journal-filter");
         setLoadError(
           "We couldn’t load this filter. Check your connection and try again.",
         );
@@ -182,13 +219,11 @@ export function JournalPageClient({
     };
   }, [
     matchesInitial,
-    initialPosts,
-    initialHasMore,
-    initialLoadError,
     pageSize,
     sort,
     format,
     selectedTag,
+    queryKey,
   ]);
 
   const hrefFor = useCallback(
@@ -426,7 +461,14 @@ export function JournalPageClient({
         </Alert>
       )}
 
-      {posts.length === 0 && !loadError ? (
+      <div className="journal-pending">
+        <JournalFilterLoading />
+      </div>
+
+      <div data-journal-results>
+      {filterPending ? (
+        <JournalFilterLoading />
+      ) : posts.length === 0 && !loadError ? (
         <EmptyState
           title="No matching entries"
           description="Try another format, topic, or clear filters to browse the full journal."
@@ -504,7 +546,7 @@ export function JournalPageClient({
         </ul>
       )}
 
-      {hasMore && posts.length > 0 && (
+      {hasMore && posts.length > 0 && !filterPending && (
         <LoadMore
           onClick={loadMore}
           loading={loadingMore}
@@ -513,6 +555,7 @@ export function JournalPageClient({
           Load more entries
         </LoadMore>
       )}
+      </div>
     </div>
   );
 }

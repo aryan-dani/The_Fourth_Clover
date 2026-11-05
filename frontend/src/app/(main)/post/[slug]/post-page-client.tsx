@@ -26,6 +26,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/features/auth/auth-context";
 import { logSupabaseError } from "@/lib/errors";
 import {
+  cn,
   formatLinkedinRepostCopy,
   getCurrentWeekKey,
 } from "@/lib/utils";
@@ -50,7 +51,47 @@ import {
 } from "lucide-react";
 import { CommentSection } from "@/features/comments/components/CommentSection";
 import { extractHeadings } from "@/lib/post-content";
+import type { JournalNeighbor } from "@/features/data/server-queries";
 import type { PostWithAuthor, PublicationRole } from "@/types/database";
+
+function JournalContinue({
+  previous,
+  next,
+}: {
+  previous: JournalNeighbor | null;
+  next: JournalNeighbor | null;
+}) {
+  if (!previous && !next) return null;
+
+  return (
+    <nav
+      aria-label="More from the Journal"
+      className="grid gap-8 sm:grid-cols-2"
+    >
+      {previous ? (
+        <Link href={`/post/${previous.slug}`} className="group block">
+          <span className="type-label text-muted-foreground">Previous</span>
+          <span className="type-display mt-2 block text-[clamp(1.1rem,2vw,1.4rem)] transition-opacity group-hover:opacity-70">
+            {previous.title}
+          </span>
+        </Link>
+      ) : (
+        <span />
+      )}
+      {next ? (
+        <Link
+          href={`/post/${next.slug}`}
+          className="group block sm:text-right"
+        >
+          <span className="type-label text-[var(--brand-color)]">Next</span>
+          <span className="type-display mt-2 block text-[clamp(1.25rem,2.4vw,1.75rem)] transition-opacity group-hover:opacity-70">
+            {next.title}
+          </span>
+        </Link>
+      ) : null}
+    </nav>
+  );
+}
 
 type PostPageClientProps = {
   initialPost: PostWithAuthor;
@@ -59,6 +100,10 @@ type PostPageClientProps = {
   publicationSlug?: string;
   publicationName?: string;
   relatedPosts?: PostWithAuthor[];
+  journalNeighbors?: {
+    previous: JournalNeighbor | null;
+    next: JournalNeighbor | null;
+  };
   authorRole?: PublicationRole | null;
   viewerRole?: PublicationRole | null;
   editorUserIds?: string[];
@@ -70,6 +115,7 @@ export function PostPageClient({
   publicationSlug,
   publicationName,
   relatedPosts = [],
+  journalNeighbors,
   authorRole,
   viewerRole,
   editorUserIds = [],
@@ -312,7 +358,12 @@ export function PostPageClient({
       ? "Poetry"
       : "Journal";
   return (
-    <div className="mx-auto w-full max-w-article px-4 py-10 sm:px-6 lg:px-8">
+    <div
+      className={cn(
+        "mx-auto w-full px-4 py-10 sm:px-6 lg:px-8",
+        postFormat === "poetry" ? "max-w-[40rem]" : "max-w-article",
+      )}
+    >
       <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
         <Button variant="ghost" asChild size="sm" className="-ml-2">
           <Link href={backHref} className="inline-flex items-center gap-1.5">
@@ -467,6 +518,7 @@ export function PostPageClient({
           isCsi: isCsiPost,
         }}
         anonymous={Boolean(post.is_anonymous)}
+        format={postFormat}
         publishedAt={publishedOrCreatedDate}
         readTime={post.read_time}
         coverImage={post.cover_image || post.featured_image}
@@ -542,6 +594,12 @@ export function PostPageClient({
                 ))}
               </div>
             </div>
+          ) : journalNeighbors &&
+            (journalNeighbors.previous || journalNeighbors.next) ? (
+            <JournalContinue
+              previous={journalNeighbors.previous}
+              next={journalNeighbors.next}
+            />
           ) : undefined
         }
       >

@@ -29,6 +29,8 @@ export type ArticleLayoutProps = {
   className?: string;
   showProgress?: boolean;
   anonymous?: boolean;
+  /** Poetry uses a narrower column than a prose essay. */
+  format?: "prose" | "poetry";
 };
 
 export function ArticleLayout({
@@ -50,6 +52,7 @@ export function ArticleLayout({
   className,
   showProgress = true,
   anonymous = false,
+  format = "prose",
 }: ArticleLayoutProps) {
   const hasToc = Boolean(headings && headings.length > 0);
 
@@ -57,7 +60,13 @@ export function ArticleLayout({
     <>
       {showProgress && <ReadingProgress targetSelector="#article-body" />}
 
-      <article className={cn("mx-auto w-full max-w-article", className)}>
+      <article
+        className={cn(
+          "mx-auto w-full",
+          format === "poetry" ? "max-w-[40rem]" : "max-w-article",
+          className,
+        )}
+      >
         <header className="space-y-5 border-b border-hairline pb-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <SectionLabel href={sectionHref}>{sectionLabel}</SectionLabel>

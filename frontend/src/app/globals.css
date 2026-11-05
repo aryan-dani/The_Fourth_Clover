@@ -879,6 +879,31 @@ html[data-intro="revealing"] {
   text-underline-offset: 3px;
 }
 
+.verse {
+  max-width: 34rem;
+  margin-inline: auto;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(1.2rem, 1.05rem + 0.45vw, 1.45rem);
+  line-height: 1.7;
+  color: var(--fg);
+}
+.verse .stanza + .stanza {
+  margin-top: 1.85rem;
+}
+.verse p {
+  margin: 0;
+}
+
+.journal-pending {
+  display: none;
+}
+html[data-journal-filter="pending"] [data-journal-results] {
+  display: none;
+}
+html[data-journal-filter="pending"] .journal-pending {
+  display: block;
+}
+
 .hljs-keyword { color: hsl(var(--hljs-keyword)); }
 .hljs-string { color: hsl(var(--hljs-string)); }
 .hljs-number { color: hsl(var(--hljs-number)); }

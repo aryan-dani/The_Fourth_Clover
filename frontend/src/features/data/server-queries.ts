@@ -665,6 +665,61 @@ export const fetchPostBySlugForPage = cache(
   },
 );
 
+export type JournalNeighbor = {
+  id: string;
+  title: string;
+  slug: string;
+  format: string | null;
+  published_at: string | null;
+};
+
+/** Next is the newer piece; previous is the older one. Same format, Journal only. */
+export async function fetchJournalNeighbors(post: {
+  id: string;
+  format: string | null;
+  published_at: string | null;
+  publication_id: string | null;
+}): Promise<{ previous: JournalNeighbor | null; next: JournalNeighbor | null }> {
+  if (post.publication_id || !post.published_at) {
+    return { previous: null, next: null };
+  }
+
+  const format = post.format === "poetry" ? "poetry" : "prose";
+  const supabase = createSupabasePublicServerClient();
+  const publishedAt = post.published_at;
+
+  const newer = supabase
+    .from("posts")
+    .select("id, title, slug, format, published_at")
+    .eq("status", "published")
+    .is("publication_id", null)
+    .eq("format", format)
+    .neq("id", post.id)
+    .gt("published_at", publishedAt)
+    .order("published_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  const older = supabase
+    .from("posts")
+    .select("id, title, slug, format, published_at")
+    .eq("status", "published")
+    .is("publication_id", null)
+    .eq("format", format)
+    .neq("id", post.id)
+    .lt("published_at", publishedAt)
+    .order("published_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const [newerRes, olderRes] = await Promise.all([newer, older]);
+
+  return {
+    previous: (olderRes.data as JournalNeighbor | null) ?? null,
+    next: (newerRes.data as JournalNeighbor | null) ?? null,
+  };
+}
+
 type PostWithCounts = Post & {
   likes: { count: number }[];
   comments: { count: number }[];

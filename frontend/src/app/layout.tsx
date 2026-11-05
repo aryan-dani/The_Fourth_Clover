@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   ],
 };
 
-const BOOT_SCRIPT = `(function(){var d=document.documentElement;try{if(!window.matchMedia("(prefers-reduced-motion: reduce)").matches){d.classList.add("js-motion");}}catch(e){}d.setAttribute("data-intro","done");})();`;
+const BOOT_SCRIPT = `(function(){var d=document.documentElement;try{if(!window.matchMedia("(prefers-reduced-motion: reduce)").matches){d.classList.add("js-motion");}}catch(e){}d.setAttribute("data-intro","done");try{if(location.pathname==="/journal"&&location.search.length>1){d.setAttribute("data-journal-filter","pending");}}catch(e){}})();`;
 
 export default function RootLayout({
   children,

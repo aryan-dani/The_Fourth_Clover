@@ -28,6 +28,10 @@ function formatCountdown(targetIso: string | null | undefined) {
   };
 }
 
+function pieceFormat(format: string | null | undefined) {
+  return format === "poetry" ? "Poetry" : "Journal";
+}
+
 function formatDate(iso: string | null | undefined) {
   if (!iso) return "";
   return new Intl.DateTimeFormat("en-US", {
@@ -216,7 +220,7 @@ export function HomePageClient({ data }: { data: HomeData }) {
                 className="group block border-b border-[var(--fg-line)] py-8"
               >
                 <span className="type-label block text-muted-foreground">
-                  Lead ·{" "}
+                  Lead · {pieceFormat(data.journalLead.format)} ·{" "}
                   {formatDate(
                     data.journalLead.published_at ||
                       data.journalLead.created_at,
@@ -249,12 +253,51 @@ export function HomePageClient({ data }: { data: HomeData }) {
                       post.author?.username ||
                       "Author"}
                   {" · "}
+                  {pieceFormat(post.format)}
+                  {" · "}
                   {formatDate(post.published_at || post.created_at)}
                 </span>
               </Link>
             </Reveal>
           ))}
         </ul>
+
+        {data.poetry.length > 0 && (
+          <div className="mt-16">
+            <Reveal y={18}>
+              <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <p className="type-label text-muted-foreground">Poetry</p>
+                  <h3 className="type-display mt-3 text-[clamp(1.4rem,3vw,2.1rem)]">
+                    Verse
+                  </h3>
+                </div>
+                <Link href="/journal?format=poetry" className="type-label link-u">
+                  All poetry →
+                </Link>
+              </div>
+            </Reveal>
+            <ul>
+              {data.poetry.map((post, i) => (
+                <Reveal key={post.id} as="li" y={14} delay={i * 0.04}>
+                  <Link
+                    href={`/post/${post.slug}`}
+                    className="group flex flex-col gap-2 border-b border-[var(--fg-line)] py-5 sm:flex-row sm:items-baseline sm:justify-between"
+                  >
+                    <span className="text-lg tracking-tight transition-opacity group-hover:opacity-70 md:text-xl">
+                      {post.title}
+                    </span>
+                    <span className="type-label shrink-0 text-muted-foreground">
+                      Poetry
+                      {" · "}
+                      {formatDate(post.published_at || post.created_at)}
+                    </span>
+                  </Link>
+                </Reveal>
+              ))}
+            </ul>
+          </div>
+        )}
       </section>
 
       {/* Closing — ink */}
