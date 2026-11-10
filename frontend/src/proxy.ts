@@ -7,7 +7,7 @@ function hasSupabaseAuthCookie(request: NextRequest): boolean {
 
 /**
  * Paths that need a fresh auth session on the request (cookies + getUser).
- * Public reading routes skip this so signed-in readers still hit the CDN cache.
+ * The matcher below only runs this proxy on these prefixes.
  */
 const AUTH_REFRESH_PREFIXES = [
   "/write",
@@ -34,7 +34,7 @@ function needsAuthRefresh(pathname: string): boolean {
 /**
  * Next.js 16 proxy — refreshes the Supabase auth session on private routes
  * so Server Components / Server Actions see a valid cookie session.
- * Must not redirect public readers away from marketing or article pages.
+ * Public HTML never enters this file (see matcher).
  */
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -46,12 +46,10 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // Public traffic has no session to refresh — skip the auth round-trip.
   if (!hasSupabaseAuthCookie(request)) {
     return supabaseResponse;
   }
 
-  // Signed-in readers of public pages keep the cached document.
   if (!needsAuthRefresh(request.nextUrl.pathname)) {
     return supabaseResponse;
   }
@@ -88,6 +86,31 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/write",
+    "/write/:path*",
+    "/dashboard",
+    "/dashboard/:path*",
+    "/admin",
+    "/admin/:path*",
+    "/settings",
+    "/settings/:path*",
+    "/notifications",
+    "/notifications/:path*",
+    "/verify-csi",
+    "/verify-csi/:path*",
+    "/reading-list",
+    "/reading-list/:path*",
+    "/following",
+    "/following/:path*",
+    "/tech-weekly/write",
+    "/tech-weekly/write/:path*",
+    "/tech-weekly/review",
+    "/tech-weekly/review/:path*",
+    "/csi/write",
+    "/csi/write/:path*",
+    "/csi/review",
+    "/csi/review/:path*",
+    "/auth",
+    "/auth/:path*",
   ],
 };

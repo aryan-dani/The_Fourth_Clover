@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import {
-  fetchPublicProfilePageData,
-  getProfileFollowMeta,
-} from "@/features/data/server-queries";
+import { fetchPublicProfilePageData } from "@/features/data/server-queries";
 import { ProfilePageClient } from "./profile-page-client";
 import { absoluteUrl } from "@/lib/site";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+export const revalidate = 300;
+export const dynamic = "force-static";
+export const fetchCache = "force-cache";
 
 export async function generateMetadata({
   params,
@@ -65,37 +65,23 @@ export default async function ProfilePage({
   const { username } = await params;
   const decoded = decodeURIComponent(username);
   if (decoded.toLowerCase() === "anonymous") notFound();
-  const { profile, posts } = await fetchPublicProfilePageData(decoded);
+
+  const { profile, pieces, followerCount } =
+    await fetchPublicProfilePageData(decoded);
   if (!profile) notFound();
 
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const viewerId = user?.id ?? null;
-
-  const followMeta = await getProfileFollowMeta(viewerId, profile.id);
-
   const stats = {
-    totalPosts: posts.length,
-    totalLikes: posts.reduce(
-      (s, p) => s + (p.likes?.[0]?.count || 0),
-      0
-    ),
-    totalComments: posts.reduce(
-      (s, p) => s + (p.comments?.[0]?.count || 0),
-      0
-    ),
-    followerCount: followMeta.followerCount,
+    totalPosts: pieces.length,
+    totalLikes: pieces.reduce((sum, piece) => sum + piece.likesCount, 0),
+    totalComments: pieces.reduce((sum, piece) => sum + piece.commentsCount, 0),
+    followerCount,
   };
 
   return (
     <ProfilePageClient
       initialProfile={profile}
-      initialPosts={posts}
+      initialPieces={pieces}
       initialStats={stats}
-      viewerId={viewerId}
-      initialIsFollowing={followMeta.isFollowing}
     />
   );
 }

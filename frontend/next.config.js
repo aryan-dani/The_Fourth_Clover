@@ -44,6 +44,45 @@ const nextConfig = {
       { source: "/profile", destination: "/settings", permanent: false },
     ];
   },
+  async headers() {
+    const edgeCache = [
+      {
+        key: "Netlify-CDN-Cache-Control",
+        value: "public, s-maxage=300, stale-while-revalidate=86400",
+      },
+      {
+        key: "Cache-Control",
+        value: "public, max-age=0, must-revalidate",
+      },
+    ];
+    const privateNoStore = [
+      {
+        key: "Netlify-CDN-Cache-Control",
+        value: "private, no-store",
+      },
+      {
+        key: "Cache-Control",
+        value: "private, no-store",
+      },
+    ];
+    // First match wins — keep write/review desks private before /tech-weekly/:slug.
+    return [
+      { source: "/tech-weekly/write", headers: privateNoStore },
+      { source: "/tech-weekly/write/:path*", headers: privateNoStore },
+      { source: "/tech-weekly/review", headers: privateNoStore },
+      { source: "/tech-weekly/review/:path*", headers: privateNoStore },
+      { source: "/", headers: edgeCache },
+      { source: "/journal", headers: edgeCache },
+      { source: "/journal/:path*", headers: edgeCache },
+      { source: "/post/:slug", headers: edgeCache },
+      { source: "/tech-weekly", headers: edgeCache },
+      { source: "/tech-weekly/:slug", headers: edgeCache },
+      { source: "/about", headers: edgeCache },
+      { source: "/tags", headers: edgeCache },
+      { source: "/tags/:tag", headers: edgeCache },
+      { source: "/profile/:username", headers: edgeCache },
+    ];
+  },
   images: {
     remotePatterns: [
       {

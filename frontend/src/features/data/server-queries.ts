@@ -734,11 +734,32 @@ type PostWithCounts = Post & {
   comments: { count: number }[];
 };
 
+/** Unified public profile feed — Journal posts + Tech Weekly submissions. */
+export type ProfilePiece = {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  cover_image: string | null;
+  tags: string[] | null;
+  read_time: number | null;
+  published_at: string | null;
+  kind: "journal" | "tech-weekly";
+  likesCount: number;
+  commentsCount: number;
+};
+
+function estimateReadMinutes(wordCount: number | null | undefined): number | null {
+  if (!wordCount || wordCount <= 0) return null;
+  return Math.max(1, Math.round(wordCount / 200));
+}
+
 export async function fetchPublicProfilePageData(username: string): Promise<{
   profile: Profile | null;
-  posts: PostWithCounts[];
+  pieces: ProfilePiece[];
+  followerCount: number;
 }> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicServerClient();
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("*")
@@ -746,25 +767,102 @@ export async function fetchPublicProfilePageData(username: string): Promise<{
     .maybeSingle();
 
   if (profileError || !profile) {
-    return { profile: null, posts: [] };
+    return { profile: null, pieces: [], followerCount: 0 };
   }
 
-  const { data: postsData, error: postsError } = await supabase
-    .from("posts")
-    .select("*, likes(count), comments(count)")
-    .eq("author_id", profile.id)
-    .eq("status", "published")
-    .eq("is_anonymous", false)
-    .order("created_at", { ascending: false })
-    .limit(24);
+  const profileId = profile.id as string;
 
-  if (postsError) {
-    return { profile: profile as Profile, posts: [] };
-  }
+  const [postsRes, techRes, followersRes] = await Promise.all([
+    supabase
+      .from("posts")
+      .select("id, title, slug, excerpt, cover_image, tags, read_time, published_at, created_at, likes(count), comments(count)")
+      .eq("author_id", profileId)
+      .eq("status", "published")
+      .eq("is_anonymous", false)
+      .order("published_at", { ascending: false })
+      .limit(24),
+    supabase
+      .from("tech_submissions")
+      .select(
+        "id, title, slug, summary, cover_image, tags, word_count, selected_at, created_at, tech_reactions(count), tech_comments(count)",
+      )
+      .eq("author_id", profileId)
+      .eq("is_deleted", false)
+      .in("status", ["submitted", "approved", "selected", "archived"])
+      .order("created_at", { ascending: false })
+      .limit(24),
+    supabase
+      .from("follows")
+      .select("*", { count: "exact", head: true })
+      .eq("following_id", profileId),
+  ]);
+
+  const journalPieces: ProfilePiece[] = (
+    (postsRes.data || []) as unknown as Array<{
+      id: string;
+      title: string;
+      slug: string;
+      excerpt: string | null;
+      cover_image: string | null;
+      tags: string[] | null;
+      read_time: number | null;
+      published_at: string | null;
+      created_at: string;
+      likes: { count: number }[];
+      comments: { count: number }[];
+    }>
+  ).map((post) => ({
+    id: post.id,
+    title: post.title,
+    slug: post.slug,
+    excerpt: post.excerpt,
+    cover_image: post.cover_image,
+    tags: post.tags,
+    read_time: post.read_time,
+    published_at: post.published_at || post.created_at,
+    kind: "journal" as const,
+    likesCount: post.likes?.[0]?.count ?? 0,
+    commentsCount: post.comments?.[0]?.count ?? 0,
+  }));
+
+  const techPieces: ProfilePiece[] = (
+    (techRes.data || []) as unknown as Array<{
+      id: string;
+      title: string;
+      slug: string;
+      summary: string | null;
+      cover_image: string | null;
+      tags: string[] | null;
+      word_count: number | null;
+      selected_at: string | null;
+      created_at: string;
+      tech_reactions: { count: number }[];
+      tech_comments: { count: number }[];
+    }>
+  ).map((sub) => ({
+    id: sub.id,
+    title: sub.title,
+    slug: sub.slug,
+    excerpt: sub.summary,
+    cover_image: sub.cover_image,
+    tags: sub.tags,
+    read_time: estimateReadMinutes(sub.word_count),
+    published_at: sub.selected_at || sub.created_at,
+    kind: "tech-weekly" as const,
+    likesCount: sub.tech_reactions?.[0]?.count ?? 0,
+    commentsCount: sub.tech_comments?.[0]?.count ?? 0,
+  }));
+
+  const pieces = [...journalPieces, ...techPieces].sort((a, b) => {
+    const aTime = a.published_at ? new Date(a.published_at).getTime() : 0;
+    const bTime = b.published_at ? new Date(b.published_at).getTime() : 0;
+    return bTime - aTime;
+  });
 
   return {
     profile: profile as Profile,
-    posts: (postsData || []) as PostWithCounts[],
+    pieces,
+    followerCount: followersRes.count ?? 0,
   };
 }
 

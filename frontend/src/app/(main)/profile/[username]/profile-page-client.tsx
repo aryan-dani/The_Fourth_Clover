@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -21,44 +21,64 @@ import {
   UserPlus,
   Loader2,
 } from "lucide-react";
-import { Profile, Post } from "@/types/database";
+import type { Profile } from "@/types/database";
+import type { ProfilePiece } from "@/features/data/server-queries";
 import { useAuth } from "@/features/auth/auth-context";
 import { followUser, unfollowUser } from "@/features/data/database-operations";
 import { notifyFollow } from "@/features/notifications/notifications";
 import { GitHubIcon } from "@/components/icons/BrandIcons";
-
-type PostWithCounts = Post & {
-  likes: { count: number }[];
-  comments: { count: number }[];
-};
+import { supabase } from "@/lib/supabase";
 
 export type ProfilePageClientProps = {
   initialProfile: Profile;
-  initialPosts: PostWithCounts[];
+  initialPieces: ProfilePiece[];
   initialStats: {
     totalPosts: number;
     totalLikes: number;
     totalComments: number;
     followerCount: number;
   };
-  viewerId: string | null;
-  initialIsFollowing: boolean;
 };
+
+function pieceHref(piece: ProfilePiece) {
+  return piece.kind === "tech-weekly"
+    ? `/tech-weekly/${piece.slug}`
+    : `/post/${piece.slug}`;
+}
 
 export function ProfilePageClient({
   initialProfile: profile,
-  initialPosts: posts,
+  initialPieces: pieces,
   initialStats: stats,
-  viewerId,
-  initialIsFollowing,
 }: ProfilePageClientProps) {
   const { profile: sessionProfile, user } = useAuth();
-  const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
+  const viewerId = user?.id ?? null;
+  const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(stats.followerCount);
   const [followBusy, setFollowBusy] = useState(false);
 
-  const isOwnProfile = !!viewerId && viewerId === profile.id;
-  const canFollow = !!viewerId && !isOwnProfile;
+  const isOwnProfile = Boolean(viewerId && viewerId === profile.id);
+  const canFollow = Boolean(viewerId && !isOwnProfile);
+
+  useEffect(() => {
+    if (!viewerId || viewerId === profile.id) {
+      setIsFollowing(false);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const { data } = await supabase
+        .from("follows")
+        .select("follower_id")
+        .eq("follower_id", viewerId)
+        .eq("following_id", profile.id)
+        .maybeSingle();
+      if (!cancelled) setIsFollowing(Boolean(data));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [viewerId, profile.id]);
 
   const followerNotifyName =
     sessionProfile?.full_name?.trim() ||
@@ -89,291 +109,299 @@ export function ProfilePageClient({
       setFollowBusy(false);
     }
   }, [viewerId, isOwnProfile, isFollowing, profile.id, followerNotifyName]);
+
   return (
     <div className="min-h-screen bg-background">
-
       <main className="flex-1 pt-20 pb-8">
         <PageShell variant="wide" className="max-w-4xl">
-          <div className="text-center mb-8">
-              <div className="relative inline-block mb-4">
-                <Avatar className="h-28 w-28 mx-auto ring-4 ring-primary/25 ring-offset-4 ring-offset-background">
-                  <AvatarImage src={profile.avatar_url || undefined} />
-                  <AvatarFallback className="text-3xl bg-gradient-to-br from-primary/30 to-primary/10">
-                    {profile.full_name?.[0] || profile.username[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <div
-                  className="absolute -inset-1 rounded-full bg-primary/15 blur-xl -z-10"
-                  aria-hidden
-                />
-              </div>
-
-              <h1 className="font-display text-3xl md:text-4xl font-semibold tracking-tight text-foreground mb-2">
-                {profile.full_name || profile.username}
-              </h1>
-              <p className="font-sans text-muted-foreground text-base md:text-lg mb-3">
-                @{profile.username}
-              </p>
-
-              {(profile.csi_id ||
-                (profile.role && profile.role !== "unverified")) && (
-                <div className="flex flex-wrap items-center justify-center gap-2 mb-5">
-                  <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 px-3 py-1 text-xs font-medium">
-                    {profile.role === "super_admin" || profile.csi_id === 303
-                      ? "CSI Technical Secretary · Super Admin"
-                      : profile.role === "tech_head" ||
-                          profile.csi_id === 241 ||
-                          profile.csi_id === 246
-                        ? "CSI Technical Head"
-                        : `CSI ${profile.dept || "Tech"}${profile.year ? ` · ${profile.year}` : ""}`}
-                    {profile.csi_id ? ` · #${profile.csi_id}` : ""}
-                  </Badge>
-                </div>
-              )}
-
-              {!isOwnProfile && (
-                <div className="flex justify-center mb-5">
-                  {canFollow ? (
-                    <Button
-                      type="button"
-                      size="lg"
-                      variant={isFollowing ? "outline" : "default"}
-                      className="min-w-[160px]"
-                      disabled={followBusy}
-                      onClick={() => void handleToggleFollow()}
-                    >
-                      {followBusy ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : isFollowing ? (
-                        "Unfollow"
-                      ) : (
-                        <>
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          Follow
-                        </>
-                      )}
-                    </Button>
-                  ) : (
-                    <Button size="lg" variant="secondary" asChild>
-                      <Link href="/auth/signin">Sign in to follow</Link>
-                    </Button>
-                  )}
-                </div>
-              )}
-
-              {profile.bio && (
-                <p className="font-serif text-foreground max-w-2xl mx-auto mb-5 leading-relaxed text-base md:text-lg">
-                  {profile.bio}
-                </p>
-              )}
-
-              <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
-                {profile.website && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                    className="hover:border-primary/50 hover:bg-primary/10 transition-all"
-                  >
-                    <a
-                      href={
-                        profile.website.startsWith("http://") ||
-                        profile.website.startsWith("https://")
-                          ? profile.website
-                          : `https://${profile.website}`
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Globe className="w-4 h-4 mr-2" />
-                      Website
-                    </a>
-                  </Button>
-                )}
-                {profile.twitter && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                    className="hover:border-blue-500/50 hover:bg-blue-500/10 hover:text-blue-500 transition-all"
-                  >
-                    <a
-                      href={`https://twitter.com/${profile.twitter}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Twitter
-                    </a>
-                  </Button>
-                )}
-                {profile.github && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                    className="hover:border-purple-500/50 hover:bg-purple-500/10 hover:text-purple-500 transition-all"
-                  >
-                    <a
-                      href={`https://github.com/${profile.github}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <GitHubIcon className="w-4 h-4 mr-2" />
-                      GitHub
-                    </a>
-                  </Button>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-2xl mx-auto">
-                <Card className="glass border hover:border-primary/30 transition-colors">
-                  <CardContent className="p-4 text-center">
-                    <div className="flex items-center justify-center mb-2 p-2 rounded-full bg-muted/60 w-fit mx-auto">
-                      <FileText className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                    <p className="font-display text-2xl font-semibold text-foreground">
-                      {stats.totalPosts}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5 font-medium">
-                      Posts
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card className="glass border hover:border-primary/30 transition-colors">
-                  <CardContent className="p-4 text-center">
-                    <div className="flex items-center justify-center mb-2 p-2 rounded-full bg-muted/60 w-fit mx-auto">
-                      <Users className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                    <p className="font-display text-2xl font-semibold text-foreground">
-                      {followerCount}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5 font-medium">
-                      Followers
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card className="glass border hover:border-primary/30 transition-colors">
-                  <CardContent className="p-4 text-center">
-                    <div className="flex items-center justify-center mb-2 p-2 rounded-full bg-muted/60 w-fit mx-auto">
-                      <Heart className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                    <p className="font-display text-2xl font-semibold text-foreground">
-                      {stats.totalLikes}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5 font-medium">
-                      Likes
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card className="glass border hover:border-primary/30 transition-colors">
-                  <CardContent className="p-4 text-center">
-                    <div className="flex items-center justify-center mb-2 p-2 rounded-full bg-muted/60 w-fit mx-auto">
-                      <MessageCircle className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                    <p className="font-display text-2xl font-semibold text-foreground">
-                      {stats.totalComments}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5 font-medium">
-                      Comments
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
+          <div className="mb-8 text-center">
+            <div className="relative mb-4 inline-block">
+              <Avatar className="mx-auto h-28 w-28 ring-4 ring-primary/25 ring-offset-4 ring-offset-background">
+                <AvatarImage src={profile.avatar_url || undefined} />
+                <AvatarFallback className="bg-gradient-to-br from-primary/30 to-primary/10 text-3xl">
+                  {profile.full_name?.[0] || profile.username[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div
+                className="absolute -inset-1 -z-10 rounded-full bg-primary/15 blur-xl"
+                aria-hidden
+              />
             </div>
 
-            <div>
-              <h2 className="font-display text-xl md:text-2xl font-semibold text-foreground mb-5 border-b border-border/60 pb-3 text-center sm:text-left">
-                Posts by {profile.full_name || profile.username}
-              </h2>
+            <h1 className="mb-2 font-display text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+              {profile.full_name || profile.username}
+            </h1>
+            <p className="mb-3 font-sans text-base text-muted-foreground md:text-lg">
+              @{profile.username}
+            </p>
 
-              {posts.length === 0 ? (
-                <div className="text-center py-10">
-                  <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">No Posts Yet</h3>
-                  <p className="text-muted-foreground">
-                    {profile.full_name || profile.username} hasn&apos;t published
-                    any posts yet.
+            {(profile.csi_id ||
+              (profile.role && profile.role !== "unverified")) && (
+              <div className="mb-5 flex flex-wrap items-center justify-center gap-2">
+                <Badge className="border-emerald-500/30 bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-500">
+                  {profile.role === "super_admin" || profile.csi_id === 303
+                    ? "CSI Technical Secretary · Super Admin"
+                    : profile.role === "tech_head" ||
+                        profile.csi_id === 241 ||
+                        profile.csi_id === 246
+                      ? "CSI Technical Head"
+                      : `CSI ${profile.dept || "Tech"}${profile.year ? ` · ${profile.year}` : ""}`}
+                  {profile.csi_id ? ` · #${profile.csi_id}` : ""}
+                </Badge>
+              </div>
+            )}
+
+            {!isOwnProfile && (
+              <div className="mb-5 flex justify-center">
+                {canFollow ? (
+                  <Button
+                    type="button"
+                    size="lg"
+                    variant={isFollowing ? "outline" : "default"}
+                    className="min-w-[160px]"
+                    disabled={followBusy}
+                    onClick={() => void handleToggleFollow()}
+                  >
+                    {followBusy ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : isFollowing ? (
+                      "Unfollow"
+                    ) : (
+                      <>
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        Follow
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button size="lg" variant="secondary" asChild>
+                    <Link href="/auth/signin">Sign in to follow</Link>
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {profile.bio && (
+              <p className="mx-auto mb-5 max-w-2xl font-serif text-base leading-relaxed text-foreground md:text-lg">
+                {profile.bio}
+              </p>
+            )}
+
+            <div className="mb-6 flex flex-wrap items-center justify-center gap-2">
+              {profile.website && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                  className="transition-all hover:border-primary/50 hover:bg-primary/10"
+                >
+                  <a
+                    href={
+                      profile.website.startsWith("http://") ||
+                      profile.website.startsWith("https://")
+                        ? profile.website
+                        : `https://${profile.website}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Globe className="mr-2 h-4 w-4" />
+                    Website
+                  </a>
+                </Button>
+              )}
+              {profile.twitter && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                  className="transition-all hover:border-blue-500/50 hover:bg-blue-500/10 hover:text-blue-500"
+                >
+                  <a
+                    href={`https://twitter.com/${profile.twitter}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Twitter
+                  </a>
+                </Button>
+              )}
+              {profile.github && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                  className="transition-all hover:border-purple-500/50 hover:bg-purple-500/10 hover:text-purple-500"
+                >
+                  <a
+                    href={`https://github.com/${profile.github}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <GitHubIcon className="mr-2 h-4 w-4" />
+                    GitHub
+                  </a>
+                </Button>
+              )}
+            </div>
+
+            <div className="mx-auto grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+              <Card className="glass border transition-colors hover:border-primary/30">
+                <CardContent className="p-4 text-center">
+                  <div className="mx-auto mb-2 flex w-fit items-center justify-center rounded-full bg-muted/60 p-2">
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <p className="font-display text-2xl font-semibold text-foreground">
+                    {stats.totalPosts}
                   </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {posts.map((post) => (
-                    <div key={post.id} className="relative h-full">
-                      <Link
-                        href={`/post/${post.slug}`}
-                        className="absolute inset-0 z-20 rounded-[inherit]"
-                        aria-label={post.title}
-                      />
-                      <Card className="group overflow-hidden hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 glass h-full border-2 hover:border-primary/30 hover:-translate-y-2">
-                        {post.cover_image && (
-                          <div className="aspect-video overflow-hidden relative bg-muted/30">
-                            <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                            <Image
-                              src={post.cover_image}
-                              alt={post.title}
-                              width={640}
-                              height={360}
-                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                              sizes="(max-width: 768px) 100vw, 50vw"
-                            />
+                  <p className="mt-0.5 text-xs font-medium text-muted-foreground">
+                    Posts
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="glass border transition-colors hover:border-primary/30">
+                <CardContent className="p-4 text-center">
+                  <div className="mx-auto mb-2 flex w-fit items-center justify-center rounded-full bg-muted/60 p-2">
+                    <Users className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <p className="font-display text-2xl font-semibold text-foreground">
+                    {followerCount}
+                  </p>
+                  <p className="mt-0.5 text-xs font-medium text-muted-foreground">
+                    Followers
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="glass border transition-colors hover:border-primary/30">
+                <CardContent className="p-4 text-center">
+                  <div className="mx-auto mb-2 flex w-fit items-center justify-center rounded-full bg-muted/60 p-2">
+                    <Heart className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <p className="font-display text-2xl font-semibold text-foreground">
+                    {stats.totalLikes}
+                  </p>
+                  <p className="mt-0.5 text-xs font-medium text-muted-foreground">
+                    Likes
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="glass border transition-colors hover:border-primary/30">
+                <CardContent className="p-4 text-center">
+                  <div className="mx-auto mb-2 flex w-fit items-center justify-center rounded-full bg-muted/60 p-2">
+                    <MessageCircle className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <p className="font-display text-2xl font-semibold text-foreground">
+                    {stats.totalComments}
+                  </p>
+                  <p className="mt-0.5 text-xs font-medium text-muted-foreground">
+                    Comments
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          <div>
+            <h2 className="mb-5 border-b border-border/60 pb-3 text-center font-display text-xl font-semibold text-foreground sm:text-left md:text-2xl">
+              Posts by {profile.full_name || profile.username}
+            </h2>
+
+            {pieces.length === 0 ? (
+              <div className="py-10 text-center">
+                <FileText className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
+                <h3 className="mb-2 text-xl font-semibold">No Posts Yet</h3>
+                <p className="text-muted-foreground">
+                  {profile.full_name || profile.username} hasn&apos;t published
+                  any posts yet.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                {pieces.map((piece) => (
+                  <div key={`${piece.kind}-${piece.id}`} className="relative h-full">
+                    <Link
+                      href={pieceHref(piece)}
+                      className="absolute inset-0 z-20 rounded-[inherit]"
+                      aria-label={piece.title}
+                    />
+                    <Card className="group glass h-full overflow-hidden border-2 transition-all duration-500 hover:-translate-y-2 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/10">
+                      {piece.cover_image && (
+                        <div className="relative aspect-video overflow-hidden bg-muted/30">
+                          <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                          <Image
+                            src={piece.cover_image}
+                            alt={piece.title}
+                            width={640}
+                            height={360}
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            sizes="(max-width: 768px) 100vw, 50vw"
+                          />
+                        </div>
+                      )}
+                      <CardContent className="flex flex-1 flex-col p-6">
+                        <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                          {piece.kind === "tech-weekly"
+                            ? "Tech Weekly"
+                            : "Journal"}
+                        </p>
+                        <h3 className="mb-2 line-clamp-2 text-lg font-bold transition-colors duration-300 group-hover:text-primary">
+                          {piece.title}
+                        </h3>
+
+                        {piece.excerpt && (
+                          <p className="mb-4 flex-1 line-clamp-3 text-sm text-muted-foreground">
+                            {piece.excerpt}
+                          </p>
+                        )}
+
+                        {piece.tags && piece.tags.length > 0 && (
+                          <div className="mb-4 flex flex-wrap gap-2">
+                            {piece.tags.slice(0, 3).map((tag) => (
+                              <Badge
+                                key={tag}
+                                variant="secondary"
+                                className="text-xs transition-colors hover:bg-primary/20"
+                              >
+                                {toTitleCase(tag)}
+                              </Badge>
+                            ))}
                           </div>
                         )}
-                        <CardContent className="flex flex-1 flex-col p-6">
-                          <h3 className="mb-2 line-clamp-2 text-lg font-bold transition-colors duration-300 group-hover:text-primary">
-                            {post.title}
-                          </h3>
 
-                          <p className="mb-4 flex-1 line-clamp-3 text-sm text-muted-foreground">
-                            {post.excerpt}
-                          </p>
-
-                          {post.tags && post.tags.length > 0 && (
-                            <div className="mb-4 flex flex-wrap gap-2">
-                              {post.tags.slice(0, 3).map((tag) => (
-                                <Badge
-                                  key={tag}
-                                  variant="secondary"
-                                  className="text-xs transition-colors hover:bg-primary/20"
-                                >
-                                  {toTitleCase(tag)}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-
-                          <div className="mt-auto flex items-center justify-between border-t border-primary/10 pt-4 text-xs text-muted-foreground">
-                            <div className="flex items-center space-x-4">
+                        <div className="mt-auto flex items-center justify-between border-t border-primary/10 pt-4 text-xs text-muted-foreground">
+                          <div className="flex items-center space-x-4">
+                            {piece.read_time ? (
                               <div className="flex items-center space-x-1 transition-colors hover:text-primary">
                                 <Clock className="h-3.5 w-3.5" />
-                                <span>{post.read_time}m read</span>
+                                <span>{piece.read_time}m read</span>
                               </div>
-                              <div className="flex items-center space-x-1 transition-colors hover:text-red-500">
-                                <Heart className="h-3.5 w-3.5" />
-                                <span>{post.likes[0]?.count || 0}</span>
-                              </div>
-                              <div className="flex items-center space-x-1 transition-colors hover:text-blue-500">
-                                <MessageCircle className="h-3.5 w-3.5" />
-                                <span>{post.comments[0]?.count || 0}</span>
-                              </div>
-                            </div>
-                            {post.published_at ? (
-                              <RelativeTime date={post.published_at} />
                             ) : null}
+                            <div className="flex items-center space-x-1 transition-colors hover:text-red-500">
+                              <Heart className="h-3.5 w-3.5" />
+                              <span>{piece.likesCount}</span>
+                            </div>
+                            <div className="flex items-center space-x-1 transition-colors hover:text-blue-500">
+                              <MessageCircle className="h-3.5 w-3.5" />
+                              <span>{piece.commentsCount}</span>
+                            </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                          {piece.published_at ? (
+                            <RelativeTime date={piece.published_at} />
+                          ) : null}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </PageShell>
       </main>
-
     </div>
   );
 }
