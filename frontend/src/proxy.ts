@@ -6,7 +6,33 @@ function hasSupabaseAuthCookie(request: NextRequest): boolean {
 }
 
 /**
- * Next.js 16 proxy — refreshes the Supabase auth session on each request
+ * Paths that need a fresh auth session on the request (cookies + getUser).
+ * Public reading routes skip this so signed-in readers still hit the CDN cache.
+ */
+const AUTH_REFRESH_PREFIXES = [
+  "/write",
+  "/dashboard",
+  "/admin",
+  "/settings",
+  "/notifications",
+  "/verify-csi",
+  "/reading-list",
+  "/following",
+  "/tech-weekly/write",
+  "/tech-weekly/review",
+  "/csi/write",
+  "/csi/review",
+  "/auth",
+];
+
+function needsAuthRefresh(pathname: string): boolean {
+  return AUTH_REFRESH_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
+}
+
+/**
+ * Next.js 16 proxy — refreshes the Supabase auth session on private routes
  * so Server Components / Server Actions see a valid cookie session.
  * Must not redirect public readers away from marketing or article pages.
  */
@@ -22,6 +48,11 @@ export async function proxy(request: NextRequest) {
 
   // Public traffic has no session to refresh — skip the auth round-trip.
   if (!hasSupabaseAuthCookie(request)) {
+    return supabaseResponse;
+  }
+
+  // Signed-in readers of public pages keep the cached document.
+  if (!needsAuthRefresh(request.nextUrl.pathname)) {
     return supabaseResponse;
   }
 

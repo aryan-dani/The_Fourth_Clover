@@ -70,7 +70,7 @@ declare global {
   }
 }
 
-/** Routes where Lenis fights text fields / dense tables. */
+/** Writer desks and account tools — Lenis fights text fields / dense tables. */
 const LENIS_OFF_PREFIXES = [
   "/write",
   "/dashboard",
@@ -85,8 +85,20 @@ const LENIS_OFF_PREFIXES = [
   "/auth",
 ];
 
+/** Public reading path — native scroll feels immediate on long pieces. */
+function isReadingRoute(pathname: string): boolean {
+  if (pathname === "/") return true;
+  if (pathname === "/journal" || pathname.startsWith("/journal/")) return true;
+  if (pathname.startsWith("/post/")) return true;
+  if (pathname === "/tech-weekly" || pathname.startsWith("/tech-weekly/")) {
+    return true;
+  }
+  return false;
+}
+
 function shouldDisableLenis(pathname: string | null): boolean {
   if (!pathname) return false;
+  if (isReadingRoute(pathname)) return true;
   return LENIS_OFF_PREFIXES.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );

@@ -10,7 +10,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/features/auth/auth-context";
 import { SiteProviders } from "@/components/providers/SiteProviders";
 import { ThemeProvider } from "@/components/providers/theme-provider";
-import { fontDisplay, fontMono, fontSans } from "@/lib/fonts";
+import { fontDisplay, fontSans } from "@/lib/fonts";
 import { siteUrl } from "@/lib/site";
 
 export const viewport: Viewport = {
@@ -48,7 +48,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fontDisplay.variable} ${fontSans.variable} ${fontMono.variable}`}
+      className={`${fontDisplay.variable} ${fontSans.variable}`}
       suppressHydrationWarning
     >
       <body className="font-sans" suppressHydrationWarning>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -116,6 +116,29 @@ export function TechSubmissionDetailClient({
   const isTechHeadOrAdmin = caps.canReview;
   const canComment = caps.canCommentTech;
   const isAuthor = Boolean(user?.id && user.id === submission.author_id);
+
+  // Public HTML is cached without the viewer; hydrate their reactions after paint.
+  useEffect(() => {
+    if (!user?.id) {
+      setViewerReactions([]);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("tech_reactions")
+        .select("reaction_type")
+        .eq("submission_id", submission.id)
+        .eq("user_id", user.id);
+      if (cancelled || error) return;
+      setViewerReactions(
+        (data || []).map((r) => r.reaction_type as TechReactionType),
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, submission.id]);
 
   const counts = submission.reaction_counts || {
     like: 0,

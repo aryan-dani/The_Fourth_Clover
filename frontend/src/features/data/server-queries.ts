@@ -648,7 +648,16 @@ export const fetchPostBySlugForPage = cache(
     } catch {
       decoded = slug;
     }
-    const candidates = Array.from(new Set([decoded, slug].filter(Boolean)));
+    const kebab = decoded
+      .toLowerCase()
+      .trim()
+      .replace(/_/g, "-")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+    const candidates = Array.from(
+      new Set([decoded, slug, kebab].filter(Boolean)),
+    );
 
     const supabase = createSupabasePublicServerClient();
     for (const candidate of candidates) {

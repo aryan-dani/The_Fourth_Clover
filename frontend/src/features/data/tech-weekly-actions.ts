@@ -333,6 +333,10 @@ export async function fetchFeaturedTechWeeklyPost(): Promise<TechSubmissionWithA
   }
 }
 
+/**
+ * Public Tech Weekly article payload — no cookies()/getUser(), so the page
+ * can be statically cached like Journal posts. Viewer reactions load client-side.
+ */
 const getTechSubmissionDetailCached = cache(
   async (
     slug: string
@@ -342,31 +346,26 @@ const getTechSubmissionDetailCached = cache(
     viewerReactions: TechReactionType[];
     allowMemberComments: boolean;
   }> => {
-    const authSupabase = await createSupabaseServerClient();
+    const supabase = createSupabasePublicServerClient();
 
-    const [
-      {
-        data: { user },
-      },
-      { data: settingsRow },
-      { data: subData },
-    ] = await Promise.all([
-      authSupabase.auth.getUser(),
-      authSupabase
+    const [{ data: settingsRow }, { data: subData }] = await Promise.all([
+      supabase
         .from("platform_settings")
         .select("allow_member_comments")
         .eq("id", 1)
         .maybeSingle(),
-      authSupabase
+      supabase
         .from("tech_submissions")
         .select(
           `
           *,
           author:profiles!tech_submissions_author_id_fkey (${AUTHOR_BADGE_SELECT}),
           week:tech_weeks!tech_submissions_week_id_fkey (*)
-        `
+        `,
         )
         .eq("slug", slug)
+        .eq("is_deleted", false)
+        .in("status", ["submitted", "approved", "selected", "archived"])
         .maybeSingle(),
     ]);
 
@@ -384,17 +383,17 @@ const getTechSubmissionDetailCached = cache(
     const submission = subData as unknown as TechSubmissionWithAuthor;
 
     const [reactionsRes, commentsRes] = await Promise.all([
-      authSupabase
+      supabase
         .from("tech_reactions")
-        .select("user_id, reaction_type")
+        .select("reaction_type")
         .eq("submission_id", submission.id),
-      authSupabase
+      supabase
         .from("tech_comments")
         .select(
           `
           *,
           author:profiles!tech_comments_user_id_fkey (${AUTHOR_BADGE_SELECT})
-        `
+        `,
         )
         .eq("submission_id", submission.id)
         .eq("is_deleted", false)
@@ -402,16 +401,12 @@ const getTechSubmissionDetailCached = cache(
     ]);
 
     const counts = { like: 0, insightful: 0, fire: 0, total: 0 };
-    const viewerReactions: TechReactionType[] = [];
 
     for (const r of reactionsRes.data || []) {
       if (r.reaction_type === "like") counts.like += 1;
       if (r.reaction_type === "insightful") counts.insightful += 1;
       if (r.reaction_type === "fire") counts.fire += 1;
       counts.total += 1;
-      if (user?.id && r.user_id === user.id) {
-        viewerReactions.push(r.reaction_type as TechReactionType);
-      }
     }
 
     submission.reaction_counts = counts;
@@ -441,10 +436,10 @@ const getTechSubmissionDetailCached = cache(
     return {
       submission,
       comments: topLevel,
-      viewerReactions,
+      viewerReactions: [],
       allowMemberComments,
     };
-  }
+  },
 );
 
 export async function fetchTechSubmissionDetailBySlug(slug: string) {

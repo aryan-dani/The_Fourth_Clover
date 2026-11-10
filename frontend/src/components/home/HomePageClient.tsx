@@ -5,12 +5,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/features/auth/auth-context";
 import { getCapabilities } from "@/lib/roles";
 import type { HomeData } from "@/features/data/home-queries";
-import {
-  DrawLine,
-  Reveal,
-  RevealText,
-  ScriptWipe,
-} from "@/components/motion/Reveal";
+import { HomeLine, HomeReveal } from "@/components/home/HomeReveal";
 import { HeroClover } from "@/components/home/HeroClover";
 import { FeaturedTechWeeklyBanner } from "@/components/tech-weekly/FeaturedTechWeeklyBanner";
 
@@ -67,11 +62,19 @@ export function HomePageClient({ data }: { data: HomeData }) {
     );
   }, []);
 
+  const journalIds = new Set(
+    [
+      data.journalLead?.id,
+      ...data.journalLatest.slice(0, 5).map((p) => p.id),
+    ].filter(Boolean) as string[],
+  );
+  const poetryShelf = data.poetry.filter((p) => !journalIds.has(p.id));
+
   return (
     <div>
       {/* Hero — paper + clover lockup */}
       <section className="wrap pb-12 pt-8 md:pb-16 md:pt-12">
-        <Reveal trigger="intro" delay={0.05} y={12}>
+        <HomeReveal delay={0.05}>
           <div className="type-label flex flex-wrap items-center justify-between gap-3 text-muted-foreground">
             <span suppressHydrationWarning>{dateline || "\u00A0"}</span>
             <span className="hidden sm:inline">CSI MIT-WPU Technical Press</span>
@@ -79,32 +82,31 @@ export function HomePageClient({ data }: { data: HomeData }) {
               About the publication
             </Link>
           </div>
-        </Reveal>
+        </HomeReveal>
 
-        <DrawLine trigger="intro" delay={0.15} className="hairline-rule my-5 md:my-6" />
+        <HomeLine className="hairline-rule my-5 md:my-6" />
 
         <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-12 xl:gap-16">
           <div className="order-2 min-w-0 lg:order-1">
             <h1 className="type-display max-w-4xl text-[clamp(2.6rem,8.5vw,5.75rem)]">
-              <RevealText as="span" by="words" trigger="intro" className="block">
+              <HomeReveal as="span" className="block">
                 Writing, poetry
-              </RevealText>
+              </HomeReveal>
               <span className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-0">
-                <RevealText as="span" by="words" trigger="intro" delay={0.12}>
+                <HomeReveal as="span" delay={0.08}>
                   &amp;
-                </RevealText>
-                <ScriptWipe
+                </HomeReveal>
+                <HomeReveal
                   as="span"
-                  trigger="intro"
-                  delay={0.3}
+                  delay={0.16}
                   className="type-display-italic text-[0.72em] text-[var(--brand-color)]"
                 >
                   engineering
-                </ScriptWipe>
+                </HomeReveal>
               </span>
             </h1>
 
-            <Reveal trigger="intro" delay={0.25} className="mt-5 max-w-xl md:mt-6">
+            <HomeReveal delay={0.2} className="mt-5 max-w-xl md:mt-6">
               <p className="type-body text-lg">
                 An editorial publication from CSI MIT-WPU — essays and verse in
                 the Journal, systems thinking in Tech Weekly.
@@ -126,7 +128,7 @@ export function HomePageClient({ data }: { data: HomeData }) {
                   {user ? "Start writing" : "Sign in to write"}
                 </Link>
               </div>
-            </Reveal>
+            </HomeReveal>
           </div>
 
           <div className="order-1 flex justify-start lg:order-2 lg:min-h-[16rem] lg:items-center lg:justify-center xl:min-h-[20rem]">
@@ -138,7 +140,7 @@ export function HomePageClient({ data }: { data: HomeData }) {
       {/* Tech Weekly — clover wash */}
       <section className="border-y border-[var(--fg-line)] py-16 md:py-20">
         <div className="wrap">
-          <Reveal y={20}>
+          <HomeReveal delay={0.05}>
             <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="type-label text-muted-foreground">Tech Weekly</p>
@@ -158,21 +160,21 @@ export function HomePageClient({ data }: { data: HomeData }) {
                 Open issue
               </Link>
             </div>
-          </Reveal>
+          </HomeReveal>
 
           {data.featuredPick && (
-            <Reveal y={24} className="mb-10">
+            <HomeReveal delay={0.1} className="mb-10">
               <FeaturedTechWeeklyBanner
                 submission={data.featuredPick}
                 canCopyLinkedIn={caps.canReview}
               />
-            </Reveal>
+            </HomeReveal>
           )}
 
           {data.latestTech.length > 0 && (
             <ul className="divide-y divide-[var(--fg-line)] border-t border-[var(--fg-line)]">
               {data.latestTech.map((sub, i) => (
-                <Reveal key={sub.id} as="li" y={16} delay={i * 0.06}>
+                <HomeReveal key={sub.id} as="li" delay={0.05 + i * 0.04}>
                   <Link
                     href={`/tech-weekly/${sub.slug}`}
                     className="group flex flex-col gap-2 py-5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8"
@@ -187,7 +189,7 @@ export function HomePageClient({ data }: { data: HomeData }) {
                       {sub.created_at ? ` · ${formatDate(sub.created_at)}` : ""}
                     </span>
                   </Link>
-                </Reveal>
+                </HomeReveal>
               ))}
             </ul>
           )}
@@ -196,7 +198,7 @@ export function HomePageClient({ data }: { data: HomeData }) {
 
       {/* Journal — paper */}
       <section className="wrap py-16 md:py-24">
-        <Reveal y={18}>
+        <HomeReveal>
           <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="type-label text-muted-foreground">Journal</p>
@@ -208,13 +210,13 @@ export function HomePageClient({ data }: { data: HomeData }) {
               View all →
             </Link>
           </div>
-        </Reveal>
+        </HomeReveal>
 
-        <DrawLine className="hairline-rule mb-2" />
+        <HomeLine className="hairline-rule mb-2" />
 
         <ul>
           {data.journalLead && (
-            <Reveal as="li" y={18}>
+            <HomeReveal as="li">
               <Link
                 href={`/post/${data.journalLead.slug}`}
                 className="group block border-b border-[var(--fg-line)] py-8"
@@ -235,10 +237,10 @@ export function HomePageClient({ data }: { data: HomeData }) {
                   </span>
                 )}
               </Link>
-            </Reveal>
+            </HomeReveal>
           )}
           {data.journalLatest.slice(0, 5).map((post, i) => (
-            <Reveal key={post.id} as="li" y={14} delay={i * 0.05}>
+            <HomeReveal key={post.id} as="li" delay={i * 0.04}>
               <Link
                 href={`/post/${post.slug}`}
                 className="group flex flex-col gap-2 border-b border-[var(--fg-line)] py-5 sm:flex-row sm:items-baseline sm:justify-between"
@@ -258,13 +260,13 @@ export function HomePageClient({ data }: { data: HomeData }) {
                   {formatDate(post.published_at || post.created_at)}
                 </span>
               </Link>
-            </Reveal>
+            </HomeReveal>
           ))}
         </ul>
 
-        {data.poetry.length > 0 && (
+        {poetryShelf.length > 0 && (
           <div className="mt-16">
-            <Reveal y={18}>
+            <HomeReveal>
               <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
                 <div>
                   <p className="type-label text-muted-foreground">Poetry</p>
@@ -272,14 +274,18 @@ export function HomePageClient({ data }: { data: HomeData }) {
                     Verse
                   </h3>
                 </div>
-                <Link href="/journal?format=poetry" className="type-label link-u">
+                <Link
+                  href="/journal?format=poetry"
+                  className="type-label link-u"
+                  prefetch
+                >
                   All poetry →
                 </Link>
               </div>
-            </Reveal>
+            </HomeReveal>
             <ul>
-              {data.poetry.map((post, i) => (
-                <Reveal key={post.id} as="li" y={14} delay={i * 0.04}>
+              {poetryShelf.map((post, i) => (
+                <HomeReveal key={post.id} as="li" delay={i * 0.04}>
                   <Link
                     href={`/post/${post.slug}`}
                     className="group flex flex-col gap-2 border-b border-[var(--fg-line)] py-5 sm:flex-row sm:items-baseline sm:justify-between"
@@ -293,7 +299,7 @@ export function HomePageClient({ data }: { data: HomeData }) {
                       {formatDate(post.published_at || post.created_at)}
                     </span>
                   </Link>
-                </Reveal>
+                </HomeReveal>
               ))}
             </ul>
           </div>
@@ -303,7 +309,7 @@ export function HomePageClient({ data }: { data: HomeData }) {
       {/* Closing — ink */}
       <section className="border-t border-[var(--fg-line)] py-20 md:py-28">
         <div className="wrap text-center">
-          <Reveal y={20}>
+          <HomeReveal>
             <p className="type-label text-muted-foreground">Stay close</p>
             <h2 className="type-display mx-auto mt-4 max-w-3xl text-[clamp(2rem,6vw,3.75rem)]">
               Follow the{" "}
@@ -326,7 +332,7 @@ export function HomePageClient({ data }: { data: HomeData }) {
                 Journal RSS
               </a>
             </div>
-          </Reveal>
+          </HomeReveal>
         </div>
       </section>
     </div>

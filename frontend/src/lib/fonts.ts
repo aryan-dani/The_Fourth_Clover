@@ -9,9 +9,10 @@ import {
 export const fontDisplay = Noto_Serif_Display({
   variable: "--font-display",
   subsets: ["latin"],
-  axes: ["wdth"],
   style: ["normal", "italic"],
   display: "swap",
+  // Avoid the wdth axis — many extra faces trip Turbopack's Google Fonts fetch.
+  adjustFontFallback: true,
 });
 
 export const fontSans = Jost({
