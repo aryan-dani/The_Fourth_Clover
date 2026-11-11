@@ -301,8 +301,8 @@ export function TechSubmissionDetailClient({
         status,
         reviewNote,
       });
-      if (!res.success) {
-        toast.error(res.error || "Could not update review status.");
+      if (!res?.success) {
+        toast.error(res?.error || "Could not update review status.");
         return;
       }
       setSubmission((prev) => ({
@@ -316,6 +316,10 @@ export function TechSubmissionDetailClient({
           : "Revision note sent to author.",
       );
       router.refresh();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Could not update review status.",
+      );
     } finally {
       setCurationBusy(false);
     }
@@ -328,8 +332,8 @@ export function TechSubmissionDetailClient({
         submissionId: submission.id,
         reviewNote,
       });
-      if (!res.success) {
-        toast.error(res.error || "Failed to select weekly pick.");
+      if (!res?.success) {
+        toast.error(res?.error || "Failed to select weekly pick.");
         return;
       }
       setSubmission((prev) => ({
@@ -343,6 +347,10 @@ export function TechSubmissionDetailClient({
           : "Selected as this week's official CSI LinkedIn Feature.",
       );
       router.refresh();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to select weekly pick.",
+      );
     } finally {
       setCurationBusy(false);
     }

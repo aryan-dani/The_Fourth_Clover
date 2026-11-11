@@ -6,8 +6,7 @@ function hasSupabaseAuthCookie(request: NextRequest): boolean {
 }
 
 /**
- * Paths that need a fresh auth session on the request (cookies + getUser).
- * The matcher below only runs this proxy on these prefixes.
+ * Paths that need a fresh auth session on every request (RSC + actions).
  */
 const AUTH_REFRESH_PREFIXES = [
   "/write",
@@ -31,10 +30,21 @@ function needsAuthRefresh(pathname: string): boolean {
   );
 }
 
+function isServerActionRequest(request: NextRequest): boolean {
+  return (
+    request.method === "POST" &&
+    (request.headers.has("next-action") ||
+      request.headers.has("Next-Action"))
+  );
+}
+
 /**
- * Next.js 16 proxy — refreshes the Supabase auth session on private routes
- * so Server Components / Server Actions see a valid cookie session.
- * Public HTML never enters this file (see matcher).
+ * Next.js 16 proxy — refreshes the Supabase auth session when needed.
+ *
+ * Public HTML GETs exit immediately (no getUser) so Netlify edge cache stays
+ * valid. Server Actions on public pages (Approve / Weekly Pick on a Tech Weekly
+ * article, reactions, comments, etc.) still refresh the session so auth.uid()
+ * reaches Postgres.
  */
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -50,7 +60,8 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse;
   }
 
-  if (!needsAuthRefresh(request.nextUrl.pathname)) {
+  const pathname = request.nextUrl.pathname;
+  if (!needsAuthRefresh(pathname) && !isServerActionRequest(request)) {
     return supabaseResponse;
   }
 
@@ -65,6 +76,7 @@ export async function proxy(request: NextRequest) {
           value: string;
           options: CookieOptions;
         }[],
+        headers?: Record<string, string>,
       ) {
         cookiesToSet.forEach(({ name, value }) =>
           request.cookies.set(name, value),
@@ -73,6 +85,14 @@ export async function proxy(request: NextRequest) {
         cookiesToSet.forEach(({ name, value, options }) =>
           supabaseResponse.cookies.set(name, value, options),
         );
+        // Prevent CDNs from caching Set-Cookie after a token refresh.
+        if (headers) {
+          Object.entries(headers).forEach(([key, value]) => {
+            supabaseResponse.headers.set(key, value);
+          });
+        } else {
+          supabaseResponse.headers.set("Cache-Control", "private, no-store");
+        }
       },
     },
   });
@@ -85,32 +105,9 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
+  // Catch-all so Server Actions on public article pages can refresh the session.
+  // Anonymous and public GETs return immediately above (no Auth network call).
   matcher: [
-    "/write",
-    "/write/:path*",
-    "/dashboard",
-    "/dashboard/:path*",
-    "/admin",
-    "/admin/:path*",
-    "/settings",
-    "/settings/:path*",
-    "/notifications",
-    "/notifications/:path*",
-    "/verify-csi",
-    "/verify-csi/:path*",
-    "/reading-list",
-    "/reading-list/:path*",
-    "/following",
-    "/following/:path*",
-    "/tech-weekly/write",
-    "/tech-weekly/write/:path*",
-    "/tech-weekly/review",
-    "/tech-weekly/review/:path*",
-    "/csi/write",
-    "/csi/write/:path*",
-    "/csi/review",
-    "/csi/review/:path*",
-    "/auth",
-    "/auth/:path*",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|txt|xml|webmanifest)$).*)",
   ],
 };

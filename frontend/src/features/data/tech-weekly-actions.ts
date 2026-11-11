@@ -601,43 +601,53 @@ export async function reviewTechSubmissionAction(input: {
   } = await supabase.auth.getUser();
 
   if (!user?.id) {
-    return { success: false, error: "Not authenticated." };
-  }
-
-  const { data: sub, error } = await supabase
-    .from("tech_submissions")
-    .update({
-      status: input.status,
-      review_note: input.reviewNote?.trim() || null,
-    })
-    .eq("id", input.submissionId)
-    .select("id, slug, title, author_id")
-    .single();
-
-  if (error || !sub) {
     return {
       success: false,
-      error: error?.message || "Failed to update submission review status.",
+      error: "Not authenticated. Sign in again, then retry Approve.",
     };
   }
 
-  if (sub.author_id !== user.id) {
+  const { data, error } = await supabase.rpc("review_tech_submission", {
+    p_submission_id: input.submissionId,
+    p_status: input.status,
+    p_review_note: input.reviewNote?.trim() || null,
+  });
+
+  if (error || !data) {
+    return {
+      success: false,
+      error:
+        error?.message ||
+        "Only Technical Heads or Super Admin can update review status.",
+    };
+  }
+
+  const result = data as {
+    success: boolean;
+    submission_id: string;
+    status: string;
+    slug: string;
+    title: string;
+    author_id: string;
+  };
+
+  if (result.author_id !== user.id) {
     // Encode tech submission id in message (notifications.post_id FKs posts only).
-    const twMarker = `\u200bTW:${sub.id}`;
+    const twMarker = `\u200bTW:${result.submission_id}`;
     await supabase.from("notifications").insert({
-      user_id: sub.author_id,
+      user_id: result.author_id,
       from_user_id: user.id,
       type: input.status === "approved" ? "review_approved" : "changes_requested",
       message:
         (input.status === "approved"
-          ? `Your CSI Tech Weekly article "${sub.title}" was approved!`
-          : `Review note on "${sub.title}": ${input.reviewNote || "Changes requested."}`) +
+          ? `Your CSI Tech Weekly article "${result.title}" was approved!`
+          : `Review note on "${result.title}": ${input.reviewNote || "Changes requested."}`) +
         twMarker,
     });
   }
 
   revalidatePath("/tech-weekly");
-  revalidatePath(`/tech-weekly/${sub.slug}`);
+  if (result.slug) revalidatePath(`/tech-weekly/${result.slug}`);
   revalidatePath("/tech-weekly/review");
   return { success: true };
 }
@@ -656,7 +666,10 @@ export async function selectTechWeeklyPickAction(input: {
   } = await supabase.auth.getUser();
 
   if (!user?.id) {
-    return { success: false, error: "Not authenticated." };
+    return {
+      success: false,
+      error: "Not authenticated. Sign in again, then retry Weekly Pick.",
+    };
   }
 
   const { data, error } = await supabase.rpc("select_tech_weekly_pick", {

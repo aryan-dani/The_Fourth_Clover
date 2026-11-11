@@ -92,10 +92,10 @@ export default function TechWeeklyReviewClient({
         reviewNote: note,
       });
 
-      if (!res.success) {
+      if (!res?.success) {
         toast({
           title: "Review action failed",
-          description: res.error || "Could not update submission.",
+          description: res?.error || "Could not update submission.",
           variant: "destructive",
         });
         return;
@@ -114,6 +114,13 @@ export default function TechWeeklyReviewClient({
         description: `"${sub.title}" marked as ${status}.`,
       });
       router.refresh();
+    } catch (err) {
+      toast({
+        title: "Review action failed",
+        description:
+          err instanceof Error ? err.message : "Could not update submission.",
+        variant: "destructive",
+      });
     } finally {
       setBusyId(null);
     }
@@ -128,10 +135,10 @@ export default function TechWeeklyReviewClient({
         reviewNote: note,
       });
 
-      if (!res.success) {
+      if (!res?.success) {
         toast({
           title: "Could not select weekly pick",
-          description: res.error || "Failed to select weekly LinkedIn pick.",
+          description: res?.error || "Failed to select weekly LinkedIn pick.",
           variant: "destructive",
         });
         return;
@@ -170,6 +177,15 @@ export default function TechWeeklyReviewClient({
           : `"${sub.title}" is now this week's official CSI LinkedIn feature.`,
       });
       router.refresh();
+    } catch (err) {
+      toast({
+        title: "Could not select weekly pick",
+        description:
+          err instanceof Error
+            ? err.message
+            : "Failed to select weekly LinkedIn pick.",
+        variant: "destructive",
+      });
     } finally {
       setBusyId(null);
     }
