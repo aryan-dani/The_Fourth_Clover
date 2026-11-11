@@ -6,7 +6,9 @@ import { z } from "zod";
 import {
   createSupabaseServerClient,
   createSupabasePublicServerClient,
+  createSupabaseServiceRoleClient,
 } from "@/lib/supabase/server";
+import { getCapabilities } from "@/lib/roles";
 import type {
   CsiRole,
   PlatformSettings,
@@ -17,6 +19,52 @@ import type {
   TechSubmissionWithAuthor,
   TechWeek,
 } from "@/types/database";
+
+async function requireTechCurator() {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return {
+      ok: false as const,
+      error: "Not authenticated. Sign in again, then retry.",
+    };
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role, is_admin, is_suspended, csi_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const caps = getCapabilities(profile);
+  const rosterHead =
+    profile?.csi_id === 241 ||
+    profile?.csi_id === 246 ||
+    profile?.csi_id === 303;
+
+  if (!caps.canReview && !rosterHead) {
+    return {
+      ok: false as const,
+      error: "Only Technical Heads or Super Admin can curate Tech Weekly.",
+    };
+  }
+
+  let admin;
+  try {
+    admin = createSupabaseServiceRoleClient();
+  } catch {
+    return {
+      ok: false as const,
+      error:
+        "Server is missing SUPABASE_SERVICE_ROLE_KEY. Curation cannot run.",
+    };
+  }
+
+  return { ok: true as const, user, admin, supabase };
+}
 
 const AUTHOR_BADGE_SELECT = `
   id,
@@ -595,19 +643,13 @@ export async function reviewTechSubmissionAction(input: {
   status: "approved" | "rejected" | "submitted";
   reviewNote?: string;
 }): Promise<{ success: boolean; error?: string }> {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user?.id) {
-    return {
-      success: false,
-      error: "Not authenticated. Sign in again, then retry Approve.",
-    };
+  const gate = await requireTechCurator();
+  if (!gate.ok) {
+    return { success: false, error: gate.error };
   }
 
-  const { data, error } = await supabase.rpc("review_tech_submission", {
+  const { data, error } = await gate.admin.rpc("admin_review_tech_submission", {
+    p_actor_id: gate.user.id,
     p_submission_id: input.submissionId,
     p_status: input.status,
     p_review_note: input.reviewNote?.trim() || null,
@@ -618,7 +660,7 @@ export async function reviewTechSubmissionAction(input: {
       success: false,
       error:
         error?.message ||
-        "Only Technical Heads or Super Admin can update review status.",
+        "Could not update review status. Check server logs / service role.",
     };
   }
 
@@ -631,12 +673,12 @@ export async function reviewTechSubmissionAction(input: {
     author_id: string;
   };
 
-  if (result.author_id !== user.id) {
+  if (result.author_id !== gate.user.id) {
     // Encode tech submission id in message (notifications.post_id FKs posts only).
     const twMarker = `\u200bTW:${result.submission_id}`;
-    await supabase.from("notifications").insert({
+    await gate.supabase.from("notifications").insert({
       user_id: result.author_id,
-      from_user_id: user.id,
+      from_user_id: gate.user.id,
       type: input.status === "approved" ? "review_approved" : "changes_requested",
       message:
         (input.status === "approved"
@@ -660,19 +702,13 @@ export async function selectTechWeeklyPickAction(input: {
   error?: string;
   replacedId?: string | null;
 }> {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user?.id) {
-    return {
-      success: false,
-      error: "Not authenticated. Sign in again, then retry Weekly Pick.",
-    };
+  const gate = await requireTechCurator();
+  if (!gate.ok) {
+    return { success: false, error: gate.error };
   }
 
-  const { data, error } = await supabase.rpc("select_tech_weekly_pick", {
+  const { data, error } = await gate.admin.rpc("admin_select_tech_weekly_pick", {
+    p_actor_id: gate.user.id,
     p_submission_id: input.submissionId,
     p_review_note: input.reviewNote?.trim() || null,
   });
@@ -682,7 +718,7 @@ export async function selectTechWeeklyPickAction(input: {
       success: false,
       error:
         error?.message ||
-        "Only CSI Technical Heads (241, 246) or Super Admin (303) can select the Weekly LinkedIn Pick.",
+        "Could not select weekly pick. Check server logs / service role.",
     };
   }
 
@@ -692,16 +728,16 @@ export async function selectTechWeeklyPickAction(input: {
     replaced_id: string | null;
   };
 
-  const { data: sub } = await supabase
+  const { data: sub } = await gate.admin
     .from("tech_submissions")
     .select("id, slug, title, author_id")
     .eq("id", input.submissionId)
     .maybeSingle();
 
-  if (sub && sub.author_id !== user.id) {
-    await supabase.from("notifications").insert({
+  if (sub && sub.author_id !== gate.user.id) {
+    await gate.supabase.from("notifications").insert({
       user_id: sub.author_id,
-      from_user_id: user.id,
+      from_user_id: gate.user.id,
       type: "review_approved",
       message: `Congratulations! "${sub.title}" was selected as this week's official CSI LinkedIn Pick!\u200bTW:${sub.id}`,
     });
