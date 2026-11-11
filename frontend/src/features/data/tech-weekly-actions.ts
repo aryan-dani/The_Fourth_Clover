@@ -3,6 +3,7 @@
 import { cache } from "react";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   createSupabaseServerClient,
   createSupabasePublicServerClient,
@@ -20,7 +21,23 @@ import type {
   TechWeek,
 } from "@/types/database";
 
-async function requireTechCurator() {
+type CuratorGate =
+  | { ok: false; error: string }
+  | {
+      ok: true;
+      user: { id: string };
+      supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+      /** Privileged or explicitly-authed client used for curation RPCs. */
+      curator: SupabaseClient;
+      mode: "service" | "user";
+    };
+
+/**
+ * Verify the signed-in user can curate, then return a client that can call
+ * curation RPCs. Prefer service role (admin_*), else attach the session JWT
+ * explicitly so PostgREST always sees auth.uid().
+ */
+async function requireTechCurator(): Promise<CuratorGate> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -28,10 +45,15 @@ async function requireTechCurator() {
 
   if (!user?.id) {
     return {
-      ok: false as const,
+      ok: false,
       error: "Not authenticated. Sign in again, then retry.",
     };
   }
+
+  // Refresh may have updated the in-memory session; read it after getUser.
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -47,23 +69,46 @@ async function requireTechCurator() {
 
   if (!caps.canReview && !rosterHead) {
     return {
-      ok: false as const,
+      ok: false,
       error: "Only Technical Heads or Super Admin can curate Tech Weekly.",
     };
   }
 
-  let admin;
   try {
-    admin = createSupabaseServiceRoleClient();
+    const curator = createSupabaseServiceRoleClient();
+    return { ok: true, user, supabase, curator, mode: "service" };
   } catch {
+    // Service role not configured — fall through to user JWT.
+  }
+
+  if (!session?.access_token) {
     return {
-      ok: false as const,
-      error:
-        "Server is missing SUPABASE_SERVICE_ROLE_KEY. Curation cannot run.",
+      ok: false,
+      error: "Session expired. Sign out and sign in again, then retry.",
     };
   }
 
-  return { ok: true as const, user, admin, supabase };
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !anonKey) {
+    return {
+      ok: false,
+      error: "Missing Supabase public env on the server.",
+    };
+  }
+
+  const curator = createClient(supabaseUrl, anonKey, {
+    global: {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    },
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
+
+  return { ok: true, user, supabase, curator, mode: "user" };
 }
 
 const AUTHOR_BADGE_SELECT = `
@@ -648,19 +693,25 @@ export async function reviewTechSubmissionAction(input: {
     return { success: false, error: gate.error };
   }
 
-  const { data, error } = await gate.admin.rpc("admin_review_tech_submission", {
-    p_actor_id: gate.user.id,
-    p_submission_id: input.submissionId,
-    p_status: input.status,
-    p_review_note: input.reviewNote?.trim() || null,
-  });
+  const note = input.reviewNote?.trim() || null;
+  const { data, error } =
+    gate.mode === "service"
+      ? await gate.curator.rpc("admin_review_tech_submission", {
+          p_actor_id: gate.user.id,
+          p_submission_id: input.submissionId,
+          p_status: input.status,
+          p_review_note: note,
+        })
+      : await gate.curator.rpc("review_tech_submission", {
+          p_submission_id: input.submissionId,
+          p_status: input.status,
+          p_review_note: note,
+        });
 
   if (error || !data) {
     return {
       success: false,
-      error:
-        error?.message ||
-        "Could not update review status. Check server logs / service role.",
+      error: error?.message || "Could not update review status.",
     };
   }
 
@@ -707,18 +758,23 @@ export async function selectTechWeeklyPickAction(input: {
     return { success: false, error: gate.error };
   }
 
-  const { data, error } = await gate.admin.rpc("admin_select_tech_weekly_pick", {
-    p_actor_id: gate.user.id,
-    p_submission_id: input.submissionId,
-    p_review_note: input.reviewNote?.trim() || null,
-  });
+  const note = input.reviewNote?.trim() || null;
+  const { data, error } =
+    gate.mode === "service"
+      ? await gate.curator.rpc("admin_select_tech_weekly_pick", {
+          p_actor_id: gate.user.id,
+          p_submission_id: input.submissionId,
+          p_review_note: note,
+        })
+      : await gate.curator.rpc("select_tech_weekly_pick", {
+          p_submission_id: input.submissionId,
+          p_review_note: note,
+        });
 
   if (error || !data) {
     return {
       success: false,
-      error:
-        error?.message ||
-        "Could not select weekly pick. Check server logs / service role.",
+      error: error?.message || "Could not select weekly pick.",
     };
   }
 
@@ -728,7 +784,7 @@ export async function selectTechWeeklyPickAction(input: {
     replaced_id: string | null;
   };
 
-  const { data: sub } = await gate.admin
+  const { data: sub } = await gate.curator
     .from("tech_submissions")
     .select("id, slug, title, author_id")
     .eq("id", input.submissionId)
