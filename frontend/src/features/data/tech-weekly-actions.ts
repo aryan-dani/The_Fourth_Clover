@@ -4,6 +4,7 @@ import { cache } from "react";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
 import {
   createSupabaseServerClient,
   createSupabasePublicServerClient,
@@ -31,6 +32,61 @@ type CuratorGate =
       curator: SupabaseClient;
       mode: "service" | "user";
     };
+
+/** Read access_token from the sb-*-auth-token cookie (handles chunked cookies). */
+async function readAccessTokenFromCookies(): Promise<string | null> {
+  try {
+    const jar = await cookies();
+    const all = jar.getAll();
+    const base = all
+      .map((c) => c.name)
+      .find(
+        (name) =>
+          name.startsWith("sb-") &&
+          name.endsWith("-auth-token") &&
+          !name.includes("."),
+      );
+    if (!base) return null;
+
+    const chunks = all
+      .filter(
+        (c) => c.name === base || c.name.startsWith(`${base}.`),
+      )
+      .sort((a, b) => {
+        const ai = a.name === base ? -1 : Number(a.name.split(".").pop());
+        const bi = b.name === base ? -1 : Number(b.name.split(".").pop());
+        return ai - bi;
+      });
+
+    const raw = chunks.map((c) => c.value).join("");
+    if (!raw) return null;
+
+    let parsed: unknown = raw;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      try {
+        parsed = JSON.parse(
+          Buffer.from(raw.replace(/^base64-/, ""), "base64").toString("utf8"),
+        );
+      } catch {
+        return null;
+      }
+    }
+
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      "access_token" in parsed &&
+      typeof (parsed as { access_token: unknown }).access_token === "string"
+    ) {
+      return (parsed as { access_token: string }).access_token;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Verify the signed-in user can curate, then return a client that can call
@@ -81,7 +137,10 @@ async function requireTechCurator(): Promise<CuratorGate> {
     // Service role not configured — fall through to user JWT.
   }
 
-  if (!session?.access_token) {
+  const accessToken =
+    session?.access_token || (await readAccessTokenFromCookies());
+
+  if (!accessToken) {
     return {
       ok: false,
       error: "Session expired. Sign out and sign in again, then retry.",
@@ -99,7 +158,7 @@ async function requireTechCurator(): Promise<CuratorGate> {
 
   const curator = createClient(supabaseUrl, anonKey, {
     global: {
-      headers: { Authorization: `Bearer ${session.access_token}` },
+      headers: { Authorization: `Bearer ${accessToken}` },
     },
     auth: {
       persistSession: false,
