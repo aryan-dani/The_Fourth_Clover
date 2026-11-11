@@ -454,52 +454,62 @@ export function TechSubmissionDetailClient({
             </span>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Input
-              value={reviewNote}
-              onChange={(e) => setReviewNote(e.target.value)}
-              placeholder="Editorial note or feedback for author…"
-              className="h-9 flex-1 border-hairline text-xs"
-              aria-label="Editorial review note"
-            />
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={curationBusy}
-                onClick={() => void handleReviewStatus("approved")}
-                className="border-hairline"
-                aria-label="Approve dispatch"
-              >
-                <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                Approve
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={curationBusy}
-                onClick={() => void handleReviewStatus("rejected")}
-                className="border-hairline"
-                aria-label="Request revision"
-              >
-                <XCircle className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-                Request Revision
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                disabled={curationBusy || submission.status === "selected"}
-                onClick={() => void handleSelectWeeklyPick()}
-                aria-label="Select as weekly LinkedIn pick"
-              >
-                {submission.status === "selected"
-                  ? "Selected for LinkedIn"
-                  : "Select as Weekly Pick"}
-              </Button>
+          {submission.status === "selected" ? (
+            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-muted-foreground">
+              Featured as this week&apos;s LinkedIn pick. Use Copy for LinkedIn
+              above when you post.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Input
+                value={reviewNote}
+                onChange={(e) => setReviewNote(e.target.value)}
+                placeholder="Editorial note or feedback for author…"
+                className="h-9 flex-1 border-hairline text-xs"
+                aria-label="Editorial review note"
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                {submission.status !== "approved" && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={curationBusy}
+                    onClick={() => void handleReviewStatus("approved")}
+                    className="border-hairline"
+                    aria-label="Approve dispatch"
+                  >
+                    <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                    Approve
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={curationBusy}
+                  onClick={() => void handleReviewStatus("rejected")}
+                  className="border-hairline"
+                  aria-label="Request revision"
+                >
+                  <XCircle className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                  Request Revision
+                </Button>
+                {(submission.status === "approved" ||
+                  submission.status === "submitted") && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={curationBusy}
+                    onClick={() => void handleSelectWeeklyPick()}
+                    aria-label="Select as weekly LinkedIn pick"
+                  >
+                    Select as Weekly Pick
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 

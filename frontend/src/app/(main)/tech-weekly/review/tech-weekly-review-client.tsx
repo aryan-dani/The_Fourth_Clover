@@ -473,45 +473,56 @@ export default function TechWeeklyReviewClient({
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={isBusy}
-                        onClick={() => void handleReview(sub, "approved")}
-                        className="h-8 rounded-md text-xs"
-                      >
-                        {isBusy ? (
-                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
-                        )}
-                        Approve
-                      </Button>
+                      {isSelected ? (
+                        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground px-1">
+                          Selected for LinkedIn
+                        </span>
+                      ) : (
+                        <>
+                          {sub.status !== "approved" && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={isBusy}
+                              onClick={() => void handleReview(sub, "approved")}
+                              className="h-8 rounded-md text-xs"
+                            >
+                              {isBusy ? (
+                                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                              )}
+                              Approve
+                            </Button>
+                          )}
 
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={isBusy}
-                        onClick={() => void handleReview(sub, "rejected")}
-                        className="h-8 rounded-md text-xs"
-                      >
-                        <XCircle className="mr-1.5 h-3.5 w-3.5" />
-                        Request Revision
-                      </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={isBusy}
+                            onClick={() => void handleReview(sub, "rejected")}
+                            className="h-8 rounded-md text-xs"
+                          >
+                            <XCircle className="mr-1.5 h-3.5 w-3.5" />
+                            Request Revision
+                          </Button>
 
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={isBusy || isSelected}
-                        onClick={() => void handleSelectPick(sub)}
-                        className="h-8 rounded-md text-xs"
-                      >
-                        {isSelected
-                          ? "Selected for LinkedIn"
-                          : "Select as Weekly Pick"}
-                      </Button>
+                          {(sub.status === "approved" ||
+                            sub.status === "submitted") && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled={isBusy}
+                              onClick={() => void handleSelectPick(sub)}
+                              className="h-8 rounded-md text-xs"
+                            >
+                              Select as Weekly Pick
+                            </Button>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
