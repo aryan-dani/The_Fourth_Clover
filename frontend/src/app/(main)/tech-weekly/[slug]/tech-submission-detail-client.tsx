@@ -42,9 +42,35 @@ import {
   addTechCommentAction,
   deleteTechCommentAction,
   submitTechReportAction,
-  reviewTechSubmissionAction,
-  selectTechWeeklyPickAction,
 } from "@/features/data/tech-weekly-actions";
+
+async function postCuration(
+  body: Record<string, unknown>,
+): Promise<{ success: boolean; error?: string; replacedId?: string | null }> {
+  const response = await fetch("/api/tech-weekly/curate", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(body),
+  });
+  const payload = (await response.json().catch(() => ({}))) as {
+    success?: boolean;
+    error?: string;
+    replacedId?: string | null;
+  };
+  if (!response.ok || !payload.success) {
+    return {
+      success: false,
+      error:
+        payload.error ||
+        `Curation failed (${response.status} ${response.statusText})`.trim(),
+    };
+  }
+  return {
+    success: true,
+    replacedId: payload.replacedId ?? null,
+  };
+}
 import type {
   TechCommentWithAuthor,
   TechReactionType,
@@ -296,13 +322,14 @@ export function TechSubmissionDetailClient({
   const handleReviewStatus = async (status: "approved" | "rejected") => {
     setCurationBusy(true);
     try {
-      const res = await reviewTechSubmissionAction({
+      const res = await postCuration({
+        intent: "review",
         submissionId: submission.id,
         status,
         reviewNote,
       });
-      if (!res?.success) {
-        toast.error(res?.error || "Could not update review status.");
+      if (!res.success) {
+        toast.error(res.error || "Could not update review status.");
         return;
       }
       setSubmission((prev) => ({
@@ -328,12 +355,13 @@ export function TechSubmissionDetailClient({
   const handleSelectWeeklyPick = async () => {
     setCurationBusy(true);
     try {
-      const res = await selectTechWeeklyPickAction({
+      const res = await postCuration({
+        intent: "pick",
         submissionId: submission.id,
         reviewNote,
       });
-      if (!res?.success) {
-        toast.error(res?.error || "Failed to select weekly pick.");
+      if (!res.success) {
+        toast.error(res.error || "Failed to select weekly pick.");
         return;
       }
       setSubmission((prev) => ({

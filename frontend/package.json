@@ -93,7 +93,7 @@
     "@emnapi/runtime": "^1.11.3",
     "@eslint/eslintrc": "^3.3.3",
     "@eslint/js": "^9.39.2",
-    "@netlify/plugin-nextjs": "^5.15.10",
+    "@netlify/plugin-nextjs": "^5.16.6",
     "@next/bundle-analyzer": "16.4.6",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^24.19.2",

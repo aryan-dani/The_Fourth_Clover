@@ -22,6 +22,7 @@ const AUTH_REFRESH_PREFIXES = [
   "/csi/write",
   "/csi/review",
   "/auth",
+  "/api",
 ];
 
 function needsAuthRefresh(pathname: string): boolean {

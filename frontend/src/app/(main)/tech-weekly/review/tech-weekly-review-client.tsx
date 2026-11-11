@@ -19,15 +19,36 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { CopyForLinkedInButton } from "@/components/tech-weekly/FeaturedTechWeeklyBanner";
-import {
-  reviewTechSubmissionAction,
-  selectTechWeeklyPickAction,
-} from "@/features/data/tech-weekly-actions";
 import type {
   CsiRole,
   TechSubmissionWithAuthor,
   TechWeek,
 } from "@/types/database";
+
+async function postCuration(
+  body: Record<string, unknown>,
+): Promise<{ success: boolean; error?: string; replacedId?: string | null }> {
+  const response = await fetch("/api/tech-weekly/curate", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(body),
+  });
+  const payload = (await response.json().catch(() => ({}))) as {
+    success?: boolean;
+    error?: string;
+    replacedId?: string | null;
+  };
+  if (!response.ok || !payload.success) {
+    return {
+      success: false,
+      error:
+        payload.error ||
+        `Curation failed (${response.status} ${response.statusText})`.trim(),
+    };
+  }
+  return { success: true, replacedId: payload.replacedId ?? null };
+}
 
 type ReviewQueueProps = {
   authorized: boolean;
@@ -86,16 +107,17 @@ export default function TechWeeklyReviewClient({
     setBusyId(sub.id);
     try {
       const note = noteById[sub.id] ?? sub.review_note ?? "";
-      const res = await reviewTechSubmissionAction({
+      const res = await postCuration({
+        intent: "review",
         submissionId: sub.id,
         status,
         reviewNote: note,
       });
 
-      if (!res?.success) {
+      if (!res.success) {
         toast({
           title: "Review action failed",
-          description: res?.error || "Could not update submission.",
+          description: res.error || "Could not update submission.",
           variant: "destructive",
         });
         return;
@@ -130,15 +152,16 @@ export default function TechWeeklyReviewClient({
     setBusyId(sub.id);
     try {
       const note = noteById[sub.id] ?? sub.review_note ?? "";
-      const res = await selectTechWeeklyPickAction({
+      const res = await postCuration({
+        intent: "pick",
         submissionId: sub.id,
         reviewNote: note,
       });
 
-      if (!res?.success) {
+      if (!res.success) {
         toast({
           title: "Could not select weekly pick",
-          description: res?.error || "Failed to select weekly LinkedIn pick.",
+          description: res.error || "Failed to select weekly LinkedIn pick.",
           variant: "destructive",
         });
         return;

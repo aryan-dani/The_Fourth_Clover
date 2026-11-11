@@ -4,6 +4,8 @@
   publish = ".next"
 
 [build.environment]
+  # Must be >=22.12 so @netlify/plugin-nextjs runs on the same Node as the build.
+  # Keep frontend/.nvmrc in sync (Netlify prefers .nvmrc over UI settings).
   NODE_VERSION = "22"
   NEXT_TELEMETRY_DISABLED = "1"
   NEXT_CACHE_DIR = ".next/cache"
