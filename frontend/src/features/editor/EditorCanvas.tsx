@@ -1,16 +1,18 @@
 "use client";
 
-import { useRef } from "react";
+import React from "react";
 import TextareaAutosize from "react-textarea-autosize";
-import { Bold, Heading2, ImagePlus, Italic, Link2 } from "lucide-react";
+import { RichEditor } from "./RichEditor";
+import { PostBodyRenderer } from "@/components/post/PostBodyRenderer";
 import { cn } from "@/lib/utils";
 import type { EditorMode } from "./EditorShell";
 
-type EditorCanvasProps = {
+export type EditorCanvasProps = {
   title: string;
   onTitleChange: (value: string) => void;
   content: string;
   onContentChange: (value: string) => void;
+  onWordCountChange?: (words: number, readTime: number) => void;
   dek?: string;
   onDekChange?: (value: string) => void;
   showDek?: boolean;
@@ -20,96 +22,61 @@ type EditorCanvasProps = {
   mode?: EditorMode;
   preview?: React.ReactNode;
   onImageInsert?: () => void;
+  storageKey?: string;
+  userId?: string | null;
   className?: string;
 };
-
-function wrapSelection(
-  value: string,
-  start: number,
-  end: number,
-  before: string,
-  after: string,
-): { next: string; cursorStart: number; cursorEnd: number } {
-  const selected = value.slice(start, end) || "text";
-  const next =
-    value.slice(0, start) + before + selected + after + value.slice(end);
-  return {
-    next,
-    cursorStart: start + before.length,
-    cursorEnd: start + before.length + selected.length,
-  };
-}
 
 export function EditorCanvas({
   title,
   onTitleChange,
   content,
   onContentChange,
+  onWordCountChange,
   dek,
   onDekChange,
   showDek = false,
   titlePlaceholder = "Title",
-  dekPlaceholder = "Dek / summary",
-  bodyPlaceholder = "Write in Markdown…",
+  dekPlaceholder = "Dek / summary (1–2 sentences)",
+  bodyPlaceholder = "Start writing, or type '/' for commands…",
   mode = "write",
   preview,
-  onImageInsert,
+  storageKey,
+  userId,
   className,
 }: EditorCanvasProps) {
-  const bodyRef = useRef<HTMLTextAreaElement | null>(null);
-
-  const applyWrap = (before: string, after: string) => {
-    const el = bodyRef.current;
-    if (!el) {
-      onContentChange(`${content}${before}text${after}`);
-      return;
+  if (mode === "preview") {
+    if (preview) {
+      return (
+        <div
+          className={cn(
+            "min-h-[28rem] rounded-2xl border border-border/80 bg-background shadow-sm",
+            className,
+          )}
+        >
+          {preview}
+        </div>
+      );
     }
-    const start = el.selectionStart ?? content.length;
-    const end = el.selectionEnd ?? content.length;
-    const { next, cursorStart, cursorEnd } = wrapSelection(
-      content,
-      start,
-      end,
-      before,
-      after,
-    );
-    onContentChange(next);
-    requestAnimationFrame(() => {
-      el.focus();
-      el.setSelectionRange(cursorStart, cursorEnd);
-    });
-  };
 
-  const insertHeading = () => {
-    const el = bodyRef.current;
-    if (!el) {
-      onContentChange(`${content}\n## Heading\n`);
-      return;
-    }
-    const start = el.selectionStart ?? content.length;
-    const lineStart = content.lastIndexOf("\n", start - 1) + 1;
-    const next =
-      content.slice(0, lineStart) + "## " + content.slice(lineStart);
-    onContentChange(next);
-    requestAnimationFrame(() => {
-      el.focus();
-      el.setSelectionRange(lineStart + 3, lineStart + 3);
-    });
-  };
-
-  const insertLink = () => {
-    applyWrap("[", "](https://)");
-  };
-
-  if (mode === "preview" && preview) {
     return (
       <div
         className={cn(
-          "min-h-[28rem] border border-border bg-background",
+          "min-h-[28rem] rounded-2xl border border-border/80 bg-background p-6 sm:p-12 md:p-16 shadow-sm",
           className,
         )}
       >
-        {preview}
+        {title && (
+          <h1 className="font-display mb-4 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+            {title}
+          </h1>
+        )}
+        {showDek && dek && (
+          <p className="font-serif mb-8 text-lg sm:text-xl text-muted-foreground leading-relaxed">
+            {dek}
+          </p>
+        )}
+        <PostBodyRenderer content={content} />
       </div>
     );
   }
@@ -117,91 +84,45 @@ export function EditorCanvas({
   return (
     <div
       className={cn(
-        "border border-border bg-background",
+        "relative rounded-2xl border border-border/80 bg-background shadow-sm transition-colors",
         className,
       )}
     >
-      <div className="flex flex-wrap items-center gap-1 border-b border-border px-3 py-2">
-        <ToolbarButton
-          label="Bold"
-          onClick={() => applyWrap("**", "**")}
-          icon={<Bold className="h-3.5 w-3.5" />}
-        />
-        <ToolbarButton
-          label="Italic"
-          onClick={() => applyWrap("*", "*")}
-          icon={<Italic className="h-3.5 w-3.5" />}
-        />
-        <ToolbarButton
-          label="Heading"
-          onClick={insertHeading}
-          icon={<Heading2 className="h-3.5 w-3.5" />}
-        />
-        <ToolbarButton
-          label="Link"
-          onClick={insertLink}
-          icon={<Link2 className="h-3.5 w-3.5" />}
-        />
-        {onImageInsert && (
-          <ToolbarButton
-            label="Image"
-            onClick={onImageInsert}
-            icon={<ImagePlus className="h-3.5 w-3.5" />}
-          />
-        )}
-      </div>
-
-      <div className="space-y-4 p-5 sm:p-8">
+      <div className="mx-auto max-w-4xl px-6 sm:px-12 md:px-16 pt-8 pb-12 sm:pt-12">
+        {/* Post Headline Input */}
         <input
           type="text"
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
           placeholder={titlePlaceholder}
-          className="w-full bg-transparent font-display text-3xl font-semibold tracking-tight text-foreground placeholder:text-muted-foreground/50 focus:outline-none sm:text-4xl"
+          className="font-display w-full bg-transparent text-3xl font-semibold tracking-tight text-foreground placeholder:text-muted-foreground/35 focus:outline-none sm:text-4xl md:text-[2.75rem] leading-[1.12]"
         />
 
+        {/* Optional Dek / Lead Summary Input */}
         {showDek && onDekChange && (
-          <TextareaAutosize
-            value={dek ?? ""}
-            onChange={(e) => onDekChange(e.target.value)}
-            placeholder={dekPlaceholder}
-            minRows={2}
-            className="w-full resize-none bg-transparent font-serif text-base leading-relaxed text-muted-foreground placeholder:text-muted-foreground/45 focus:outline-none sm:text-lg"
-          />
+          <div className="mt-4 pt-2">
+            <TextareaAutosize
+              value={dek ?? ""}
+              onChange={(e) => onDekChange(e.target.value)}
+              placeholder={dekPlaceholder}
+              minRows={1}
+              className="w-full resize-none bg-transparent font-serif text-lg leading-relaxed text-muted-foreground placeholder:text-muted-foreground/40 focus:text-foreground focus:outline-none sm:text-xl"
+            />
+          </div>
         )}
 
-        <TextareaAutosize
-          ref={bodyRef}
-          value={content}
-          onChange={(e) => onContentChange(e.target.value)}
-          placeholder={bodyPlaceholder}
-          minRows={16}
-          className="w-full resize-none bg-transparent font-mono text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/45 focus:outline-none"
-        />
+        {/* Distraction-Free Rich Text Canvas */}
+        <div className="mt-6 border-t border-border/30 pt-6">
+          <RichEditor
+            content={content}
+            onChange={onContentChange}
+            onWordCountChange={onWordCountChange}
+            placeholder={bodyPlaceholder}
+            storageKey={storageKey}
+            userId={userId}
+          />
+        </div>
       </div>
     </div>
-  );
-}
-
-function ToolbarButton({
-  label,
-  onClick,
-  icon,
-}: {
-  label: string;
-  onClick: () => void;
-  icon: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={label}
-      aria-label={label}
-      className="inline-flex items-center gap-1 rounded-sm px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-    >
-      {icon}
-      <span className="hidden sm:inline">{label}</span>
-    </button>
   );
 }

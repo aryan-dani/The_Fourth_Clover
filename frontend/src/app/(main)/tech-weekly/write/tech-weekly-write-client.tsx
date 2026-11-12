@@ -61,7 +61,8 @@ const PRESET_TAGS = [
 ];
 
 function countWords(text: string): number {
-  const trimmed = text.trim().replace(/\s+/g, " ");
+  const plain = text.replace(/<[^>]+>/g, " ");
+  const trimmed = plain.trim().replace(/\s+/g, " ");
   if (!trimmed) return 0;
   return trimmed.split(" ").length;
 }
@@ -292,6 +293,16 @@ export default function TechWeeklyWriteClient({
       return;
     }
 
+    let effectiveCover = coverImage || null;
+    if (!effectiveCover && content) {
+      const imgMatch =
+        content.match(/<img[^>]+src=["']([^"']+)["']/i) ||
+        content.match(/!\[[^\]]*\]\(([^)]+)\)/i);
+      if (imgMatch && imgMatch[1]) {
+        effectiveCover = imgMatch[1];
+      }
+    }
+
     setSavingStatus(
       targetStatus === "submitted" ? "submitting" : "saving_draft",
     );
@@ -301,7 +312,7 @@ export default function TechWeeklyWriteClient({
         title,
         summary,
         content,
-        coverImage: coverImage || null,
+        coverImage: effectiveCover,
         tags: parsedTags,
         status: targetStatus,
       });
@@ -572,9 +583,11 @@ export default function TechWeeklyWriteClient({
             showDek
             content={content}
             onContentChange={setContent}
+            storageKey={storageKey}
+            userId={initialContext.userId}
             titlePlaceholder="How Postgres MVCC Prevents Read Locks at Scale"
             dekPlaceholder="Lead summary / LinkedIn hook (1–2 sentences)"
-            bodyPlaceholder={`## The Engineering Bottleneck\nState the exact system constraint, protocol behavior, or trade-off.\n\n## Production Takeaway\nSummarize what engineers should apply in practice.`}
+            bodyPlaceholder="State the engineering bottleneck, system constraints, or trade-offs (or type '/' for commands)…"
             mode={mode}
             onImageInsert={() => {
               if (!uploadingInline) inlineInputRef.current?.click();

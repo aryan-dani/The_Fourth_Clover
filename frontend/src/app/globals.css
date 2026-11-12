@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "katex/dist/katex.min.css";
 @config "../../tailwind.config.ts";
 
 /* ==========================================================================
@@ -967,3 +968,188 @@ select:focus-visible,
     scroll-behavior: auto !important;
   }
 }
+
+/* ==========================================================================
+   RICH TEXT & TECHNICAL POST EDITOR / RENDERER STYLES
+   ========================================================================== */
+
+/* ProseMirror Canvas Essentials */
+.ProseMirror {
+  outline: none;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before,
+.ProseMirror p.is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--fg-muted);
+  opacity: 0.4;
+  pointer-events: none;
+  height: 0;
+}
+
+/* Suppress placeholder completely when floating menu is open to prevent overlapping */
+.ProseMirror.floating-menu-open p.is-editor-empty::before,
+.ProseMirror.floating-menu-open p.is-empty::before,
+.floating-menu-open .ProseMirror p.is-editor-empty::before,
+.floating-menu-open .ProseMirror p.is-empty::before {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  display: none !important;
+}
+
+/* Typography & Headings inside editor */
+.editorial-canvas h1,
+.prose-editorial h1 {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(2rem, 3.5vw, 2.75rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  margin-top: 2.2rem;
+  margin-bottom: 0.8rem;
+}
+
+.editorial-canvas h2,
+.prose-editorial h2 {
+  font-family: var(--font-sans), sans-serif;
+  font-size: clamp(1.4rem, 2.2vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--fg);
+}
+
+.editorial-canvas h3,
+.prose-editorial h3 {
+  font-family: var(--font-sans), sans-serif;
+  font-size: clamp(1.15rem, 1.8vw, 1.35rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  color: var(--fg);
+}
+
+.editorial-canvas p,
+.prose-editorial p {
+  margin-bottom: 1.4rem;
+  line-height: 1.8;
+}
+
+.editorial-canvas blockquote,
+.prose-editorial blockquote {
+  border-left: 3px solid var(--brand-color);
+  padding-left: 1.25rem;
+  font-style: italic;
+  color: var(--fg-muted);
+  margin-top: 1.8rem;
+  margin-bottom: 1.8rem;
+}
+
+.editorial-canvas hr,
+.prose-editorial hr {
+  border: none;
+  border-top: 1px solid var(--fg-line);
+  margin: 3rem auto;
+  width: 40%;
+}
+
+/* Figures & Image Layouts */
+.editorial-figure.layout-default,
+figure.layout-default {
+  max-width: 68ch;
+  margin: 2.5rem auto;
+}
+
+.editorial-figure.layout-wide,
+figure.layout-wide {
+  max-width: 58rem;
+  margin: 3rem auto;
+}
+
+.editorial-figure.layout-full,
+figure.layout-full {
+  max-width: 100vw;
+  width: 100%;
+  margin: 3.5rem 0;
+}
+
+.editorial-figure figcaption,
+figure figcaption {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 0.875rem;
+  font-style: italic;
+  text-align: center;
+  color: var(--fg-muted);
+  margin-top: 0.75rem;
+}
+
+/* Editorial Tables */
+.editorial-table,
+.prose-editorial table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2rem 0;
+  font-size: 0.875rem;
+}
+
+.editorial-table th,
+.prose-editorial table th {
+  border: 1px solid var(--fg-line);
+  padding: 0.6rem 0.9rem;
+  background-color: color-mix(in srgb, var(--fg-line) 20%, transparent);
+  font-weight: 600;
+  text-align: left;
+}
+
+.editorial-table td,
+.prose-editorial table td {
+  border: 1px solid var(--fg-line);
+  padding: 0.6rem 0.9rem;
+}
+
+/* Task list checkboxes */
+.task-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.task-item > label {
+  user-select: none;
+  margin-top: 0.25rem;
+}
+
+.task-item > div {
+  flex: 1 1 auto;
+}
+
+/* Line numbers styling for IDE code blocks */
+.has-line-numbers code {
+  counter-reset: line;
+}
+
+.has-line-numbers code > span {
+  display: block;
+}
+
+.has-line-numbers code > span::before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  width: 2rem;
+  margin-right: 1.25rem;
+  color: #6e7681;
+  text-align: right;
+  user-select: none;
+}
+

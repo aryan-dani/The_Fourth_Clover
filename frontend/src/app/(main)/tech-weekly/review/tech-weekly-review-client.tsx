@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { CopyForLinkedInButton } from "@/components/tech-weekly/FeaturedTechWeeklyBanner";
+import { PostBodyRenderer } from "@/components/post/PostBodyRenderer";
 import type {
   CsiRole,
   TechSubmissionWithAuthor,
@@ -452,8 +453,8 @@ export default function TechWeeklyReviewClient({
                   </div>
 
                   {isExpanded && (
-                    <div className="mt-4 rounded-md border border-border bg-background p-5 font-mono text-xs whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
-                      {sub.content}
+                    <div className="mt-4 rounded-xl border border-border bg-background p-6 max-h-[32rem] overflow-y-auto">
+                      <PostBodyRenderer content={sub.content} />
                     </div>
                   )}
 

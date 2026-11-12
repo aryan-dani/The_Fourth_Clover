@@ -35,6 +35,7 @@ import {
 import type { UseFormReturn } from "react-hook-form";
 import type { PostFormValues } from "@/features/write/write-meta-fields";
 import { PostBodyRenderer } from "@/components/post/PostBodyRenderer";
+import { RichEditor } from "@/features/editor/RichEditor";
 import { inlineImageAltSchema } from "@/lib/validations";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -422,31 +423,10 @@ export function WriteEditorForm({
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <div
-                      className={cn(
-                        "relative rounded-xl transition-colors",
-                        isDraggingOver &&
-                          "ring-2 ring-primary/50 bg-primary/5 p-2",
-                      )}
-                    >
-                      <Textarea
-                        placeholder="Start writing in Markdown. Use headings (##), code blocks (```), or drag and paste images directly."
-                        {...field}
-                        ref={(el) => {
-                          field.ref(el);
-                          textareaRef.current = el;
-                        }}
-                        onSelect={recordCursorPosition}
-                        onKeyUp={recordCursorPosition}
-                        onClick={recordCursorPosition}
-                        onPaste={handleTextareaPaste}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          setIsDraggingOver(true);
-                        }}
-                        onDragLeave={() => setIsDraggingOver(false)}
-                        onDrop={handleTextareaDrop}
-                        className="min-h-[58vh] resize-none overflow-y-auto border-0 bg-transparent px-0 py-0 font-serif text-base leading-[1.82] text-foreground/90 shadow-none ring-0 placeholder:text-muted-foreground/30 focus-visible:ring-0 sm:min-h-[62vh] sm:text-[17px] sm:leading-[1.88]"
+                    <div className="min-h-[58vh]">
+                      <RichEditor
+                        content={field.value || ""}
+                        onChange={(html) => field.onChange(html)}
                       />
                     </div>
                   </FormControl>

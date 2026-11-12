@@ -345,6 +345,7 @@ function WritePageContent({
           onContentChange={(v) =>
             form.setValue("content", v, { shouldDirty: true })
           }
+          storageKey={editId ? `post-draft:${editId}` : "new-post-draft"}
           showDek={false}
           mode={mode}
           onImageInsert={() => {
