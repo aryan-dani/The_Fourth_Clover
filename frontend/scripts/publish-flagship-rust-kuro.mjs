@@ -35,6 +35,9 @@ const TAGS = [
   "Desktop",
 ];
 
+const COVER_IMAGE =
+  "https://fntnxpwxuxtztyqoiika.supabase.co/storage/v1/object/public/post-images/24cf47ad-16d8-4ab9-be89-30e9bf5aa716/kuro-flagship/1794569443947-tray-speaking.png";
+
 const contentPath = path.join(__dirname, "content", "flagship-rust-kuro.html");
 const content = fs.readFileSync(contentPath, "utf8").trim();
 
@@ -60,6 +63,8 @@ const payload = {
   author_id: AUTHOR_ID,
   publication_id: null,
   is_anonymous: false,
+  cover_image: COVER_IMAGE,
+  featured_image: COVER_IMAGE,
   published_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };

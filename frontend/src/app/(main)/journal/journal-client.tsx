@@ -526,11 +526,11 @@ export function JournalPageClient({
                       {post.format === "poetry" ? "Poetry" : "Prose"}
                       {post.read_time ? ` · ${post.read_time} min` : ""}
                     </span>
-                    <span className="type-display mt-2 block text-[clamp(1.25rem,3vw,1.85rem)] transition-opacity group-hover:opacity-70">
+                    <span className="type-display mt-2 block text-[clamp(1.25rem,3vw,1.85rem)] leading-[1.18] tracking-[-0.01em] transition-opacity group-hover:opacity-70">
                       {post.title}
                     </span>
                     {post.excerpt && (
-                      <span className="type-body mt-2 line-clamp-2 block max-w-2xl text-sm">
+                      <span className="type-body mt-2.5 line-clamp-2 block max-w-2xl text-sm leading-[1.65]">
                         {post.excerpt}
                       </span>
                     )}

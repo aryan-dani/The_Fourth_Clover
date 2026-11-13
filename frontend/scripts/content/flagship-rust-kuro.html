@@ -1,64 +1,46 @@
-<p>If you have spent any time on engineering forums over the last few weeks, you have probably noticed a surreal pattern: everything known to software engineering is suddenly being ported to Rust.</p>
-<p>Video games are being merged and rebuilt in Rust. Open-source developers are recreating massive creative suites and releasing them for free in Rust. Minecraft servers and engines are getting rewritten in Rust. Discord is moving its client architecture to Rust. And across local AI repositories—including our own desktop voice agent, Kuro—teams are systematically ripping out Python and Electron in favor of native Rust.</p>
-<p>Why specifically Rust? With dozens of mature programming languages available—C, C++, Go, Java, C#, Kotlin, Dart, Python, TypeScript—why did the industry collectively decide that right now is the moment to rewrite the world in a language famous for having a brutal learning curve?</p>
-<p>Here is the unfiltered truth: Rust didn't just win on raw speed. Rust won because large language models fundamentally changed how code is written, and local AI fundamentally changed what consumer hardware can tolerate.</p>
-
-<h2>1. The Real Reason Everything Is Shifting to Rust Right Now</h2>
-<p>For a decade, the knock against Rust was simple: it was too hard for average teams to write quickly. Fighting the borrow checker, reasoning through explicit lifetimes, and satisfying a pedantic type system required a steep upfront cognitive tax. If a startup wanted to ship a cross-platform desktop UI by Friday, they reached for TypeScript and Electron. If they wanted to wire up machine learning, they reached for Python.</p>
-<p>Then AI-assisted coding arrived, and the economics of programming flipped overnight.</p>
-
-<h3>The Compiler as a Deterministic Harness for Probabilistic AI</h3>
-<p>Large Language Models are not formal reasoning engines; they are probabilistic token predictors that you can endlessly smash against an engineering problem. Because they hallucinate, they work best when paired with an uncompromising, deterministic verifier.</p>
-<p>Look at what happens when you pair an AI coding agent with other languages:</p>
-<ul>
-<li><strong>In C or C++</strong>: The AI writes code that compiles cleanly on the first try—and silently introduces Undefined Behavior (UB), memory leaks, aliased pointers, or use-after-free vulnerabilities. You then burn millions of tokens and hours of human debugging trying to figure out why a third-party library segfaulted or why a virtual pointer cast corrupted the heap. Worse, LLMs are now actively used by security researchers to discover use-after-free CVEs in legacy C/C++ codebases at scale.</li>
-<li><strong>In Python or JavaScript</strong>: There is so much uncurated, dynamically typed training slop in public corpora that models frequently guess syntax or pass incompatible state across functions. Because the feedback loop is loose, an agent might take ten runtime revisions in Python just to catch state bugs that a static type system would have rejected in one.</li>
-<li><strong>In Rust</strong>: So long as you forbid <code>unsafe</code> blocks (or deny <code>unsafe_op_in_unsafe_fn</code> at the workspace level), the borrow checker, ownership model, and type system eliminate entire classes of memory and concurrency bugs before the binary ever runs.</li>
-</ul>
-
-<figure class="diagram-frame">
-<svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AI plus rustc deterministic verification loop versus C++ undefined behavior and Python runtime exceptions">
-  <rect width="900" height="280" fill="transparent"/>
-  <text x="28" y="36" font-family="ui-monospace, monospace" font-size="13" letter-spacing="1.5" fill="currentColor">THE AI + RUSTC DETERMINISTIC VERIFICATION LOOP</text>
-  <rect x="28" y="58" width="160" height="54" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="108" y="82" text-anchor="middle" font-family="ui-monospace, monospace" font-size="12" fill="currentColor">LLM AGENT</text>
-  <text x="108" y="100" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="currentColor" opacity="0.65">probabilistic draft</text>
-  <path d="M188 85 H248" stroke="currentColor" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
-  <rect x="248" y="58" width="170" height="54" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="333" y="82" text-anchor="middle" font-family="ui-monospace, monospace" font-size="12" fill="currentColor">rustc + clippy</text>
-  <text x="333" y="100" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="currentColor" opacity="0.65">deterministic verifier</text>
-  <path d="M418 85 H478" stroke="currentColor" stroke-width="1.5" fill="none"/>
-  <rect x="478" y="58" width="160" height="54" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="558" y="82" text-anchor="middle" font-family="ui-monospace, monospace" font-size="12" fill="currentColor">SHIP BINARY</text>
-  <text x="558" y="100" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="currentColor" opacity="0.65">memory-safe artifact</text>
-  <path d="M333 112 V148 H108 V112" stroke="currentColor" stroke-width="1.5" fill="none" stroke-dasharray="4 3"/>
-  <text x="220" y="142" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="currentColor" opacity="0.7">readable diagnostics loop</text>
-  <line x1="28" y1="175" x2="872" y2="175" stroke="currentColor" stroke-width="1" opacity="0.25"/>
-  <text x="28" y="198" font-family="ui-monospace, monospace" font-size="11" fill="currentColor" opacity="0.75">FAILURE MODES ELSEWHERE</text>
-  <rect x="28" y="212" width="400" height="48" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.85"/>
-  <text x="48" y="240" font-family="ui-monospace, monospace" font-size="12" fill="currentColor">C / C++ — silent UB, UAF, heap corruption after clean compile</text>
-  <rect x="448" y="212" width="424" height="48" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.85"/>
-  <text x="468" y="240" font-family="ui-monospace, monospace" font-size="12" fill="currentColor">Python / JS — runtime exceptions after N hallucinated revisions</text>
-  <defs>
-    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-      <path d="M0,0 L6,3 L0,6 Z" fill="currentColor"/>
-    </marker>
-  </defs>
-</svg>
-<figcaption>Figure 1 — Probabilistic agents need a strict compiler feedback loop</figcaption>
+<figure>
+<img src="https://fntnxpwxuxtztyqoiika.supabase.co/storage/v1/object/public/post-images/24cf47ad-16d8-4ab9-be89-30e9bf5aa716/kuro-flagship/1794569442828-kuro-logo.svg" alt="Kuro wordmark on paper" width="1400" height="480" />
+<figcaption>Kuro — local-first Windows desk voice agent</figcaption>
 </figure>
 
+<p>If you have spent any time on engineering forums lately, the pattern is hard to miss: everything known to software is being ported to Rust.</p>
+<p>Game engines. Creative tools. Minecraft servers. Discord's client path. And across local AI — including our own desk agent, Kuro — teams are ripping out Python and Electron for native Rust.</p>
+<p>Why Rust, and why now? The honest answer is not raw speed alone. Large language models changed how code is written. Local AI changed what consumer hardware can tolerate. Rust sits at the intersection of both pressures.</p>
+
+<h2>1. Why everything is shifting to Rust</h2>
+<p>For a decade the knock against Rust was simple: too hard, too slow to write. Startups shipping a desktop UI by Friday reached for TypeScript and Electron. Machine learning reached for Python.</p>
+<p>AI-assisted coding flipped those economics overnight.</p>
+
+<h3>The compiler as a deterministic harness</h3>
+<p>LLMs are probabilistic token predictors. They hallucinate. They work best when smashed against an uncompromising verifier.</p>
+<ul>
+<li><strong>C / C++</strong> — Clean compiles can still hide undefined behavior, leaks, and use-after-free. Debugging burns tokens and hours after the fact.</li>
+<li><strong>Python / JavaScript</strong> — Loose feedback loops and training slop mean many runtime revisions for bugs a type system would reject once.</li>
+<li><strong>Rust</strong> — Ownership, the borrow checker, and <code>Send</code>/<code>Sync</code> kill whole bug classes before a binary runs — especially when <code>unsafe_op_in_unsafe_fn</code> is denied at the workspace level.</li>
+</ul>
+
+<div class="editorial-diagram" role="figure" aria-label="AI plus rustc verification loop">
+  <p class="editorial-diagram__title">The AI + rustc verification loop</p>
+  <div class="editorial-diagram__row">
+    <div class="editorial-diagram__node"><strong>LLM agent</strong><span>Probabilistic draft. Fast, imperfect, endlessly iterable.</span></div>
+    <div class="editorial-diagram__arrow" aria-hidden="true">→</div>
+    <div class="editorial-diagram__node"><strong>rustc + clippy</strong><span>Deterministic verifier. Readable diagnostics. Tight loop.</span></div>
+    <div class="editorial-diagram__arrow" aria-hidden="true">→</div>
+    <div class="editorial-diagram__node"><strong>Ship binary</strong><span>Memory-safe artifact without waiting for production crashes.</span></div>
+  </div>
+  <p class="editorial-diagram__note">Failure modes elsewhere · C/C++ silent UB after a clean compile · Python/JS runtime exceptions after N revisions</p>
+  <p class="editorial-diagram__caption">Figure 1 — Probabilistic agents need a strict compiler feedback loop</p>
+</div>
+
 <aside data-callout-type="mechanism" class="editorial-callout callout-mechanism">
-<p><strong>Mechanism:</strong> Pair a probabilistic generator (the LLM) with a deterministic verifier (<code>rustc</code>, <code>clippy</code>, ownership, <code>Send</code>/<code>Sync</code>). The agent can iterate until the binary is memory-safe without waiting for production crashes.</p>
+<p><strong>Mechanism:</strong> Pair a probabilistic generator with a deterministic verifier. The agent iterates until the binary is memory-safe — no production crash required to discover the bug.</p>
 </aside>
 
-<h3>The Warehouse Air-Conditioning Irony of Developer Tooling</h3>
-<p>There is a slightly dark irony to this moment. For twenty years, software engineers begged management to care about developer experience: strict compilers that catch hasty mistakes, clean CLI tooling, actionable compiler error messages, and time to write proper documentation. Management rarely cared.</p>
-<p>It is just like those stories about warehouses refusing to install air conditioning while human workers suffered from heat exhaustion—until the company bought warehouse robots, and suddenly installed AC overnight because the robots overheated and shut down without it. Once AI agents needed deterministic CLI tooling (<code>cargo</code>, <code>rustfmt</code>, <code>clippy</code>), strict type signatures, and clear compiler diagnostics to function, those exact engineering practices became top corporate priorities.</p>
+<h3>The warehouse air-conditioning irony</h3>
+<p>For twenty years engineers begged for strict compilers, clean CLIs, actionable errors, and real documentation. Management rarely cared — until agents needed those exact guardrails to stop hallucinating broken code. Same story as warehouses that refused air conditioning for people, then installed it overnight for robots that overheated.</p>
 
-<h3>Type-Driven Correctness: enum + Exhaustive match + Newtypes</h3>
-<p>Beyond memory safety and concurrency (<code>Send</code> and <code>Sync</code> making cross-thread data races a compile-time error), Rust's real superpower for maintaining complex software is how its type system prevents logic drift.</p>
-<p>Consider a simple mechanic using Rust's <code>enum</code> and exhaustive <code>match</code>, paired with zero-cost newtypes:</p>
+<h3>Type-driven correctness</h3>
+<p>Rust's deeper advantage for long-lived systems is logic that refuses to drift. Exhaustive <code>match</code> and zero-cost newtypes catch missing variants and unit mixups at compile time:</p>
 
 <pre data-language="rust" data-filename="damage.rs"><code>#[derive(Debug, Clone, Copy)]
 pub struct ResistancePct(pub f32);
@@ -77,108 +59,105 @@ pub fn compute_resistance(received: &amp;DamageType) -&gt; ResistancePct {
         DamageType::Ice { .. } =&gt; ResistancePct(10.0),
         DamageType::Psy =&gt; ResistancePct(5.0),
         DamageType::Physical =&gt; ResistancePct(25.0),
-        // COMPILE ERROR: non-exhaustive patterns: `DamageType::Nuke` not covered!
+        // rustc: missing DamageType::Nuke
     }
 }</code></pre>
 
-<p>In C, C++, or loosely typed scripting languages, forgetting to handle the <code>Nuke</code> variant—or accidentally passing Fahrenheit into a Celsius float parameter—compiles or runs until it silently corrupts state. In Rust, the code simply refuses to compile. If you add a <code>Wind</code> variant six months later, <code>rustc</code> points to every single function across the workspace that needs to be updated.</p>
-<p>Add <code>cargo</code>—which eliminates the multi-megabyte auto-generated Makefile and CMake rule-engine nightmares of C++—and you have a language that learned forty years of systems programming lessons without carrying forty years of legacy baggage.</p>
+<p>Forget <code>Nuke</code> in C or a scripting language and you may corrupt state quietly. In Rust the build fails. Add <code>Wind</code> six months later and <code>rustc</code> lists every call site that must change. Pair that with <code>cargo</code> instead of sprawling CMake trees, and you get forty years of systems lessons without forty years of baggage.</p>
 
-<h2>2. Discord's Switch and the End of the Electron Bloat Era</h2>
-<p>For the last decade, everybody complained about Electron, yet almost everybody kept shipping it. Why? Because TypeScript and React made it effortless to get a polished, cross-platform UI onto Windows, macOS, and Linux in record time.</p>
-<p>If you open an Electron app once a week, you don't notice the cost. If you keep it open all day and interact with it 500 times a day—like Microsoft Teams, Slack, or Discord—bundling an entire Chromium browser and Node.js garbage collector inside every desktop application becomes painful. And if you try to use Java, C#, or Go on the client side, you either deal with heavy desktop runtimes, weaker UI ecosystems, or garbage collection pauses that cause micro-stutters during real-time audio, video, and rendering.</p>
-<p>That is why Discord's trajectory has become the bellwether for the industry. Discord isn't a stranger to Rust—they have used Rust on the backend and inside native modules for years because eliminating garbage collection pauses was the only way to keep latency predictable at scale. Now, watching Discord take on the massive task of moving its desktop and mobile client experience toward Rust signals a broader conclusion: the "ship a browser as a desktop app" experiment has hit its ceiling. When RAM becomes expensive and users expect instant startup and zero stutter, native compiled code wins.</p>
+<h2>2. Discord and the end of the Electron tax</h2>
+<p>Everyone complained about Electron. Almost everyone shipped it — because TypeScript and React made polished cross-platform UI cheap.</p>
+<p>Open an Electron app once a week and you shrug. Keep Teams, Slack, or Discord open all day — hundreds of interactions beside local AI models — and Chromium plus a GC in every desktop process becomes painful. Java, C#, and Go on the client bring their own runtime or stutter costs for real-time audio and video.</p>
+<p>Discord already used Rust on the backend and in native modules for predictable latency. Moving more of the client experience toward Rust is the bellwether: when RAM is scarce and startup must feel instant, native wins.</p>
 
 <aside data-callout-type="takeaway" class="editorial-callout callout-takeaway">
-<p><strong>Production takeaway:</strong> Cross-platform convenience was a fair trade when machines were idle most of the day. Local AI models, always-on chat, and all-day desk apps made the Electron and GC tax intolerable.</p>
+<p><strong>Production takeaway:</strong> Cross-platform convenience was fair when machines idled. Always-on chat plus local models made the Electron and GC tax intolerable.</p>
 </aside>
 
-<h2>3. Enter Kuro: Why We Rewrote Our Local AI Voice Agent Completely in Rust</h2>
-<p>We didn't just watch this trend from the sidelines—we hit the exact hardware walls that caused it while building <a href="https://github.com/aryan-dani/Kuro" target="_blank" rel="noopener noreferrer">Kuro</a> (<code>aryan-dani/Kuro</code>).</p>
+<h2>3. Enter Kuro — rewriting the desk agent in native Rust</h2>
+<p>We did not watch from the sidelines. We hit the same walls building <a href="https://github.com/aryan-dani/Kuro" target="_blank" rel="noopener noreferrer">Kuro</a>.</p>
 
-<h3>What Is Kuro?</h3>
-<p>Kuro is a local-first Windows desktop voice agent. You hold <code>Ctrl+Alt+Space</code>, speak naturally, and release. Anchored by a minimal, zero-jitter 44px always-on-top capsule at the bottom of your monitor (<strong>KuroShell</strong>, built in WinUI 3 / .NET 10 x64), Kuro acts as an immediate physical and digital operator for your workspace:</p>
-<ul>
-<li><strong>Smart workspace hardware control:</strong> Switches the local Tuya TCP smart plug and extension board feeding your monitor and desk lighting (<code>desk on</code>, <code>desk off</code>, <code>good night</code>, and <code>wake up daddy's home</code>—which triggers the board and plays music while <code>Ctrl+Alt+Space</code> is still held).</li>
-<li><strong>Productivity and communication agency:</strong> Triages urgent emails and deadlines via n8n Cloud, fetches live RSS news briefings (The Verge, Hacker News, BBC World, NPR), spins up Google Meet links via native OAuth token refresh, and dispatches WhatsApp messages (resolving contacts and reading your clipboard or active browser URL).</li>
-<li><strong>Local multimodal vision and conversational AI:</strong> Captures your primary monitor via native Win32 GDI (<code>GetDC</code>, <code>BitBlt</code>, <code>GetDIBits</code>) for visual analysis on a local vision model (<code>qwen3-vl:8b</code>) and maintains a 20-turn conversational memory thread with local Ollama (<code>127.0.0.1:11434</code>).</li>
-</ul>
-
-<h3>Why Our Original Python 3.11 Stack Hit a Wall</h3>
-<p>Kuro originally ran on a classic Python 3.11 AI stack: faster-whisper, Coqui XTTS-v2, FastAPI, uvicorn, pygame, tinytuya, and pynput across 29 Python files (<code>main.py</code>, <code>run_kuro.py</code>, <code>brain.py</code>, <code>phrases.py</code>, <code>stt.py</code>, <code>tts.py</code>, and <code>tools/*.py</code>).</p>
-<p>On a consumer laptop with an 8 GB VRAM GPU, that stack created four severe problems:</p>
-<ol>
-<li><strong>Multi-gigabyte memory contention:</strong> Keeping Python, PyTorch, CUDA contexts, and XTTS-v2 resident consumed 1.8 GB to 3.5 GB of committed memory, took 4 to 9 seconds on cold boot, and frequently collided with Whisper and Ollama in VRAM.</li>
-<li><strong>OS keystroke hook overhead:</strong> Python's <code>pynput</code> registered a global low-level Windows hook (<code>WH_KEYBOARD_LL</code>), routing every single keystroke you typed on your machine through the Python interpreter.</li>
-<li><strong>Hidden subprocess latency:</strong> Even during our initial hybrid migration, spawning a background <code>whisper_worker.py</code> subprocess with <code>beam_size=5</code> and no silence trimming caused a single spoken word ("hello") to take 1,640 ms to 1,765 ms warm (and 8.3 seconds cold).</li>
-<li><strong>Brittle hardcoded phrase matching:</strong> Our legacy router (<code>phrases.py</code> / early <code>phrases.rs</code>) relied on hardcoded substring checks. When a long coding question ended with "I'm stuck on this error, can you help me?", <code>.contains("help me")</code> false-positived and hijacked the prompt into the static help menu instead of sending it to the LLM. Meanwhile, natural commands like "kill the workspace illumination" missed the hardcoded strings completely.</li>
-</ol>
-<p>So we purged the active Python runtime—quarantining all 29 legacy <code>.py</code> files into <code>legacy/python/</code>—and architected <code>kuro-rs</code>, a 9-crate native Rust 2024 Edition workspace.</p>
-
-<figure class="diagram-frame">
-<svg viewBox="0 0 960 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Nine-crate kuro-rs workspace architecture connected to KuroShell">
-  <rect width="960" height="420" fill="transparent"/>
-  <text x="24" y="32" font-family="ui-monospace, monospace" font-size="13" letter-spacing="1.5" fill="currentColor">KURO-RS WORKSPACE — 9 CRATES + KUROSHELL</text>
-  <rect x="320" y="52" width="320" height="56" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="480" y="76" text-anchor="middle" font-family="ui-monospace, monospace" font-size="13" fill="currentColor">KuroShell (WinUI 3 / .NET 10)</text>
-  <text x="480" y="94" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="currentColor" opacity="0.65">44px capsule HUD · x64</text>
-  <text x="480" y="128" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="currentColor" opacity="0.7">\\.\pipe\KuroEngine  ·  127.0.0.1:8765</text>
-  <line x1="480" y1="136" x2="480" y2="158" stroke="currentColor" stroke-width="1.5"/>
-  <rect x="360" y="158" width="240" height="44" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="480" y="185" text-anchor="middle" font-family="ui-monospace, monospace" font-size="12" fill="currentColor">kuro-core + kuro-ipc</text>
-  <!-- row of crates -->
-  <rect x="24" y="240" width="100" height="44" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="74" y="267" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="currentColor">hotkey</text>
-  <rect x="136" y="240" width="100" height="44" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="186" y="267" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="currentColor">audio</text>
-  <rect x="248" y="240" width="100" height="44" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="298" y="267" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="currentColor">stt</text>
-  <rect x="360" y="240" width="100" height="44" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="410" y="267" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="currentColor">router</text>
-  <rect x="472" y="240" width="100" height="44" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="522" y="267" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="currentColor">tools</text>
-  <rect x="584" y="240" width="100" height="44" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="634" y="267" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="currentColor">tts</text>
-  <rect x="696" y="240" width="100" height="44" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="746" y="267" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="currentColor">wifi</text>
-  <rect x="808" y="240" width="128" height="44" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="872" y="267" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="currentColor">engine.exe</text>
-  <line x1="74" y1="240" x2="74" y2="220" stroke="currentColor" stroke-width="1" opacity="0.5"/>
-  <line x1="186" y1="240" x2="186" y2="220" stroke="currentColor" stroke-width="1" opacity="0.5"/>
-  <line x1="298" y1="240" x2="298" y2="220" stroke="currentColor" stroke-width="1" opacity="0.5"/>
-  <line x1="410" y1="240" x2="410" y2="202" stroke="currentColor" stroke-width="1" opacity="0.5"/>
-  <line x1="522" y1="240" x2="522" y2="202" stroke="currentColor" stroke-width="1" opacity="0.5"/>
-  <line x1="634" y1="240" x2="634" y2="220" stroke="currentColor" stroke-width="1" opacity="0.5"/>
-  <line x1="746" y1="240" x2="746" y2="220" stroke="currentColor" stroke-width="1" opacity="0.5"/>
-  <line x1="24" y1="220" x2="872" y2="220" stroke="currentColor" stroke-width="1" opacity="0.5"/>
-  <line x1="480" y1="202" x2="480" y2="220" stroke="currentColor" stroke-width="1.5"/>
-  <rect x="24" y="312" width="912" height="84" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="40" y="340" font-family="ui-monospace, monospace" font-size="11" fill="currentColor">LOCAL SURFACE</text>
-  <text x="40" y="362" font-family="ui-monospace, monospace" font-size="12" fill="currentColor">Ollama :11434  ·  Tuya TCP plugs  ·  Win32 GDI capture  ·  Silero VAD + Whisper + Kokoro ONNX</text>
-  <text x="40" y="382" font-family="ui-monospace, monospace" font-size="12" fill="currentColor">n8n Cloud  ·  Google Meet OAuth  ·  WhatsApp contacts.json  ·  RSS (Verge / HN / BBC / NPR)</text>
-</svg>
-<figcaption>Figure 2 — Named-pipe IPC from KuroShell into the nine-crate kuro-rs engine</figcaption>
+<figure>
+<img src="https://fntnxpwxuxtztyqoiika.supabase.co/storage/v1/object/public/post-images/24cf47ad-16d8-4ab9-be89-30e9bf5aa716/kuro-flagship/1794569443947-tray-speaking.png" alt="Kuro speaking tray mark" width="512" height="512" />
+<figcaption>Kuro mark — speaking pose from the native tray brand set</figcaption>
 </figure>
 
-<h2>4. Inside kuro-rs: The Math, SIMD Kernels, and Neural Engineering</h2>
-<p>Rewriting a voice agent in Rust is not just about translating syntax; it is about designing sympathetic to the CPU cache, SIMD registers, and operating system scheduler. Here are the four major engineering systems inside <code>kuro-rs</code>.</p>
-
-<h3>Breakthrough 1: The 3-Tier Semantic Intent Router and 0.62 ns AVX2 Math (kuro-router)</h3>
-<p>To kill hardcoded substring bugs permanently without paying the latency of a generative LLM router, we built a deterministic 3-tier hybrid semantic router:</p>
+<p>Hold <code>Ctrl+Alt+Space</code>, speak, release. <strong>KuroShell</strong> (WinUI 3 / .NET 10 x64) is a quiet always-on-top capsule. <strong>kuro-engine.exe</strong> owns the hotkey, Whisper, routing, tools, and speech.</p>
 <ul>
-<li><strong>Tier 1 — Reflexive O(1) exact hash (&lt;= 3 tokens):</strong> Short atomic commands (<code>cancel</code>, <code>stop</code>, <code>pause</code>, <code>desk on</code>, <code>desk off</code>, <code>help</code>) resolve in &lt; 1 µs via a static hash lookup. Crucially, Tier 1 never runs <code>.contains()</code> on multi-word sentences.</li>
-<li><strong>Tier 2 — In-process quantized ONNX sentence embeddings (BAAI/bge-small-en-v1.5):</strong> To avoid external C++/regex dependency conflicts in Cargo, we wrote a clean, 60-line pure-Rust BERT WordPiece tokenizer that feeds unpadded dynamic <code>[1, actual_seq_len]</code> tensors into <code>ort</code>. Passing <code>[1, 6]</code> instead of padding every short command out to <code>[1, 64]</code> cuts self-attention overhead by 3x–5x.</li>
-<li><strong>Tier 3 — Conversational margin gating and Jaro-Winkler slot extraction:</strong> Hard-negative conversational anchors prevent "can you help me?" from hijacking tool intents; contact resolution uses Jaro-Winkler similarity &gt;= 0.86.</li>
+<li><strong>Desk hardware</strong> — Tuya TCP plugs for monitors and lights: <code>desk on</code>, <code>desk off</code>, <code>good night</code>, and early <code>wake up daddy's home</code> while the hotkey is still held.</li>
+<li><strong>Agency</strong> — n8n mail triage, RSS (The Verge, Hacker News, BBC, NPR), Google Meet via native OAuth, WhatsApp contact resolution.</li>
+<li><strong>Local multimodal</strong> — Win32 GDI capture (<code>GetDC</code>, <code>BitBlt</code>, <code>GetDIBits</code>) into <code>qwen3-vl:8b</code>, plus multi-turn chat on Ollama at <code>127.0.0.1:11434</code>.</li>
 </ul>
-<p>Given token hidden states and an attention mask, we compute the attention-masked mean pool and L2-normalize onto the unit hypersphere:</p>
+
+<div class="editorial-diagram" role="figure" aria-label="Kuro HUD poses">
+  <p class="editorial-diagram__title">KuroShell brand poses</p>
+  <div class="editorial-diagram__row">
+    <div class="editorial-diagram__node" style="text-align:center;padding:0.75rem">
+      <img src="https://fntnxpwxuxtztyqoiika.supabase.co/storage/v1/object/public/post-images/24cf47ad-16d8-4ab9-be89-30e9bf5aa716/kuro-flagship/1794569443694-tray-idle.png" alt="Idle" width="96" height="96" style="margin:0 auto 0.5rem;display:block;border:0;width:4.5rem;height:4.5rem" />
+      <strong>Idle</strong><span>Quiet mark</span>
+    </div>
+    <div class="editorial-diagram__node" style="text-align:center;padding:0.75rem">
+      <img src="https://fntnxpwxuxtztyqoiika.supabase.co/storage/v1/object/public/post-images/24cf47ad-16d8-4ab9-be89-30e9bf5aa716/kuro-flagship/1794569443823-tray-listening.png" alt="Listening" width="96" height="96" style="margin:0 auto 0.5rem;display:block;border:0;width:4.5rem;height:4.5rem" />
+      <strong>Listening</strong><span>Hotkey held</span>
+    </div>
+    <div class="editorial-diagram__node" style="text-align:center;padding:0.75rem">
+      <img src="https://fntnxpwxuxtztyqoiika.supabase.co/storage/v1/object/public/post-images/24cf47ad-16d8-4ab9-be89-30e9bf5aa716/kuro-flagship/1794569444074-tray-processing.png" alt="Processing" width="96" height="96" style="margin:0 auto 0.5rem;display:block;border:0;width:4.5rem;height:4.5rem" />
+      <strong>Processing</strong><span>STT + route</span>
+    </div>
+    <div class="editorial-diagram__node" style="text-align:center;padding:0.75rem">
+      <img src="https://fntnxpwxuxtztyqoiika.supabase.co/storage/v1/object/public/post-images/24cf47ad-16d8-4ab9-be89-30e9bf5aa716/kuro-flagship/1794569443947-tray-speaking.png" alt="Speaking" width="96" height="96" style="margin:0 auto 0.5rem;display:block;border:0;width:4.5rem;height:4.5rem" />
+      <strong>Speaking</strong><span>Kokoro audio</span>
+    </div>
+  </div>
+  <p class="editorial-diagram__caption">Figure 2 — Paper / ink tray marks from the Kuro brand kit</p>
+</div>
+
+<h3>Why Python 3.11 hit the wall</h3>
+<p>The legacy stack was classic: faster-whisper, Coqui XTTS-v2, FastAPI, pynput — 29 Python files. On an 8 GB VRAM laptop it meant:</p>
+<ol>
+<li><strong>1.8–3.5 GB</strong> committed for Python + PyTorch + XTTS, colliding with Whisper and Ollama.</li>
+<li><strong><code>WH_KEYBOARD_LL</code></strong> via <code>pynput</code> — every OS keystroke through the interpreter.</li>
+<li><strong>Hidden STT latency</strong> — <code>whisper_worker.py</code> at 1,640–1,765 ms warm for a single word.</li>
+<li><strong>Brittle phrases</strong> — <code>.contains("help me")</code> hijacked long coding prompts into the static help menu.</li>
+</ol>
+<p>We quarantined the Python tree under <code>legacy/python/</code> and built <code>kuro-rs</code>: a nine-crate Rust 2024 workspace.</p>
+
+<div class="editorial-diagram" role="figure" aria-label="kuro-rs crate map">
+  <p class="editorial-diagram__title">kuro-rs workspace · Named pipe + local API</p>
+  <div class="editorial-diagram__node" style="margin-bottom:0.75rem">
+    <strong>KuroShell</strong>
+    <span>WinUI 3 capsule · tray · starts kuro-engine.exe with KURO_API=on</span>
+  </div>
+  <p class="editorial-diagram__note" style="margin-top:0;margin-bottom:0.85rem">\\.\pipe\KuroEngine · 127.0.0.1:8765</p>
+  <div class="editorial-diagram__crate-grid">
+    <div class="editorial-diagram__crate">core</div>
+    <div class="editorial-diagram__crate">ipc</div>
+    <div class="editorial-diagram__crate">hotkey</div>
+    <div class="editorial-diagram__crate">audio</div>
+    <div class="editorial-diagram__crate">stt</div>
+    <div class="editorial-diagram__crate">router</div>
+    <div class="editorial-diagram__crate">tools</div>
+    <div class="editorial-diagram__crate">tts</div>
+    <div class="editorial-diagram__crate">wifi</div>
+  </div>
+  <p class="editorial-diagram__caption">Figure 3 — Nine crates behind a 14.2 MB idle working set</p>
+</div>
+
+<h2>4. Inside kuro-rs — math, SIMD, neural path</h2>
+
+<h3>3-tier semantic router (kuro-router)</h3>
+<p>Hardcoded substrings died. The hybrid router:</p>
+<ul>
+<li><strong>Tier 1</strong> — O(1) exact hash for ≤3-token reflex commands. Never <code>.contains()</code> on long sentences.</li>
+<li><strong>Tier 2</strong> — In-process <code>BAAI/bge-small-en-v1.5</code> ONNX with a 60-line pure-Rust WordPiece tokenizer and dynamic <code>[1, actual_seq_len]</code> tensors.</li>
+<li><strong>Tier 3</strong> — Conversational margin gating plus Jaro-Winkler (≥ 0.86) for contacts.</li>
+</ul>
 
 <div class="editorial-math-block" data-latex="v = \dfrac{\sum_{i=1}^{L} m_i h_i}{\sum_{i=1}^{L} m_i},\quad \hat{q} = \dfrac{v}{\lVert v \rVert_2 + \epsilon}"></div>
 
-<p>Because both the query embedding and the pre-cached exemplar matrix are L2-normalized at startup, cosine similarity reduces to a pure 384-dimensional dot product:</p>
+<div class="editorial-math-block" data-latex="\mathrm{sim}(\hat{q}, \hat{e}_k) = \hat{q} \cdot \hat{e}_k"></div>
 
-<div class="editorial-math-block" data-latex="\mathrm{sim}(\hat{q}, \hat{e}_k) = \hat{q} \cdot \hat{e}_k = \sum_{d=0}^{383} \hat{q}_d \hat{e}_{k,d}"></div>
-
-<p>We wrote an explicit <code>std::arch::x86_64</code> AVX2 + FMA intrinsic kernel that processes 32 floats per loop iteration across four independent 256-bit YMM accumulators:</p>
+<p>An AVX2 + FMA kernel scores 384-d dots in <strong>0.62 ns</strong> — full exemplar pass in <strong>0.151 µs</strong>:</p>
 
 <pre data-language="rust" data-filename="dot_384_avx2.rs"><code>#[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx2,fma")]
@@ -189,139 +168,67 @@ pub unsafe fn dot_384_avx2(a: &amp;[f32; 384], b: &amp;[f32; 384]) -&gt; f32 {
         let mut acc1 = _mm256_setzero_ps();
         let mut acc2 = _mm256_setzero_ps();
         let mut acc3 = _mm256_setzero_ps();
-
         let ap = a.as_ptr();
         let bp = b.as_ptr();
-
-        // 384 floats = 12 unrolled iterations of 32 floats (4 x 8-wide YMM)
         let mut i = 0usize;
         while i &lt; 384 {
-            let va0 = _mm256_loadu_ps(ap.add(i));
-            let vb0 = _mm256_loadu_ps(bp.add(i));
-            acc0 = _mm256_fmadd_ps(va0, vb0, acc0);
-
-            let va1 = _mm256_loadu_ps(ap.add(i + 8));
-            let vb1 = _mm256_loadu_ps(bp.add(i + 8));
-            acc1 = _mm256_fmadd_ps(va1, vb1, acc1);
-
-            let va2 = _mm256_loadu_ps(ap.add(i + 16));
-            let vb2 = _mm256_loadu_ps(bp.add(i + 16));
-            acc2 = _mm256_fmadd_ps(va2, vb2, acc2);
-
-            let va3 = _mm256_loadu_ps(ap.add(i + 24));
-            let vb3 = _mm256_loadu_ps(bp.add(i + 24));
-            acc3 = _mm256_fmadd_ps(va3, vb3, acc3);
-
+            acc0 = _mm256_fmadd_ps(_mm256_loadu_ps(ap.add(i)), _mm256_loadu_ps(bp.add(i)), acc0);
+            acc1 = _mm256_fmadd_ps(_mm256_loadu_ps(ap.add(i + 8)), _mm256_loadu_ps(bp.add(i + 8)), acc1);
+            acc2 = _mm256_fmadd_ps(_mm256_loadu_ps(ap.add(i + 16)), _mm256_loadu_ps(bp.add(i + 16)), acc2);
+            acc3 = _mm256_fmadd_ps(_mm256_loadu_ps(ap.add(i + 24)), _mm256_loadu_ps(bp.add(i + 24)), acc3);
             i += 32;
         }
-
-        let sum01 = _mm256_add_ps(acc0, acc1);
-        let sum23 = _mm256_add_ps(acc2, acc3);
-        let total = _mm256_add_ps(sum01, sum23);
-
-        let hi128 = _mm256_extractf128_ps(total, 1);
-        let lo128 = _mm256_castps256_ps128(total);
-        let sum128 = _mm_add_ps(lo128, hi128);
-        let shuf = _mm_movehdup_ps(sum128);
-        let sums = _mm_add_ps(sum128, shuf);
-        let shuf2 = _mm_movehl_ps(sums, sums);
-        _mm_cvtss_f32(_mm_add_ss(sums, shuf2))
+        let total = _mm256_add_ps(_mm256_add_ps(acc0, acc1), _mm256_add_ps(acc2, acc3));
+        let sum128 = _mm_add_ps(_mm256_castps256_ps128(total), _mm256_extractf128_ps(total, 1));
+        let sums = _mm_add_ps(sum128, _mm_movehdup_ps(sum128));
+        _mm_cvtss_f32(_mm_add_ss(sums, _mm_movehl_ps(sums, sums)))
     }
 }</code></pre>
 
-<p>That kernel executes a 384-dimensional dot product in <strong>0.62 nanoseconds</strong> and scores the entire exemplar catalog in <strong>0.151 microseconds</strong>.</p>
-<p>Tier 3 conversational margin gating compares tool and LLM anchors:</p>
-
-<div class="editorial-math-block" data-latex="S_{\mathrm{best}} = \max_{\hat{e} \in T_{\mathrm{tools}}}(\hat{q}\cdot\hat{e}),\quad S_{\mathrm{llm}} = \max_{\hat{c} \in C_{\mathrm{LLM}}}(\hat{q}\cdot\hat{c})"></div>
-
-<div class="editorial-math-block" data-latex="S_{\mathrm{llm}} \ge S_{\mathrm{best}} - 0.04 \;\lor\; S_{\mathrm{best}} &lt; \tau_{\mathrm{intent}} \;\lor\; (S_{\mathrm{best}} - S_{\mathrm{second}}) &lt; 0.03"></div>
-
-<p>If any of those guards fire, the router bypasses local tools and sends the prompt 100% to Ollama. For WhatsApp contact resolution against <code>contacts.json</code>, we use Jaro-Winkler similarity:</p>
-
-<div class="editorial-math-block" data-latex="\mathrm{sim}_{JW}(s_1, s_2) = \mathrm{sim}_{J}(s_1, s_2) + \ell \cdot p \cdot \bigl(1 - \mathrm{sim}_{J}(s_1, s_2)\bigr)"></div>
+<div class="editorial-math-block" data-latex="S_{\mathrm{llm}} \ge S_{\mathrm{best}} - 0.04 \;\lor\; S_{\mathrm{best}} &lt; \tau_{\mathrm{intent}}"></div>
 
 <aside data-callout-type="warning" class="editorial-callout callout-warning">
-<p><strong>Warning:</strong> Hardcoded <code>.contains("help me")</code> will false-positive on long coding prompts that end politely. Tier 1 must stay atomic; conversational intent belongs in Tier 3 margin gating.</p>
+<p><strong>Warning:</strong> <code>.contains("help me")</code> false-positives on polite coding prompts. Keep Tier 1 atomic; send ambiguous speech through margin gating.</p>
 </aside>
 
-<h3>Breakthrough 2: Native Kokoro-82M TTS and Style Vector Blending (kuro-tts)</h3>
-<p>Before writing <code>kuro-tts</code>, we benchmarked eight local TTS architectures against hard hardware constraints: no resident Python/PyTorch, battery CPU viability, and sharing an 8 GB GPU with Whisper and Ollama without faulting CUDA.</p>
+<h3>Kokoro-82M on ort (kuro-tts)</h3>
+<p>Eight local TTS options scored on naturalness, Rust fit, latency, VRAM, and flexibility. Kokoro-82M won. We bypassed the broken <code>kokoro-en</code> wrapper and run <code>kokoro-v1.0.onnx</code> on the workspace-pinned <code>ort</code> crate.</p>
 
 <table>
 <thead>
-<tr>
-<th>Model</th>
-<th>Params</th>
-<th>VRAM / Memory</th>
-<th>CPU Viable?</th>
-<th>Naturalness</th>
-<th>Weighted Score</th>
-</tr>
+<tr><th>Model</th><th>Memory</th><th>CPU</th><th>Score</th></tr>
 </thead>
 <tbody>
-<tr><td>Kokoro-82M (Selected)</td><td>82M</td><td>~180–320 MB ONNX</td><td>Yes</td><td>Very good (MOS ~4.3–4.5)</td><td>83</td></tr>
-<tr><td>Piper (Fallback)</td><td>~15M</td><td>Minimal</td><td>Yes, fast</td><td>Decent, slightly mechanical</td><td>76</td></tr>
-<tr><td>Qwen3-TTS</td><td>0.6B–1.7B</td><td>Unverified</td><td>Unlikely</td><td>Strong</td><td>72</td></tr>
-<tr><td>Chatterbox Turbo</td><td>350M</td><td>~4.5–5 GB</td><td>Slow (~1.2x RT)</td><td>Excellent</td><td>70</td></tr>
-<tr><td>VibeVoice-Realtime</td><td>0.5B</td><td>Unverified</td><td>No</td><td>Good</td><td>65</td></tr>
-<tr><td>XTTS-v2 (Legacy)</td><td>~0.5B</td><td>~4–6 GB</td><td>Slow</td><td>Very good clones</td><td>65</td></tr>
-<tr><td>F5-TTS</td><td>~336M</td><td>~4–8 GB</td><td>No</td><td>Strong cloning</td><td>64</td></tr>
-<tr><td>Orpheus 3B</td><td>3B</td><td>~8 GB GGUF / 16 GB+</td><td>No</td><td>Most expressive</td><td>63</td></tr>
+<tr><td>Kokoro-82M</td><td>~180–320 MB ONNX</td><td>Yes</td><td>83</td></tr>
+<tr><td>Piper</td><td>Minimal</td><td>Yes</td><td>76</td></tr>
+<tr><td>Qwen3-TTS</td><td>Unverified</td><td>Unlikely</td><td>72</td></tr>
+<tr><td>Chatterbox Turbo</td><td>~4.5–5 GB</td><td>Slow</td><td>70</td></tr>
+<tr><td>XTTS-v2 (legacy)</td><td>~4–6 GB</td><td>Slow</td><td>65</td></tr>
+<tr><td>Orpheus 3B</td><td>~8 GB+</td><td>No</td><td>63</td></tr>
 </tbody>
 </table>
 
-<p>We scored each candidate with a hardware-weighted objective:</p>
+<div class="editorial-math-block" data-latex="\mathbf{s}_{\mathrm{kuro}}(N)=\alpha S_{\mathrm{af\_heart}}[N]+(1-\alpha)S_{\mathrm{af\_bella}}[N],\ \alpha=0.65"></div>
 
-<div class="editorial-math-block" data-latex="\mathrm{Score} = 0.40\,Q_{\mathrm{nat}} + 0.20\,R_{\mathrm{rust}} + 0.15\,L_{\mathrm{lat}} + 0.15\,M_{\mathrm{vram}} + 0.10\,F_{\mathrm{flex}}"></div>
+<p>A 3-token warm-up at init drops first audio from 1315 ms cold to 302 ms warm. Desk rituals cache to &lt; 2 ms.</p>
 
-<p>During implementation, the community wrapper crate <code>kokoro-en</code> pinned an older <code>ort</code> and C espeak-ng bindings that conflicted with our workspace. We bypassed the wrapper and executed <code>kokoro-v1.0.onnx</code> directly on the workspace-pinned <code>ort</code> crate using three tensors (<code>tokens: i64[1, N+2]</code>, <code>style: f32[1, 256]</code>, <code>speed: f32[1]</code>).</p>
-<p>Because each voice in Kokoro's <code>voices.bin</code> is a <code>[510, 1, 256]</code> style matrix indexed by sequence length <em>N</em>, <code>kuro-tts</code> can linearly interpolate speakers in about one microsecond:</p>
+<h3>Zero-Python STT (kuro-stt + kuro-audio)</h3>
+<p>In-process <code>whisper-rs</code> first regressed to 17.6 s warm. Fixes: MSVC <code>/arch:AVX2</code> for ggml C++, Silero VAD trim, dynamic <code>audio_ctx</code>, persistent <code>WhisperState</code>, greedy decode with <code>temperature_inc = 0.0</code>. Capture writes a lock-free <code>rtrb</code> SPSC ring — no mutex in the WASAPI callback.</p>
 
-<div class="editorial-math-block" data-latex="\mathbf{s}_{\mathrm{kuro}}(N) = \alpha\,S_{\mathrm{af\_heart}}[N] + (1-\alpha)\,S_{\mathrm{af\_bella}}[N],\quad \alpha = 0.65"></div>
-
-<p>To eliminate ONNX Runtime's lazy kernel compilation penalty on the first spoken sentence (1315 ms cold vs. 302 ms warm), <code>KokoroEngine::new()</code> runs a silent 3-token dummy forward pass during initialization, and pre-renders deterministic desk rituals into <code>%LOCALAPPDATA%\Kuro\tts_cache</code> so everyday hardware commands speak in &lt; 2 ms.</p>
-
-<h3>Breakthrough 3: Zero-Python STT, Silero VAD, and Dynamic Encoder Scaling</h3>
-<p>When we first deleted <code>whisper_worker.py</code> and wired in-process <code>whisper-rs</code>, our live benchmark caught a shocking regression: warm STT took <strong>17.6 seconds</strong> on a 1-second clip.</p>
-<p>Three root causes—and fixing all three produced a massive speedup:</p>
-<ol>
-<li><strong>Passing <code>/arch:AVX2</code> to C/C++ ggml:</strong> Setting <code>-C target-cpu=x86-64-v3</code> in <code>.cargo/config.toml</code> only enables AVX2/FMA for Rust code, leaving the C/C++ ggml kernels inside <code>whisper-rs-sys</code> running scalar instructions. We injected MSVC flags (<code>CFLAGS = "/O2 /arch:AVX2 /fp:fast"</code>).</li>
-<li><strong>Dynamic encoder context (<code>audio_ctx</code>) scaling:</strong> By default, Whisper pads every clip out to 30 seconds (1500 mel encoder frames), running full transformer self-attention over empty silence. After trimming with Silero VAD ONNX, we scale <code>audio_ctx</code> to the actual speech duration:</li>
-</ol>
-
-<div class="editorial-math-block" data-latex="\mathrm{audio\_ctx} = \mathrm{clamp}\!\left(\left\lceil \dfrac{\lfloor 50 \cdot T_{\mathrm{trimmed}} \rfloor + 64}{64} \right\rceil \times 64,\; 128,\; 1500\right)"></div>
-
-<ol start="3">
-<li><strong>Persistent WhisperState and greedy decoding:</strong> Reuse <code>WhisperState</code> across turns and lock <code>SamplingStrategy::Greedy { best_of: 1 }</code> with <code>temperature_inc = 0.0</code>.</li>
-</ol>
+<div class="editorial-math-block" data-latex="\mathrm{audio\_ctx}=\mathrm{clamp}\!\left(\left\lceil\frac{\lfloor 50\cdot T_{\mathrm{trimmed}}\rfloor+64}{64}\right\rceil\times 64,\ 128,\ 1500\right)"></div>
 
 <pre data-language="rust" data-filename="stt_params.rs"><code>let duration_secs = (trimmed_audio.len() as f32) / 16_000.0;
 let raw_ctx = ((duration_secs * 50.0) as i32) + 64;
 let audio_ctx = ((raw_ctx + 63) / 64 * 64).clamp(128, 1500);
 
 let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
-params.set_n_threads(
-    std::thread::available_parallelism()
-        .map(|n| (n.get() as i32).clamp(4, 8))
-        .unwrap_or(6),
-);
 params.set_audio_ctx(audio_ctx);
-params.set_translate(false);
-params.set_language(Some("en"));
-params.set_no_context(true);
-params.set_single_segment(true);
 params.set_temperature(0.0);
-params.set_temperature_inc(0.0); // Prevents 6x temperature fallback retries
-params.set_suppress_blank(true);</code></pre>
+params.set_temperature_inc(0.0);
+params.set_single_segment(true);</code></pre>
 
-<p>On the real-time capture side (<code>kuro-audio</code>), the cpal WASAPI input callback never locks a <code>Mutex</code> or allocates a <code>Vec</code>—it writes 16 kHz samples into a pre-allocated lock-free SPSC (<code>rtrb</code>) ring buffer and updates the 11 HUD level bars via atomics.</p>
-
-<h3>Breakthrough 4: 0.0% Idle CPU, 0.2 MB Dormant Unload, and the 7-Stage Commit Gate</h3>
-<ul>
-<li><strong>Sub-millisecond Named Pipes and Notify coalescing (<code>kuro-ipc</code>):</strong> KuroShell talks to <code>kuro-engine.exe</code> over <code>\\.\pipe\KuroEngine</code> alongside the <code>127.0.0.1:8765</code> HTTP/WebSocket contract. When the HUD capsule is idle and all 11 audio bars are 0.0, the 30 Hz broadcast loop parks on a <code>tokio::sync::Notify</code>—keeping both processes at <strong>0.00% CPU</strong> at rest.</li>
-<li><strong>705.7 MB down to 0.2 MB dormant working set (<code>kuro-wifi</code>):</strong> When the laptop leaves the home Wi-Fi SSID, Kuro drops <code>Option&lt;WhisperContext&gt;</code> and <code>Option&lt;ort::Session&gt;</code>, calls <code>_heapmin()</code>, then <code>K32EmptyWorkingSet</code>—shrinking from a peak mapped working set of 705.7 MB down to <strong>0.2 MB</strong>.</li>
-<li><strong>Zero-tolerance 7-stage pre-commit gate:</strong> Wired into <code>.githooks/pre-commit</code> and GitHub Actions CI, the gate blocks any commit that introduces a clippy warning (<code>-D warnings</code>), C# warning (<code>TreatWarningsAsErrors</code>), formatting drift, emoji codepoint, secret leak, or capsule jitter regression.</li>
-</ul>
+<h3>0.0% idle CPU and 0.2 MB dormant</h3>
+<p>When the capsule is quiet, the 30 Hz event loop parks on <code>tokio::sync::Notify</code>. Off home Wi-Fi, <code>kuro-wifi</code> drops Whisper and ONNX sessions, runs <code>_heapmin()</code> and <code>K32EmptyWorkingSet</code> — <strong>705.7 MB → 0.2 MB</strong>. The seven-stage gate (<code>Test-KuroGate.ps1</code>) denies warnings, emoji, and secret leaks.</p>
 
 <pre data-language="toml" data-filename="Cargo.toml"><code>[profile.release]
 opt-level = 3
@@ -332,114 +239,59 @@ strip = "symbols"
 
 [workspace.lints.rust]
 warnings = "deny"
-unsafe_op_in_unsafe_fn = "deny"
-unused_must_use = "deny"
+unsafe_op_in_unsafe_fn = "deny"</code></pre>
 
-[workspace.lints.clippy]
-all = { level = "deny", priority = -1 }
-correctness = { level = "deny", priority = -1 }
-suspicious = { level = "deny", priority = -1 }
-perf = { level = "deny", priority = -1 }
-dbg_macro = "deny"
-todo = "deny"
-unimplemented = "deny"</code></pre>
+<h2>5. Scorecard — Python stack vs kuro-rs</h2>
 
-<h2>5. The Final Scorecard: Legacy Python 3.11 vs. Native Rust (kuro-rs)</h2>
-
-<figure class="diagram-frame">
-<svg viewBox="0 0 900 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Benchmark bar chart comparing legacy Python stack to native Rust kuro-rs">
-  <rect width="900" height="360" fill="transparent"/>
-  <text x="24" y="32" font-family="ui-monospace, monospace" font-size="13" letter-spacing="1.5" fill="currentColor">PYTHON 3.11 STACK VS KURO-RS — RELATIVE IMPROVEMENT</text>
-  <text x="24" y="56" font-family="ui-monospace, monospace" font-size="10" fill="currentColor" opacity="0.65">Bars show Rust advantage (longer = better). Absolute values annotated.</text>
-  <!-- Idle RAM -->
-  <text x="24" y="96" font-family="ui-monospace, monospace" font-size="11" fill="currentColor">Idle RAM</text>
-  <rect x="160" y="82" width="28" height="18" fill="currentColor" opacity="0.25"/>
-  <rect x="160" y="82" width="520" height="18" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="690" y="96" font-family="ui-monospace, monospace" font-size="10" fill="currentColor">1.8–3.5 GB → 14.2 MB</text>
-  <!-- Dormant -->
-  <text x="24" y="136" font-family="ui-monospace, monospace" font-size="11" fill="currentColor">Dormant RAM</text>
-  <rect x="160" y="122" width="40" height="18" fill="currentColor" opacity="0.25"/>
-  <rect x="160" y="122" width="560" height="18" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="730" y="136" font-family="ui-monospace, monospace" font-size="10" fill="currentColor">resident → 0.2 MB</text>
-  <!-- Cold boot -->
-  <text x="24" y="176" font-family="ui-monospace, monospace" font-size="11" fill="currentColor">Cold boot</text>
-  <rect x="160" y="162" width="70" height="18" fill="currentColor" opacity="0.25"/>
-  <rect x="160" y="162" width="420" height="18" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="590" y="176" font-family="ui-monospace, monospace" font-size="10" fill="currentColor">4–9 s → 736 ms</text>
-  <!-- Footprint -->
-  <text x="24" y="216" font-family="ui-monospace, monospace" font-size="11" fill="currentColor">Footprint</text>
-  <rect x="160" y="202" width="36" height="18" fill="currentColor" opacity="0.25"/>
-  <rect x="160" y="202" width="500" height="18" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="670" y="216" font-family="ui-monospace, monospace" font-size="10" fill="currentColor">multi-GB venv → 8.6 MB</text>
-  <!-- AVX2 -->
-  <text x="24" y="256" font-family="ui-monospace, monospace" font-size="11" fill="currentColor">384-d dot</text>
-  <rect x="160" y="242" width="12" height="18" fill="currentColor" opacity="0.25"/>
-  <rect x="160" y="242" width="580" height="18" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="750" y="256" font-family="ui-monospace, monospace" font-size="10" fill="currentColor">substring → 0.62 ns AVX2</text>
-  <text x="24" y="310" font-family="ui-monospace, monospace" font-size="11" fill="currentColor" opacity="0.7">Filled stubs = legacy relative size · outlined bars = Rust outcome magnitude</text>
-  <text x="24" y="332" font-family="ui-monospace, monospace" font-size="11" fill="currentColor" opacity="0.7">Idle working set of the native engine: 14.2 MB · dormant unload: 0.2 MB</text>
-</svg>
-<figcaption>Figure 3 — Measured deltas from the Python stack to bare-metal kuro-rs</figcaption>
-</figure>
+<div class="editorial-diagram" role="figure" aria-label="Benchmark comparison">
+  <p class="editorial-diagram__title">Measured deltas</p>
+  <div class="editorial-diagram__bars">
+    <div class="editorial-diagram__bar">
+      <span>Idle RAM</span>
+      <span class="editorial-diagram__bar-track"><span class="editorial-diagram__bar-fill" style="width:92%"></span></span>
+      <span>14.2 MB</span>
+    </div>
+    <div class="editorial-diagram__bar">
+      <span>Dormant</span>
+      <span class="editorial-diagram__bar-track"><span class="editorial-diagram__bar-fill" style="width:98%"></span></span>
+      <span>0.2 MB</span>
+    </div>
+    <div class="editorial-diagram__bar">
+      <span>Cold boot</span>
+      <span class="editorial-diagram__bar-track"><span class="editorial-diagram__bar-fill" style="width:78%"></span></span>
+      <span>736 ms</span>
+    </div>
+    <div class="editorial-diagram__bar">
+      <span>Footprint</span>
+      <span class="editorial-diagram__bar-track"><span class="editorial-diagram__bar-fill" style="width:88%"></span></span>
+      <span>8.6 MB</span>
+    </div>
+    <div class="editorial-diagram__bar">
+      <span>384-d dot</span>
+      <span class="editorial-diagram__bar-track"><span class="editorial-diagram__bar-fill" style="width:96%"></span></span>
+      <span>0.62 ns</span>
+    </div>
+  </div>
+  <p class="editorial-diagram__caption">Figure 4 — From multi-GB Python commit to a bare-metal desk engine</p>
+</div>
 
 <table>
 <thead>
-<tr>
-<th>Benchmark Dimension</th>
-<th>Legacy Python 3.11</th>
-<th>Native Rust (kuro-rs + KuroShell)</th>
-<th>Engineering Delta</th>
-</tr>
+<tr><th>Dimension</th><th>Python 3.11</th><th>kuro-rs + KuroShell</th></tr>
 </thead>
 <tbody>
-<tr>
-<td>Compiled engine footprint</td>
-<td>Multi-GB <code>.venv</code> (torch, cudnn, TTS, faster-whisper)</td>
-<td>8.6 MB static executable</td>
-<td>~99.7% smaller artifact</td>
-</tr>
-<tr>
-<td>Idle working set (RAM)</td>
-<td>~1.8 GB – 3.5 GB commit</td>
-<td>14.2 MB resident</td>
-<td>&gt;99% memory reduction at rest</td>
-</tr>
-<tr>
-<td>Away / dormant memory</td>
-<td>Resident until manually killed</td>
-<td>0.2 MB (from 705.7 MB peak mapped WS)</td>
-<td>Zero battery/VRAM drain off home Wi-Fi</td>
-</tr>
-<tr>
-<td>Cold startup latency</td>
-<td>4,000 – 9,000 ms</td>
-<td>736 ms</td>
-<td>~8x–10x faster cold start</td>
-</tr>
-<tr>
-<td>Intent vector math (384-d)</td>
-<td>Brittle substring rules</td>
-<td>0.62 ns AVX2 dot / 0.151 µs full matrix</td>
-<td>Zero conversational false positives</td>
-</tr>
-<tr>
-<td>TTS first-audio latency</td>
-<td>400 – 600 ms (resident XTTS-v2)</td>
-<td>&lt; 2 ms cached / 302 ms warm Kokoro</td>
-<td>Instant desk feedback, zero Python</td>
-</tr>
-<tr>
-<td>Idle CPU and OS key hook</td>
-<td><code>pynput</code> <code>WH_KEYBOARD_LL</code> global hook</td>
-<td>0.00% CPU (<code>RegisterHotKey</code> + Notify)</td>
-<td>Zero OS keystroke lag</td>
-</tr>
+<tr><td>Engine footprint</td><td>Multi-GB venv</td><td>8.6 MB exe</td></tr>
+<tr><td>Idle RAM</td><td>1.8–3.5 GB</td><td>14.2 MB</td></tr>
+<tr><td>Dormant</td><td>Resident</td><td>0.2 MB</td></tr>
+<tr><td>Cold start</td><td>4–9 s</td><td>736 ms</td></tr>
+<tr><td>Intent math</td><td>Substring rules</td><td>0.62 ns AVX2</td></tr>
+<tr><td>TTS first audio</td><td>400–600 ms XTTS</td><td>&lt;2 ms cache / 302 ms warm</td></tr>
+<tr><td>Idle CPU / hook</td><td>pynput LL hook</td><td>0.00% + RegisterHotKey</td></tr>
 </tbody>
 </table>
 
 <aside data-callout-type="takeaway" class="editorial-callout callout-takeaway">
-<p><strong>Production takeaway:</strong> When AI removes the friction of writing strict low-level code, and Rust's compiler removes the risk of AI-generated memory corruption, shipping multi-gigabyte Electron or Python desktop agents stops being a reasonable default.</p>
+<p><strong>Production takeaway:</strong> When AI removes the friction of writing strict code, and Rust removes the risk of AI memory corruption, shipping multi-gigabyte desktop agents stops being a reasonable default.</p>
 </aside>
 
-<p>The carcinisation of software is not a passing meme. When AI removes the friction of writing strict, low-level code, and Rust's compiler removes the risk of AI-generated memory corruption, there is no longer an excuse for shipping bloated software.</p>
-<p>Explore the Kuro repository on GitHub: <a href="https://github.com/aryan-dani/Kuro" target="_blank" rel="noopener noreferrer">github.com/aryan-dani/Kuro</a></p>
+<p>The carcinisation of software is not a meme. Explore the source: <a href="https://github.com/aryan-dani/Kuro" target="_blank" rel="noopener noreferrer">github.com/aryan-dani/Kuro</a>.</p>

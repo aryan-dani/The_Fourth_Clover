@@ -43,8 +43,15 @@ function sectionMeta(section: ArticleCardSection, format?: ArticleFormat) {
   return { label: "Journal", href: "/journal" as const };
 }
 
-/** Nested controls stay clickable above the stretched card link. */
-const nest = "relative z-10";
+/**
+ * Nested controls stay clickable above the stretched card link.
+ * Content without this class uses pointer-events-none so the overlay Link receives clicks.
+ */
+const nest = "relative z-10 pointer-events-auto";
+
+/** Comfortable multi-line display leading — overrides .type-display's 0.88 hero crush. */
+const cardTitleLeading = "leading-[1.18] tracking-[-0.01em]";
+const cardExcerptLeading = "leading-[1.65]";
 
 export function ArticleCard({
   section,
@@ -85,7 +92,7 @@ export function ArticleCard({
           aria-label={title}
         />
         {coverImage && (
-          <div className="relative hidden h-20 w-28 shrink-0 overflow-hidden border border-hairline bg-muted sm:block">
+          <div className="pointer-events-none relative hidden h-20 w-28 shrink-0 overflow-hidden border border-hairline bg-muted sm:block">
             <Image
               src={coverImage}
               alt=""
@@ -95,11 +102,16 @@ export function ArticleCard({
             />
           </div>
         )}
-        <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="pointer-events-none min-w-0 flex-1 space-y-2">
           <SectionLabel href={meta.href} className={nest}>
             {meta.label}
           </SectionLabel>
-          <h3 className="type-display text-[clamp(1.05rem,2.2vw,1.35rem)] text-foreground transition-opacity group-hover:opacity-70">
+          <h3
+            className={cn(
+              "type-display text-[clamp(1.05rem,2.2vw,1.35rem)] text-foreground transition-opacity group-hover:opacity-70",
+              cardTitleLeading,
+            )}
+          >
             {title}
           </h3>
           {author && (
@@ -119,37 +131,49 @@ export function ArticleCard({
 
   if (variant === "compact") {
     return (
-      <article className={cn("group relative space-y-2", className)}>
+      <article className={cn("group relative space-y-2.5", className)}>
         <Link
           href={href}
           className="absolute inset-0 z-0"
           aria-label={title}
         />
-        <SectionLabel href={meta.href} className={nest}>
-          {meta.label}
-        </SectionLabel>
-        <h3 className="type-display text-[clamp(1rem,2vw,1.25rem)] text-foreground transition-opacity group-hover:opacity-70">
-          {title}
-        </h3>
-        {excerpt && (
-          <p className="line-clamp-2 font-serif text-sm leading-relaxed text-muted-foreground">
-            {excerpt}
-          </p>
-        )}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-          {publishedAt && (
-            <time dateTime={publishedAt}>
-              {new Date(publishedAt).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-                timeZone: "UTC",
-              })}
-            </time>
+        <div className="pointer-events-none space-y-2.5">
+          <SectionLabel href={meta.href} className={nest}>
+            {meta.label}
+          </SectionLabel>
+          <h3
+            className={cn(
+              "type-display text-[clamp(1rem,2vw,1.25rem)] text-foreground transition-opacity group-hover:opacity-70",
+              cardTitleLeading,
+            )}
+          >
+            {title}
+          </h3>
+          {excerpt && (
+            <p
+              className={cn(
+                "line-clamp-2 font-serif text-sm text-muted-foreground",
+                cardExcerptLeading,
+              )}
+            >
+              {excerpt}
+            </p>
           )}
-          {readTime != null && readTime > 0 && (
-            <span className="tabular-nums">{readTime} min</span>
-          )}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+            {publishedAt && (
+              <time dateTime={publishedAt}>
+                {new Date(publishedAt).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  timeZone: "UTC",
+                })}
+              </time>
+            )}
+            {readTime != null && readTime > 0 && (
+              <span className="tabular-nums">{readTime} min</span>
+            )}
+          </div>
         </div>
       </article>
     );
@@ -170,7 +194,7 @@ export function ArticleCard({
       {coverImage && (
         <div
           className={cn(
-            "relative block w-full overflow-hidden bg-muted",
+            "pointer-events-none relative block w-full overflow-hidden bg-muted",
             isLead
               ? "aspect-[16/10] md:aspect-auto md:min-h-[18rem]"
               : "aspect-[16/10]",
@@ -193,7 +217,7 @@ export function ArticleCard({
 
       <div
         className={cn(
-          "flex flex-1 flex-col gap-3 p-5 sm:p-6",
+          "pointer-events-none flex flex-1 flex-col gap-3.5 p-5 sm:p-6",
           isLead && "justify-center md:p-8",
         )}
       >
@@ -209,6 +233,7 @@ export function ArticleCard({
         <h2
           className={cn(
             "type-display text-foreground transition-opacity group-hover:opacity-70",
+            cardTitleLeading,
             isLead
               ? "text-[clamp(1.5rem,3.5vw,2.4rem)]"
               : "text-[clamp(1.15rem,2.5vw,1.45rem)]",
@@ -220,7 +245,8 @@ export function ArticleCard({
         {excerpt && (
           <p
             className={cn(
-              "font-serif leading-relaxed text-muted-foreground",
+              "font-serif text-muted-foreground",
+              cardExcerptLeading,
               isLead
                 ? "line-clamp-4 text-base md:text-lg"
                 : "line-clamp-3 text-sm",
