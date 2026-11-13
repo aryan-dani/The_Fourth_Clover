@@ -196,8 +196,8 @@ export function ArticleCard({
           className={cn(
             "pointer-events-none relative block w-full overflow-hidden bg-muted",
             isLead
-              ? "aspect-[16/10] md:aspect-auto md:min-h-[18rem]"
-              : "aspect-[16/10]",
+              ? "aspect-[16/10] md:aspect-auto md:min-h-[16rem]"
+              : "aspect-[2/1]",
           )}
         >
           <Image
@@ -236,7 +236,7 @@ export function ArticleCard({
             cardTitleLeading,
             isLead
               ? "text-[clamp(1.5rem,3.5vw,2.4rem)]"
-              : "text-[clamp(1.15rem,2.5vw,1.45rem)]",
+              : "line-clamp-4 text-[clamp(1.15rem,2.5vw,1.45rem)]",
           )}
         >
           {title}

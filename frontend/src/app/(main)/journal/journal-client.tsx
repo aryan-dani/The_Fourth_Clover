@@ -479,27 +479,57 @@ export function JournalPageClient({
           }
         />
       ) : view === "cards" ? (
-        <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {posts.map((post, index) => (
+        <div className="space-y-6">
+          {posts[0] && (
             <ArticleCard
-              key={post.id}
+              key={posts[0].id}
               section="journal"
-              variant="standard"
-              title={post.title}
-              slug={post.slug}
-              excerpt={post.excerpt}
-              coverImage={post.cover_image || post.featured_image}
-              author={post.author}
-              publishedAt={post.published_at || post.created_at}
-              readTime={post.read_time}
-              tags={post.tags}
-              format={post.format === "poetry" ? "poetry" : "prose"}
-              anonymous={Boolean(post.is_anonymous)}
-              reactionCount={post.likes?.[0]?.count}
-              commentCount={post.comments?.[0]?.count}
-              priority={index < 3}
+              variant="lead"
+              title={posts[0].title}
+              slug={posts[0].slug}
+              excerpt={posts[0].excerpt}
+              coverImage={
+                posts[0].cover_image || posts[0].featured_image
+              }
+              author={posts[0].author}
+              publishedAt={posts[0].published_at || posts[0].created_at}
+              readTime={posts[0].read_time}
+              tags={posts[0].tags}
+              format={posts[0].format === "poetry" ? "poetry" : "prose"}
+              anonymous={Boolean(posts[0].is_anonymous)}
+              reactionCount={posts[0].likes?.[0]?.count}
+              commentCount={posts[0].comments?.[0]?.count}
+              priority
             />
-          ))}
+          )}
+          {posts.length > 1 && (
+            <div className="columns-1 gap-6 md:columns-2 lg:columns-3 [column-fill:_balance]">
+              {posts.slice(1).map((post, index) => (
+                <div
+                  key={post.id}
+                  className="mb-6 break-inside-avoid"
+                >
+                  <ArticleCard
+                    section="journal"
+                    variant="standard"
+                    title={post.title}
+                    slug={post.slug}
+                    excerpt={post.excerpt}
+                    coverImage={post.cover_image || post.featured_image}
+                    author={post.author}
+                    publishedAt={post.published_at || post.created_at}
+                    readTime={post.read_time}
+                    tags={post.tags}
+                    format={post.format === "poetry" ? "poetry" : "prose"}
+                    anonymous={Boolean(post.is_anonymous)}
+                    reactionCount={post.likes?.[0]?.count}
+                    commentCount={post.comments?.[0]?.count}
+                    priority={index < 2}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <ul className="divide-y divide-[var(--fg-line)] border-t border-[var(--fg-line)]">
