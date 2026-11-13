@@ -36,7 +36,7 @@ const TAGS = [
 ];
 
 const COVER_IMAGE =
-  "https://fntnxpwxuxtztyqoiika.supabase.co/storage/v1/object/public/post-images/24cf47ad-16d8-4ab9-be89-30e9bf5aa716/kuro-flagship/1794569443947-tray-speaking.png";
+  "https://fntnxpwxuxtztyqoiika.supabase.co/storage/v1/object/public/post-images/24cf47ad-16d8-4ab9-be89-30e9bf5aa716/kuro-flagship/1794569998101-cover-1600.png";
 
 const contentPath = path.join(__dirname, "content", "flagship-rust-kuro.html");
 const content = fs.readFileSync(contentPath, "utf8").trim();
