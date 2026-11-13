@@ -329,10 +329,10 @@ export function SlashCommandMenu({ editor }: SlashCommandMenuProps) {
         top: `${position.top}px`,
         left: `${position.left}px`,
       }}
-      className="absolute z-50 w-72 max-h-80 overflow-y-auto rounded-2xl border border-border/80 bg-background/95 p-1.5 shadow-2xl backdrop-blur-md select-none animate-in fade-in zoom-in-95 duration-100"
+      className="absolute z-50 max-h-80 w-72 select-none overflow-y-auto border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-1 animate-in fade-in zoom-in-95 duration-100"
     >
-      <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-muted-foreground/70 border-b border-border/40 mb-1">
-        Commands {query ? `matching “${query}”` : ""}
+      <div className="mb-1 border-b border-[hsl(var(--border))] px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+        Commands {query ? `· ${query}` : ""}
       </div>
 
       <div className="space-y-2">
@@ -340,7 +340,7 @@ export function SlashCommandMenu({ editor }: SlashCommandMenuProps) {
           const itemsInGroup = filteredCommands.filter((c) => c.group === group);
           return (
             <div key={group} className="space-y-0.5">
-              <div className="px-2 pt-1 pb-0.5 text-[9px] font-mono uppercase tracking-wider text-muted-foreground/50">
+              <div className="px-2 pb-0.5 pt-1 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground/60">
                 {group}
               </div>
               {itemsInGroup.map((item) => {
@@ -353,20 +353,20 @@ export function SlashCommandMenu({ editor }: SlashCommandMenuProps) {
                     type="button"
                     onClick={() => executeCommand(item)}
                     onMouseEnter={() => setSelectedIndex(itemIndex)}
-                    className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors ${
+                    className={`flex w-full items-center gap-2.5 px-2.5 py-2 text-left transition-colors ${
                       isSelected
-                        ? "bg-muted text-foreground font-medium"
-                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                        ? "bg-[hsl(var(--surface))] text-foreground"
+                        : "text-muted-foreground hover:bg-[hsl(var(--surface))] hover:text-foreground"
                     }`}
                   >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center border border-[hsl(var(--border))] bg-background">
                       {item.icon}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs text-foreground font-medium">
+                      <p className="truncate text-xs font-medium text-foreground">
                         {item.title}
                       </p>
-                      <p className="truncate text-[11px] text-muted-foreground/80 font-normal">
+                      <p className="truncate text-[11px] font-normal text-muted-foreground/80">
                         {item.description}
                       </p>
                     </div>

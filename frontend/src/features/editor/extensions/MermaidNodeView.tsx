@@ -4,14 +4,16 @@ import React, { useState, useEffect, useId } from "react";
 import { NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
 import mermaid from "mermaid";
 import { Code2, Eye, Trash2, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function MermaidNodeView({
   node,
   updateAttributes,
   deleteNode,
-  selected,
 }: NodeViewProps) {
-  const code = (node.attrs.code as string) || `graph TD\n  Client[Web / Mobile] --> Gateway[API Gateway]\n  Gateway --> Auth[Auth Service]\n  Gateway --> Core[Core Engine]\n  Core --> DB[(PostgreSQL)]`;
+  const code =
+    (node.attrs.code as string) ||
+    `graph TD\n  Client[Web / Mobile] --> Gateway[API Gateway]\n  Gateway --> Auth[Auth Service]\n  Gateway --> Core[Core Engine]\n  Core --> DB[(PostgreSQL)]`;
   const [viewMode, setViewMode] = useState<"diagram" | "code">("diagram");
   const [svg, setSvg] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -50,42 +52,43 @@ export function MermaidNodeView({
 
   return (
     <NodeViewWrapper
-      className="mermaid-nodeview group relative my-6 rounded-xl border border-border/80 bg-[#0d1117] p-4 text-[#e6edf3]"
+      className="mermaid-nodeview group relative my-6 border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-4 text-foreground"
       data-mermaid={code}
     >
-      {/* Control bar */}
       <div
         contentEditable={false}
-        className="mb-3 flex items-center justify-between border-b border-white/10 pb-2 select-none"
+        className="mb-3 flex select-none items-center justify-between border-b border-[hsl(var(--border))] pb-2"
       >
         <div className="flex items-center gap-2">
-          <span className="font-mono text-xs uppercase tracking-wider text-brand-bright">
-            Mermaid Diagram
+          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            Mermaid
           </span>
 
-          <div className="inline-flex rounded-lg border border-white/10 p-0.5 text-xs">
+          <div className="inline-flex border border-[hsl(var(--border))] p-0.5">
             <button
               type="button"
               onClick={() => setViewMode("diagram")}
-              className={`inline-flex items-center gap-1 rounded px-2 py-0.5 font-sans ${
+              className={cn(
+                "inline-flex items-center gap-1 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] transition-colors",
                 viewMode === "diagram"
-                  ? "bg-brand text-brand-foreground font-medium"
-                  : "text-zinc-400 hover:text-white"
-              }`}
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
             >
-              <Eye className="h-3 w-3" />
+              <Eye className="h-3 w-3" strokeWidth={1.75} />
               <span>Preview</span>
             </button>
             <button
               type="button"
               onClick={() => setViewMode("code")}
-              className={`inline-flex items-center gap-1 rounded px-2 py-0.5 font-sans ${
+              className={cn(
+                "inline-flex items-center gap-1 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] transition-colors",
                 viewMode === "code"
-                  ? "bg-brand text-brand-foreground font-medium"
-                  : "text-zinc-400 hover:text-white"
-              }`}
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
             >
-              <Code2 className="h-3 w-3" />
+              <Code2 className="h-3 w-3" strokeWidth={1.75} />
               <span>Code</span>
             </button>
           </div>
@@ -94,10 +97,10 @@ export function MermaidNodeView({
         <button
           type="button"
           onClick={deleteNode}
-          className="text-muted-foreground hover:text-destructive p-1 rounded"
+          className="p-1 text-muted-foreground transition-colors hover:text-destructive"
           title="Delete diagram"
         >
-          <Trash2 className="h-3.5 w-3.5" />
+          <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
         </button>
       </div>
 
@@ -108,11 +111,11 @@ export function MermaidNodeView({
             rows={6}
             onChange={(e) => updateAttributes({ code: e.target.value })}
             placeholder="graph TD..."
-            className="w-full rounded-lg border border-white/10 bg-[#161b22] p-3 font-mono text-xs text-zinc-200 focus:outline-none focus:ring-1 focus:ring-brand"
+            className="w-full border border-[hsl(var(--border))] bg-[hsl(var(--surface))] p-3 font-mono text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground/20"
           />
           {error && (
-            <div className="flex items-center gap-1.5 text-xs text-rose-400">
-              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            <div className="flex items-center gap-1.5 text-xs text-destructive">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
               <span>{error}</span>
             </div>
           )}
@@ -120,20 +123,20 @@ export function MermaidNodeView({
       ) : (
         <div contentEditable={false} className="overflow-x-auto py-4 text-center">
           {error ? (
-            <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-400 text-left">
-              <p className="font-semibold">Mermaid rendering error:</p>
-              <p className="font-mono mt-1">{error}</p>
+            <div className="border border-destructive/30 bg-destructive/10 p-3 text-left text-xs text-destructive">
+              <p className="font-semibold">Mermaid rendering error</p>
+              <p className="mt-1 font-mono">{error}</p>
               <button
                 type="button"
                 onClick={() => setViewMode("code")}
-                className="mt-2 text-xs underline hover:text-rose-300"
+                className="mt-2 text-xs underline hover:opacity-80"
               >
                 Switch to code mode to fix
               </button>
             </div>
           ) : (
             <div
-              className="flex justify-center [&>svg]:max-w-full [&>svg]:h-auto"
+              className="flex justify-center [&>svg]:h-auto [&>svg]:max-w-full"
               dangerouslySetInnerHTML={{ __html: svg }}
             />
           )}

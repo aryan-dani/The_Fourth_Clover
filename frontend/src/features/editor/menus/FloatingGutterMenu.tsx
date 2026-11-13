@@ -12,7 +12,6 @@ import {
   Sparkles,
   Search,
   Video,
-  FileCode,
   Table as TableIcon,
   Calculator,
   Workflow,
@@ -22,7 +21,6 @@ import {
 import { uploadLosslessPostImage } from "../lib/upload-media";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 
 type FloatingGutterMenuProps = {
   editor: Editor;
@@ -200,84 +198,126 @@ export function FloatingGutterMenu({ editor, userId }: FloatingGutterMenuProps) 
           return isParagraph && isNodeEmpty;
         }}
       >
-        <div className="relative left-0 sm:-left-8 md:-left-10 flex items-center select-none z-40">
+        <div className="relative left-0 z-40 flex select-none items-center sm:-left-8 md:-left-10">
           {!isOpen ? (
-            /* Closed State: Single circular + button in the left gutter */
             <button
               type="button"
               onClick={() => setIsOpen(true)}
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-zinc-400/60 bg-background text-foreground shadow-sm transition-all duration-200 hover:scale-110 hover:border-foreground dark:border-zinc-600"
+              className="flex h-7 w-7 items-center justify-center border border-[hsl(var(--border))] bg-background text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
               title="Add media, code block, or diagram"
               aria-label="Floating add menu"
             >
               {isUploading ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-foreground" />
               ) : (
-                <Plus className="h-4 w-4 stroke-[2]" />
+                <Plus className="h-3.5 w-3.5" strokeWidth={1.75} />
               )}
             </button>
           ) : (
-            /* Open State: Solid, insulated, self-contained editorial pill */
-            <div className="flex items-center gap-1 rounded-full border border-border/80 bg-popover px-1.5 py-1 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150 ring-1 ring-border/40">
-              {/* Rotate to X */}
+            <div className="animate-in fade-in zoom-in-95 flex items-center gap-0.5 border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-1 py-1 duration-150">
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-foreground/20 bg-muted/60 text-foreground transition-all hover:bg-muted hover:border-foreground"
+                className="flex h-7 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-[hsl(var(--surface))] hover:text-foreground"
                 title="Close menu (Esc)"
                 aria-label="Close menu"
               >
-                <X className="h-3.5 w-3.5 stroke-[2]" />
+                <X className="h-3.5 w-3.5" strokeWidth={1.75} />
               </button>
 
-              <span className="h-3.5 w-px bg-border/60 mx-0.5" aria-hidden />
+              <span className="mx-0.5 h-4 w-px bg-[hsl(var(--border))]" aria-hidden />
 
-              {/* 1. Add Image Upload */}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-emerald-600/40 bg-background text-emerald-600 shadow-sm transition-transform hover:scale-110 hover:border-emerald-600 dark:border-emerald-400/40 dark:text-emerald-400"
-                title="Upload high-res image or diagram"
-              >
-                <ImageIcon className="h-3.5 w-3.5" />
-              </button>
+              {(
+                [
+                  {
+                    key: "image",
+                    title: "Upload image",
+                    icon: <ImageIcon className="h-3.5 w-3.5" strokeWidth={1.75} />,
+                    onClick: () => fileInputRef.current?.click(),
+                  },
+                  {
+                    key: "embed",
+                    title: "Embed media",
+                    icon: <Video className="h-3.5 w-3.5" strokeWidth={1.75} />,
+                    onClick: () => {
+                      editor.chain().focus().setEmbed({ url: "" }).run();
+                      setIsOpen(false);
+                    },
+                  },
+                  {
+                    key: "code",
+                    title: "Code block",
+                    icon: <Code2 className="h-3.5 w-3.5" strokeWidth={1.75} />,
+                    onClick: () => {
+                      editor
+                        .chain()
+                        .focus()
+                        .setCodeBlock({ language: "typescript" })
+                        .run();
+                      setIsOpen(false);
+                    },
+                  },
+                  {
+                    key: "rule",
+                    title: "Section divider",
+                    icon: <Minus className="h-3.5 w-3.5" strokeWidth={1.75} />,
+                    onClick: () => {
+                      editor.chain().focus().setHorizontalRule().run();
+                      setIsOpen(false);
+                    },
+                  },
+                ] as const
+              ).map((action) => (
+                <button
+                  key={action.key}
+                  type="button"
+                  onClick={action.onClick}
+                  className="flex h-7 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-[hsl(var(--surface))] hover:text-foreground"
+                  title={action.title}
+                >
+                  {action.icon}
+                </button>
+              ))}
 
-              {/* 2. Unsplash Search Popover */}
               <Popover open={unsplashOpen} onOpenChange={setUnsplashOpen}>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="flex h-7 w-7 items-center justify-center rounded-full border border-emerald-600/40 bg-background text-emerald-600 shadow-sm transition-transform hover:scale-110 hover:border-emerald-600 dark:border-emerald-400/40 dark:text-emerald-400"
+                    className="flex h-7 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-[hsl(var(--surface))] hover:text-foreground"
                     title="Search Unsplash photo"
                   >
-                    <Search className="h-3.5 w-3.5" />
+                    <Search className="h-3.5 w-3.5" strokeWidth={1.75} />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-80 p-3 rounded-2xl shadow-xl border-border bg-background z-50">
+                <PopoverContent className="z-50 w-80 rounded-none border-[hsl(var(--border))] bg-[hsl(var(--card))] p-3 shadow-none">
                   <form onSubmit={handleSearchUnsplash} className="flex gap-2">
                     <input
                       type="text"
                       value={unsplashQuery}
                       onChange={(e) => setUnsplashQuery(e.target.value)}
-                      placeholder="Search high-res photos…"
-                      className="flex-1 rounded-md border border-border bg-muted/40 px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-brand"
+                      placeholder="Search photos…"
+                      className="flex-1 border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground/20"
                     />
                     <button
                       type="submit"
                       disabled={unsplashLoading}
-                      className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-brand-foreground hover:bg-brand/90 disabled:opacity-50"
+                      className="bg-foreground px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-background disabled:opacity-50"
                     >
-                      {unsplashLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Search"}
+                      {unsplashLoading ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        "Search"
+                      )}
                     </button>
                   </form>
 
-                  <div className="mt-3 grid grid-cols-2 gap-2 max-h-56 overflow-y-auto">
+                  <div className="mt-3 grid max-h-56 grid-cols-2 gap-2 overflow-y-auto">
                     {unsplashResults.map((item) => (
                       <button
                         key={item.id}
                         type="button"
                         onClick={() => insertUnsplashImage(item)}
-                        className="group relative aspect-video overflow-hidden rounded-lg border border-border/50 bg-muted focus:outline-none focus:ring-2 focus:ring-brand"
+                        className="group relative aspect-video overflow-hidden border border-[hsl(var(--border))] bg-muted focus:outline-none focus:ring-1 focus:ring-foreground/25"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -285,7 +325,7 @@ export function FloatingGutterMenu({ editor, userId }: FloatingGutterMenuProps) 
                           alt={`Photo by ${item.author}`}
                           className="h-full w-full object-cover transition-transform group-hover:scale-105"
                         />
-                        <span className="absolute inset-x-0 bottom-0 bg-black/60 px-1.5 py-0.5 text-[10px] text-white truncate text-left">
+                        <span className="absolute inset-x-0 bottom-0 bg-black/60 px-1.5 py-0.5 text-left text-[10px] text-white truncate">
                           {item.author}
                         </span>
                       </button>
@@ -294,105 +334,96 @@ export function FloatingGutterMenu({ editor, userId }: FloatingGutterMenuProps) 
                 </PopoverContent>
               </Popover>
 
-              {/* 3. Add Video / Embed (< >) */}
-              <button
-                type="button"
-                onClick={() => {
-                  editor.chain().focus().setEmbed({ url: "" }).run();
-                  setIsOpen(false);
-                }}
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-emerald-600/40 bg-background text-emerald-600 shadow-sm transition-transform hover:scale-110 hover:border-emerald-600 dark:border-emerald-400/40 dark:text-emerald-400"
-                title="Embed YouTube, Vimeo, X, GitHub, or bookmark"
-              >
-                <Video className="h-3.5 w-3.5" />
-              </button>
-
-              {/* 4. Add Code Block ({ }) */}
-              <button
-                type="button"
-                onClick={() => {
-                  editor.chain().focus().setCodeBlock({ language: "typescript" }).run();
-                  setIsOpen(false);
-                }}
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-emerald-600/40 bg-background text-emerald-600 shadow-sm transition-transform hover:scale-110 hover:border-emerald-600 dark:border-emerald-400/40 dark:text-emerald-400"
-                title="Insert IDE code block"
-              >
-                <Code2 className="h-3.5 w-3.5" />
-              </button>
-
-              {/* 5. Add Section Divider (...) */}
-              <button
-                type="button"
-                onClick={() => {
-                  editor.chain().focus().setHorizontalRule().run();
-                  setIsOpen(false);
-                }}
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-emerald-600/40 bg-background text-emerald-600 shadow-sm transition-transform hover:scale-110 hover:border-emerald-600 dark:border-emerald-400/40 dark:text-emerald-400"
-                title="Insert section divider"
-              >
-                <Minus className="h-3.5 w-3.5" />
-              </button>
-
-              {/* 6. Technical Blocks Popover (+ More) */}
               <Popover>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="flex h-7 w-7 items-center justify-center rounded-full border border-emerald-600/40 bg-background text-emerald-600 shadow-sm transition-transform hover:scale-110 hover:border-emerald-600 dark:border-emerald-400/40 dark:text-emerald-400"
-                    title="More technical blocks: Callout, LaTeX Math, Mermaid diagram, Table"
+                    className="flex h-7 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-[hsl(var(--surface))] hover:text-foreground"
+                    title="More blocks"
                   >
-                    <Sparkles className="h-3.5 w-3.5" />
+                    <Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-56 p-1.5 rounded-xl shadow-xl border-border bg-background z-50">
-                  <div className="flex flex-col gap-0.5 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        editor.chain().focus().setCallout({ type: "note" }).run();
-                        setIsOpen(false);
-                      }}
-                      className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-muted-foreground hover:bg-muted hover:text-foreground"
-                    >
-                      <MessageSquare className="h-3.5 w-3.5 text-sky-500" />
-                      <span>Callout / Admonition</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        editor.chain().focus().setMathBlock().run();
-                        setIsOpen(false);
-                      }}
-                      className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-muted-foreground hover:bg-muted hover:text-foreground"
-                    >
-                      <Calculator className="h-3.5 w-3.5 text-purple-500" />
-                      <span>LaTeX Math Block</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        editor.chain().focus().setMermaid().run();
-                        setIsOpen(false);
-                      }}
-                      className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-muted-foreground hover:bg-muted hover:text-foreground"
-                    >
-                      <Workflow className="h-3.5 w-3.5 text-emerald-500" />
-                      <span>Mermaid Diagram</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
-                        setIsOpen(false);
-                      }}
-                      className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-muted-foreground hover:bg-muted hover:text-foreground"
-                    >
-                      <TableIcon className="h-3.5 w-3.5 text-amber-500" />
-                      <span>Interactive Table</span>
-                    </button>
+                <PopoverContent className="z-50 w-56 rounded-none border-[hsl(var(--border))] bg-[hsl(var(--card))] p-1 shadow-none">
+                  <div className="flex flex-col gap-0.5">
+                    {(
+                      [
+                        {
+                          label: "Callout",
+                          icon: (
+                            <MessageSquare
+                              className="h-3.5 w-3.5"
+                              strokeWidth={1.75}
+                            />
+                          ),
+                          onClick: () => {
+                            editor
+                              .chain()
+                              .focus()
+                              .setCallout({ type: "note" })
+                              .run();
+                            setIsOpen(false);
+                          },
+                        },
+                        {
+                          label: "LaTeX Math",
+                          icon: (
+                            <Calculator
+                              className="h-3.5 w-3.5"
+                              strokeWidth={1.75}
+                            />
+                          ),
+                          onClick: () => {
+                            editor.chain().focus().setMathBlock().run();
+                            setIsOpen(false);
+                          },
+                        },
+                        {
+                          label: "Mermaid",
+                          icon: (
+                            <Workflow
+                              className="h-3.5 w-3.5"
+                              strokeWidth={1.75}
+                            />
+                          ),
+                          onClick: () => {
+                            editor.chain().focus().setMermaid().run();
+                            setIsOpen(false);
+                          },
+                        },
+                        {
+                          label: "Table",
+                          icon: (
+                            <TableIcon
+                              className="h-3.5 w-3.5"
+                              strokeWidth={1.75}
+                            />
+                          ),
+                          onClick: () => {
+                            editor
+                              .chain()
+                              .focus()
+                              .insertTable({
+                                rows: 3,
+                                cols: 3,
+                                withHeaderRow: true,
+                              })
+                              .run();
+                            setIsOpen(false);
+                          },
+                        },
+                      ] as const
+                    ).map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={item.onClick}
+                        className="flex items-center gap-2 px-2.5 py-2 text-left font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:bg-[hsl(var(--surface))] hover:text-foreground"
+                      >
+                        {item.icon}
+                        <span>{item.label}</span>
+                      </button>
+                    ))}
                   </div>
                 </PopoverContent>
               </Popover>

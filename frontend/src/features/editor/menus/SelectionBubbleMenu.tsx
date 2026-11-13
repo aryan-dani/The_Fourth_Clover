@@ -28,6 +28,32 @@ type SelectionBubbleMenuProps = {
   editor: Editor;
 };
 
+function ToolButton({
+  active,
+  title,
+  onClick,
+  children,
+}: {
+  active?: boolean;
+  title: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={cn(
+        "flex h-7 w-7 items-center justify-center text-muted-foreground transition-colors hover:bg-[hsl(var(--surface))] hover:text-foreground",
+        active && "bg-[hsl(var(--surface))] text-foreground",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function SelectionBubbleMenu({ editor }: SelectionBubbleMenuProps) {
   const [linkInputOpen, setLinkInputOpen] = useState(false);
   const [url, setUrl] = useState("");
@@ -48,7 +74,11 @@ export function SelectionBubbleMenu({ editor }: SelectionBubbleMenuProps) {
     }
 
     let finalUrl = url.trim();
-    if (!/^https?:\/\//i.test(finalUrl) && !finalUrl.startsWith("/") && !finalUrl.startsWith("#")) {
+    if (
+      !/^https?:\/\//i.test(finalUrl) &&
+      !finalUrl.startsWith("/") &&
+      !finalUrl.startsWith("#")
+    ) {
       finalUrl = `https://${finalUrl}`;
     }
 
@@ -69,7 +99,6 @@ export function SelectionBubbleMenu({ editor }: SelectionBubbleMenuProps) {
     <BubbleMenu
       editor={editor}
       shouldShow={({ editor, from, to }) => {
-        // Only show if text is selected, and not inside code blocks or images
         const hasSelection = from !== to;
         const isCodeBlock = editor.isActive("codeBlock");
         const isFigure = editor.isActive("figureImage");
@@ -77,7 +106,7 @@ export function SelectionBubbleMenu({ editor }: SelectionBubbleMenuProps) {
         return hasSelection && !isCodeBlock && !isFigure && !isEmbed;
       }}
     >
-      <div className="flex items-center gap-0.5 rounded-full border border-white/10 bg-[#16181d]/95 px-2 py-1 shadow-2xl backdrop-blur-md select-none text-zinc-300">
+      <div className="flex select-none items-center gap-0.5 border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-1 py-1 text-foreground">
         {linkInputOpen ? (
           <div className="flex items-center gap-1.5 px-1 py-0.5">
             <input
@@ -94,31 +123,31 @@ export function SelectionBubbleMenu({ editor }: SelectionBubbleMenuProps) {
                 }
               }}
               placeholder="Paste or type URL…"
-              className="h-6 w-44 rounded bg-[#21262d] px-2 font-sans text-xs text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-brand"
+              className="h-7 w-44 border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-2 font-sans text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground/20"
             />
 
             <button
               type="button"
               onClick={() => setOpenInNewTab(!openInNewTab)}
               className={cn(
-                "inline-flex h-6 items-center gap-1 rounded px-1.5 text-[11px] font-sans transition-colors",
+                "inline-flex h-7 items-center gap-1 px-1.5 font-mono text-[10px] uppercase tracking-[0.1em] transition-colors",
                 openInNewTab
-                  ? "bg-brand/20 text-brand-bright font-medium"
-                  : "text-zinc-400 hover:text-zinc-200",
+                  ? "bg-[hsl(var(--surface))] text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
               title="Open in new tab"
             >
-              <ExternalLink className="h-3 w-3" />
-              <span>New tab</span>
+              <ExternalLink className="h-3 w-3" strokeWidth={1.75} />
+              <span>New</span>
             </button>
 
             <button
               type="button"
               onClick={handleApplyLink}
-              className="flex h-6 w-6 items-center justify-center rounded bg-brand text-brand-foreground hover:bg-brand/90"
+              className="flex h-7 w-7 items-center justify-center bg-foreground text-background"
               title="Apply link"
             >
-              <Check className="h-3 w-3" />
+              <Check className="h-3 w-3" strokeWidth={1.75} />
             </button>
 
             {editor.isActive("link") && (
@@ -128,186 +157,129 @@ export function SelectionBubbleMenu({ editor }: SelectionBubbleMenuProps) {
                   editor.chain().focus().unsetLink().run();
                   setLinkInputOpen(false);
                 }}
-                className="flex h-6 w-6 items-center justify-center rounded text-rose-400 hover:bg-rose-500/20"
+                className="flex h-7 w-7 items-center justify-center text-destructive hover:bg-destructive/10"
                 title="Remove link"
               >
-                <Unlink className="h-3 w-3" />
+                <Unlink className="h-3 w-3" strokeWidth={1.75} />
               </button>
             )}
           </div>
         ) : (
           <>
-            {/* Inline Marks */}
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleBold().run()}
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/10 hover:text-white",
-                editor.isActive("bold") && "bg-white/20 text-white font-bold",
-              )}
+            <ToolButton
               title="Bold (Cmd+B)"
+              active={editor.isActive("bold")}
+              onClick={() => editor.chain().focus().toggleBold().run()}
             >
-              <Bold className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleItalic().run()}
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/10 hover:text-white",
-                editor.isActive("italic") && "bg-white/20 text-white font-semibold",
-              )}
+              <Bold className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </ToolButton>
+            <ToolButton
               title="Italic (Cmd+I)"
+              active={editor.isActive("italic")}
+              onClick={() => editor.chain().focus().toggleItalic().run()}
             >
-              <Italic className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleUnderline().run()}
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/10 hover:text-white",
-                editor.isActive("underline") && "bg-white/20 text-white",
-              )}
+              <Italic className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </ToolButton>
+            <ToolButton
               title="Underline (Cmd+U)"
+              active={editor.isActive("underline")}
+              onClick={() => editor.chain().focus().toggleUnderline().run()}
             >
-              <UnderlineIcon className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleStrike().run()}
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/10 hover:text-white",
-                editor.isActive("strike") && "bg-white/20 text-white",
-              )}
+              <UnderlineIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </ToolButton>
+            <ToolButton
               title="Strikethrough"
+              active={editor.isActive("strike")}
+              onClick={() => editor.chain().focus().toggleStrike().run()}
             >
-              <Strikethrough className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleCode().run()}
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/10 hover:text-white",
-                editor.isActive("code") && "bg-white/20 text-white",
-              )}
+              <Strikethrough className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </ToolButton>
+            <ToolButton
               title="Inline Code (Cmd+E)"
+              active={editor.isActive("code")}
+              onClick={() => editor.chain().focus().toggleCode().run()}
             >
-              <Code className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleHighlight().run()}
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/10 hover:text-white",
-                editor.isActive("highlight") && "bg-amber-400/30 text-amber-300",
-              )}
+              <Code className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </ToolButton>
+            <ToolButton
               title="Highlight"
+              active={editor.isActive("highlight")}
+              onClick={() => editor.chain().focus().toggleHighlight().run()}
             >
-              <Highlighter className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={openLinkEditor}
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/10 hover:text-white",
-                editor.isActive("link") && "bg-brand/30 text-brand-bright",
-              )}
+              <Highlighter className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </ToolButton>
+            <ToolButton
               title="Link"
+              active={editor.isActive("link")}
+              onClick={openLinkEditor}
             >
-              <Link2 className="h-3.5 w-3.5" />
-            </button>
+              <Link2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </ToolButton>
 
-            <span className="h-4 w-px bg-white/15 mx-1" aria-hidden />
+            <span
+              className="mx-1 h-4 w-px bg-[hsl(var(--border))]"
+              aria-hidden
+            />
 
-            {/* Block Transforms */}
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/10 hover:text-white",
-                editor.isActive("heading", { level: 2 }) && "bg-white/20 text-white font-bold",
-              )}
+            <ToolButton
               title="Heading 2"
+              active={editor.isActive("heading", { level: 2 })}
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 2 }).run()
+              }
             >
-              <Heading2 className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/10 hover:text-white",
-                editor.isActive("heading", { level: 3 }) && "bg-white/20 text-white font-bold",
-              )}
+              <Heading2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </ToolButton>
+            <ToolButton
               title="Heading 3"
+              active={editor.isActive("heading", { level: 3 })}
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 3 }).run()
+              }
             >
-              <Heading3 className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleBlockquote().run()}
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/10 hover:text-white",
-                editor.isActive("blockquote") && "bg-white/20 text-white",
-              )}
+              <Heading3 className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </ToolButton>
+            <ToolButton
               title="Quote"
+              active={editor.isActive("blockquote")}
+              onClick={() => editor.chain().focus().toggleBlockquote().run()}
             >
-              <Quote className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleBulletList().run()}
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/10 hover:text-white",
-                editor.isActive("bulletList") && "bg-white/20 text-white",
-              )}
+              <Quote className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </ToolButton>
+            <ToolButton
               title="Bullet list"
+              active={editor.isActive("bulletList")}
+              onClick={() => editor.chain().focus().toggleBulletList().run()}
             >
-              <List className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleOrderedList().run()}
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/10 hover:text-white",
-                editor.isActive("orderedList") && "bg-white/20 text-white",
-              )}
+              <List className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </ToolButton>
+            <ToolButton
               title="Numbered list"
+              active={editor.isActive("orderedList")}
+              onClick={() => editor.chain().focus().toggleOrderedList().run()}
             >
-              <ListOrdered className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleTaskList().run()}
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/10 hover:text-white",
-                editor.isActive("taskList") && "bg-white/20 text-white",
-              )}
+              <ListOrdered className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </ToolButton>
+            <ToolButton
               title="Task list"
+              active={editor.isActive("taskList")}
+              onClick={() => editor.chain().focus().toggleTaskList().run()}
             >
-              <ListTodo className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().setCodeBlock({ language: "typescript" }).run()}
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-white/10 hover:text-white",
-                editor.isActive("codeBlock") && "bg-white/20 text-white",
-              )}
-              title="Wrap in IDE Code Block"
+              <ListTodo className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </ToolButton>
+            <ToolButton
+              title="Wrap in code block"
+              active={editor.isActive("codeBlock")}
+              onClick={() =>
+                editor
+                  .chain()
+                  .focus()
+                  .setCodeBlock({ language: "typescript" })
+                  .run()
+              }
             >
-              <Code2 className="h-3.5 w-3.5" />
-            </button>
+              <Code2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </ToolButton>
           </>
         )}
       </div>

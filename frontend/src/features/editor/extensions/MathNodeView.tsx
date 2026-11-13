@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import { NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
 import katex from "katex";
 import { Check, Copy, Edit2, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function MathNodeView({
   node,
@@ -38,26 +39,28 @@ export function MathNodeView({
 
   return (
     <NodeViewWrapper
-      className="math-nodeview group relative my-6 rounded-xl border border-border/60 bg-muted/20 p-4 transition-all"
+      className="math-nodeview group relative my-6 border border-[hsl(var(--border))] bg-[hsl(var(--surface))]/40 p-4 transition-colors"
       data-latex={latex}
     >
-      {/* Action toolbar on hover/focus */}
       <div
         contentEditable={false}
-        className={`absolute -top-3.5 right-3 flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 shadow-sm text-xs select-none transition-opacity ${
-          selected || isEditing ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-        }`}
+        className={cn(
+          "absolute -top-3 right-3 flex select-none items-center gap-1 border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-2 py-0.5 text-xs transition-opacity",
+          selected || isEditing
+            ? "opacity-100"
+            : "opacity-0 group-hover:opacity-100",
+        )}
       >
         <button
           type="button"
           onClick={() => setIsEditing(!isEditing)}
-          className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground"
         >
-          <Edit2 className="h-3 w-3" />
-          <span>{isEditing ? "Done" : "Edit LaTeX"}</span>
+          <Edit2 className="h-3 w-3" strokeWidth={1.75} />
+          <span>{isEditing ? "Done" : "Edit"}</span>
         </button>
 
-        <span className="h-3 w-px bg-border/60 mx-1" aria-hidden />
+        <span className="mx-1 h-3 w-px bg-[hsl(var(--border))]" aria-hidden />
 
         <button
           type="button"
@@ -66,26 +69,26 @@ export function MathNodeView({
           title="Copy LaTeX"
         >
           {copied ? (
-            <Check className="h-3 w-3 text-emerald-500" />
+            <Check className="h-3 w-3 text-foreground" strokeWidth={1.75} />
           ) : (
-            <Copy className="h-3 w-3" />
+            <Copy className="h-3 w-3" strokeWidth={1.75} />
           )}
         </button>
 
         <button
           type="button"
           onClick={deleteNode}
-          className="inline-flex items-center text-destructive hover:bg-destructive/10 p-0.5 rounded"
+          className="inline-flex items-center p-0.5 text-muted-foreground hover:text-destructive"
           title="Delete math block"
         >
-          <Trash2 className="h-3 w-3" />
+          <Trash2 className="h-3 w-3" strokeWidth={1.75} />
         </button>
       </div>
 
       {isEditing ? (
         <div contentEditable={false} className="space-y-3 pt-2">
-          <label className="block text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
-            LaTeX Math Formula
+          <label className="block font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            LaTeX
           </label>
           <textarea
             value={latex}
@@ -97,15 +100,15 @@ export function MathNodeView({
                 setIsEditing(false);
               }
             }}
-            placeholder="e.g. \nabla \times \mathbf{B} = \mu_0 \mathbf{J} + \mu_0 \varepsilon_0 \frac{\partial \mathbf{E}}{\partial t}"
-            className="w-full rounded-md border border-border bg-background p-2.5 font-mono text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-brand"
+            placeholder="e.g. \nabla \times \mathbf{B} = \mu_0 \mathbf{J}"
+            className="w-full border border-[hsl(var(--border))] bg-background p-2.5 font-mono text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground/20"
           />
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Press Cmd+Enter or click Done when finished</span>
+            <span>Cmd+Enter to finish</span>
             <button
               type="button"
               onClick={() => setIsEditing(false)}
-              className="rounded bg-brand px-3 py-1 font-medium text-brand-foreground hover:bg-brand/90"
+              className="bg-foreground px-3 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-background"
             >
               Done
             </button>
@@ -115,7 +118,7 @@ export function MathNodeView({
         <div
           contentEditable={false}
           onDoubleClick={() => setIsEditing(true)}
-          className="overflow-x-auto py-2 text-center cursor-pointer select-none"
+          className="cursor-pointer select-none overflow-x-auto py-2 text-center"
           title="Double-click to edit LaTeX formula"
           dangerouslySetInnerHTML={{ __html: renderedHtml }}
         />
