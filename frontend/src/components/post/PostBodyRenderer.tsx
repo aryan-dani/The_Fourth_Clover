@@ -567,6 +567,14 @@ function HtmlBodyRenderer({
         const wrapper = document.createElement("div");
         wrapper.className =
           "relative my-6 overflow-hidden rounded-xl border border-border/80 bg-[#0d1117] text-[#e6edf3] shadow-sm";
+        pre.classList.add(
+          "overflow-x-auto",
+          "p-5",
+          "text-sm",
+          "font-mono",
+          "leading-relaxed",
+        );
+        pre.style.padding = "1.15rem 1.25rem 1.35rem";
         pre.parentNode?.insertBefore(wrapper, pre);
         wrapper.appendChild(header);
         wrapper.appendChild(pre);

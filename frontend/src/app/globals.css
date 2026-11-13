@@ -913,23 +913,43 @@ html[data-intro="revealing"] {
 
 .tiptap-html-renderer pre,
 .prose-editorial.tiptap-html-renderer pre,
+.prose-editorial pre {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0;
+  padding: 1.15rem 1.25rem 1.35rem !important;
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+
 .tiptap-html-renderer .relative.my-6,
 .prose-editorial .relative.my-6 {
   max-width: 100%;
-  overflow-x: auto;
+  overflow: hidden;
 }
 
 .tiptap-html-renderer pre code,
-.prose-editorial.tiptap-html-renderer pre code {
+.prose-editorial.tiptap-html-renderer pre code,
+.prose-editorial pre code {
   display: block;
+  padding: 0;
   white-space: pre;
   word-break: normal;
   overflow-wrap: normal;
 }
 
 .tiptap-html-renderer table,
-.prose-editorial.tiptap-html-renderer table {
-  display: block;
+.prose-editorial.tiptap-html-renderer table,
+.prose-editorial table {
+  display: table;
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.tiptap-html-renderer .table-scroll,
+.prose-editorial .table-scroll {
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
@@ -1134,18 +1154,23 @@ figure figcaption {
 }
 
 .editorial-table th,
-.prose-editorial table th {
+.editorial-table td,
+.prose-editorial table th,
+.prose-editorial table td,
+.tiptap-html-renderer table th,
+.tiptap-html-renderer table td {
   border: 1px solid var(--fg-line);
-  padding: 0.6rem 0.9rem;
+  padding: 0.75rem 1rem;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.editorial-table th,
+.prose-editorial table th,
+.tiptap-html-renderer table th {
   background-color: color-mix(in srgb, var(--fg-line) 20%, transparent);
   font-weight: 600;
   text-align: left;
-}
-
-.editorial-table td,
-.prose-editorial table td {
-  border: 1px solid var(--fg-line);
-  padding: 0.6rem 0.9rem;
 }
 
 /* Task list checkboxes */
@@ -1539,6 +1564,21 @@ aside[data-callout-type="security"],
   max-width: 100%;
   border: 1px solid hsl(var(--border));
   background: hsl(var(--card));
+}
+
+/* Brand marks / square logos — never full-bleed stretch */
+.tiptap-html-renderer figure.mark-frame,
+.prose-editorial.tiptap-html-renderer figure.mark-frame {
+  max-width: min(18rem, 70%);
+  margin-inline: auto;
+}
+
+.tiptap-html-renderer figure.mark-frame img,
+.prose-editorial.tiptap-html-renderer figure.mark-frame img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  background: #f5f4ee;
 }
 
 .tiptap-html-renderer figure figcaption,

@@ -49,9 +49,10 @@ function sectionMeta(section: ArticleCardSection, format?: ArticleFormat) {
  */
 const nest = "relative z-10 pointer-events-auto";
 
-/** Comfortable multi-line display leading — overrides .type-display's 0.88 hero crush. */
-const cardTitleLeading = "leading-[1.18] tracking-[-0.01em]";
-const cardExcerptLeading = "leading-[1.65]";
+/** Card titles need air — override .type-display's 0.88 crush and negative tracking. */
+const cardTitleLeading =
+  "leading-[1.32] tracking-[0.02em] [word-spacing:0.12em]";
+const cardExcerptLeading = "leading-[1.7]";
 
 export function ArticleCard({
   section,
