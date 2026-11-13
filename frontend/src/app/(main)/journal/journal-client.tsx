@@ -90,7 +90,7 @@ function JournalFilterLoading() {
   return (
     <div className="space-y-4" role="status" aria-live="polite">
       <p className="type-label text-muted-foreground">Loading this shelf</p>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }, (_, index) => (
           <div
             key={index}
@@ -479,7 +479,7 @@ export function JournalPageClient({
           }
         />
       ) : view === "cards" ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2 lg:grid-cols-3">
           {posts.map((post, index) => (
             <ArticleCard
               key={post.id}

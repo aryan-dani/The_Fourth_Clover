@@ -217,8 +217,8 @@ export function ArticleCard({
 
       <div
         className={cn(
-          "pointer-events-none flex flex-1 flex-col gap-3.5 p-5 sm:p-6",
-          isLead && "justify-center md:p-8",
+          "pointer-events-none flex flex-col gap-3.5 p-5 sm:p-6",
+          isLead && "flex-1 justify-center md:p-8",
         )}
       >
         <div className="flex flex-wrap items-center gap-2">
@@ -264,7 +264,12 @@ export function ArticleCard({
           </div>
         )}
 
-        <div className="mt-auto flex flex-wrap items-end justify-between gap-3 border-t border-hairline pt-4">
+        <div
+          className={cn(
+            "flex flex-wrap items-end justify-between gap-3 border-t border-hairline pt-4",
+            isLead && "mt-auto",
+          )}
+        >
           {author ? (
             <Byline
               author={author}
